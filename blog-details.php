@@ -98,7 +98,7 @@
                                         <h5>$120.00</h5>
                                     </div>
                                     <div class="select-button">
-                                        <a href="#" class="primary-btn checkout-btn">CHECK OUT</a>
+                                    <a href="./check-out.php" class="primary-btn checkout-btn">CHECK OUT</a>
                                     </div>
                                 </div>
                             </li>
@@ -116,13 +116,13 @@
                         <span>All departments</span>
                         <ul class="depart-hover">
                             <li class="active"><a href="#">Women’s Clothing</a></li>
-                            <li><a href="#">Men’s Clothing</a></li>
-                            <li><a href="#">Underwear</a></li>
-                            <li><a href="#">Kid's Clothing</a></li>
-                            <li><a href="#">Brand Fashion</a></li>
-                            <li><a href="#">Accessories/Shoes</a></li>
-                            <li><a href="#">Luxury Brands</a></li>
-                            <li><a href="#">Brand Outdoor Apparel</a></li>
+                            <li><a href="./shop.php">Men’s Clothing</a></li>
+                            <li><a href="./shop.php">Underwear</a></li>
+                            <li><a href="./shop.php">Kid's Clothing</a></li>
+                            <li><a href="./shop.php">Brand Fashion</a></li>
+                            <li><a href="./shop.php">Accessories/Shoes</a></li>
+                            <li><a href="./shop.php">Luxury Brands</a></li>
+                            <li><a href="./shop.php">Brand Outdoor Apparel</a></li>
                         </ul>
                     </div>
                 </div>
@@ -132,9 +132,9 @@
                         <li><a href="./shop.php">Shop</a></li>
                         <li><a href="#">Collection</a>
                             <ul class="dropdown">
-                                <li><a href="#">Men's</a></li>
-                                <li><a href="#">Women's</a></li>
-                                <li><a href="#">Kid's</a></li>
+                                <li><a href="./shop.php">Men's</a></li>
+                                <li><a href="./shop.php">Women's</a></li>
+                                <li><a href="./shop.php">Kid's</a></li>
                             </ul>
                         </li>
                         <li><a href="./blog.php">Blog</a></li>
