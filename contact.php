@@ -207,7 +207,7 @@
                             </div>
                             <div class="ci-text">
                                 <span>Address:</span>
-                                <p>Apalit, Pampamga, Phillipines</p>
+                                <p>Apalit, Pampamga, Philippines</p>
                             </div>
                         </div>
                         <div class="cw-item">
@@ -216,7 +216,7 @@
                             </div>
                             <div class="ci-text">
                                 <span>Phone:</span>
-                                <p>+65 11.188.888</p>
+                                <p>+63 912 3456 789</p>
                             </div>
                         </div>
                         <div class="cw-item">
