@@ -1,3 +1,42 @@
+<?php 
+session_start();
+
+// Redirect if already authenticated
+if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) {
+    header("location:index.php");
+    exit;
+}
+
+include "lib/connection.php";
+
+if (isset($_POST['submit'])) {
+    // Sanitize user inputs
+    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+    $pass = md5($_POST['password']); // Consider using stronger hash algorithms like bcrypt
+
+    // Prepared statement to prevent SQL injection
+    $loginquery = "SELECT * FROM users WHERE email = ? AND pass = ?";
+    $stmt = $conn->prepare($loginquery);
+    $stmt->bind_param('ss', $email, $pass);
+    $stmt->execute();
+    $loginres = $stmt->get_result();
+
+    // Check login result
+    if ($loginres->num_rows > 0) {
+        // Fetch user data and store it in session
+        $result = $loginres->fetch_assoc();
+        $_SESSION['username'] = $result['f_name'];
+        $_SESSION['userid'] = $result['id'];
+        $_SESSION['auth'] = 1;
+
+        header("location:index.php");
+        exit;
+    } else {
+        $error_message = "Invalid email or password";
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="zxx">
 
@@ -180,26 +219,20 @@
                 <div class="col-lg-6 offset-lg-3">
                     <div class="login-form">
                         <h2>Login</h2>
-                        <form action="#">
+                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post" class="w-100" >
                             <div class="group-input">
-                                <label for="username">Username or email address *</label>
-                                <input type="text" id="username">
+                                <label for="username"E>mail address *</label>
+                                <input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Enter Email Address" required>
                             </div>
                             <div class="group-input">
                                 <label for="pass">Password *</label>
-                                <input type="text" id="pass">
+                                <input type="password" class="form-control form-control-user" id="password" name="password" placeholder="Password" required>
                             </div>
                             <div class="group-input gi-check">
-                                <div class="gi-more">
-                                    <label for="save-pass">
-                                        Save Password
-                                        <input type="checkbox" id="save-pass">
-                                        <span class="checkmark"></span>
-                                    </label>
-                                    <a href="#" class="forget-pass">Forget your Password</a>
-                                </div>
+                                
                             </div>
-                            <button type="submit" class="site-btn login-btn">Sign In</button>
+                            <input class="site-btn login-btn" type="submit" name="submit" value="Login">
+
                         </form>
                         <div class="switch-login">
                             <a href="./register.php" class="or-login">Or Create An Account</a>
@@ -214,6 +247,7 @@
     <?php include 'footer.php'; ?>   
 
     <!-- Js Plugins -->
+    <script src="js/jquery-3.5.1.slim.min.js"></script>
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
