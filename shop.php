@@ -23,6 +23,50 @@
     <link rel="stylesheet" href="css/style.css" type="text/css">
 </head>
 
+<?php
+
+  include 'lib/connection.php'; // Make sure this file includes your database connection logic.
+
+// Handle Add to Cart
+if (isset($_POST['add_to_cart'])) {
+    if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) {
+        $user_id = $_SESSION['userid'];
+        $product_name = $_POST['product_name'];
+        $product_price = $_POST['product_price'];
+        $product_id = $_POST['product_id'];
+        $product_quantity = 1;
+
+        // Check if the product is already in the cart
+        $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE productid = '$product_id' AND userid = '$user_id'");
+        if (mysqli_num_rows($select_cart) > 0) {
+            // Product already in cart, increment quantity
+            $cart_row = mysqli_fetch_assoc($select_cart);
+            $new_quantity = $cart_row['quantity'] + 1;
+            mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE id = '{$cart_row['id']}'");
+            header("Location: Clothing.php");
+            exit();
+        } else {
+            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
+            header("Location: Clothing.php");
+            exit();
+        }
+    } else {
+        // Redirect to login if the user is not logged in
+        header("Location: login.php");
+        exit();
+    }
+}
+
+  // Query to fetch products from the database
+  $sql = "SELECT * FROM product"; // Make sure this query is correct
+  $result = mysqli_query($conn, $sql); // Execute the query and store the result
+
+  if (!$result) {
+    // If the query fails, output an error and exit
+    die('Query failed: ' . mysqli_error($conn));
+  }
+?>
+
 <body>
     <!-- Page Preloder -->
     <!-- <div id="preloder">
@@ -247,242 +291,70 @@
                             </div>
                         </div>
                     </div>
+
+<!----------------------------------------------------------- PRODUCT ITEM ------------------------------>        
+
+
+
+      <!---------------------------------------------------------------------------------------------------------------------------- -->
+
                     <div class="product-list">
                         <div class="row">
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\red_nike.jpg" alt="">
-                                        <div class="sale pp-sale">Sale</div>
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
+                            <?php
+                            if (mysqli_num_rows($result) > 0) {
+                            // Loop through products
+                            while ($row = mysqli_fetch_assoc($result)) {
+                             ?>
+                            
+                                <div class="col-lg-4 col-sm-6">
+                                    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+                                     <div class="product-item">
+                                        <div class="pi-pic">
+                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
+                                            <div class="sale pp-sale">Sale</div>
+                                            <div class="icon">
+                                               <i class="icon_heart_alt"></i>
+                                            </div>
+                                             <ul>
+                                                <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
                                             <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
+                                                <?php endif; ?>
+                                                
                                                 <li class="quick-view"><a href="product.php">+ Quick View</a></li>
                                             <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
                                         </ul>
                                     </div>
                                     <div class="pi-text">
                                         <div class="catagory-name">Windbreaker</div>
+                                        <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
                                         <a href="#">
-                                            <h5>Nike Tri Tone</h5>
+                                            <h5><?php echo $row["name"] ?></h5>
+                                            <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
                                         </a>
                                         <div class="product-price">
-                                            ₱800.00
-                                            <span>₱1,000.00</span>
+                                            &#8369;<?php echo $row["Price"] ?>
+                                            <span>500</span>
+                                            <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>">
                                         </div>
+
+                                        <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                        <input type="submit" class="btn btn-primary mt-2" value="Add to Cart" name="add_to_cart">
+                                        <?php endif; ?>
+                                        
                                     </div>
+                                    </form>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\BAPE_Ape_Smoking.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">T-Shirt</div>
-                                        <a href="#">
-                                            <h5>BAPE Ape Smoking</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱600.00
-                                            <span>₱800.00</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img/A&M/Multiply_Jorts.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Jorts</div>
-                                        <a href="#">
-                                            <h5>Multiply Jorts</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-                                           
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\Jordan Jersey Backpack Black – Brands Democracy.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Bag</div>
-                                        <a href="#">
-                                            <h5>Jordan Jersey Backpack Black – Brands Democracy</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-        
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="\img\A&M\NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Bag</div>
-                                        <a href="#">
-                                            <h5>NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\Loose Button Knitted Striped Sweater.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Sweater</div>
-                                        <a href="#">
-                                            <h5>Loose Button Knitted Striped Sweater</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\BAPE_Camo_Shorts.jpg" alt="">
-                                        <div class="sale pp-sale">Sale</div>
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Short</div>
-                                        <a href="#">
-                                            <h5>BAPE Camo Shorts</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-                                            <span>₱1,500.00</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\See_Through_Polo.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Polo</div>
-                                        <a href="#">
-                                            <h5>See Through Polo</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6">
-                                <div class="product-item">
-                                    <div class="pi-pic">
-                                        <img src="img\A&M\New_York_Yunkees_Sweatshirt.jpg" alt="">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Sweatshirt</div>
-                                        <a href="#">
-                                            <h5>New York Yunkees Sweatshirt</h5>
-                                        </a>
-                                        <div class="product-price">
-                                            ₱500.00
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            
+                            <?php
+                            }
+                            } else {
+                           echo "No products available.";
+                          }
+                            ?>
                         </div>
                     </div>
-                    <div class="loading-more">
-                        <i class="icon_loading"></i>
-                        <a href="#">
-                            Loading More
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    
     </section>
     <!-- Product Shop Section End -->
 

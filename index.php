@@ -23,11 +23,51 @@
     <link rel="stylesheet" href="css/style.css" type="text/css">
 </head>
 
+
+<?php
+  include 'lib/connection.php';
+
+  // Query to fetch all products
+  $sql = "SELECT * FROM product";
+  $result = $conn->query($sql);
+
+  // Check if user is logged in and trying to add to cart
+  if (isset($_POST['add_to_cart'])) {
+    if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) { 
+      $user_id = $_SESSION['userid'];
+      $product_name = $_POST['product_name'];
+      $product_price = $_POST['product_price'];
+      $product_id = $_POST['product_id'];
+      $product_quantity = 1;
+
+      // Check if the product is already in the cart
+      $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE productid = '$product_id' AND userid = '$user_id'");
+      if (mysqli_num_rows($select_cart) > 0) {
+        $message[] = 'Product already added to cart';
+      } else {
+        // Insert product into cart
+        $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
+        $message[] = 'Product added to cart successfully';
+        header('Location: index.php'); // Refresh the page after adding the product
+        exit();
+      }
+    } else {
+      // Redirect to login if the user is not logged in
+      header("Location: login.php");
+      exit();
+    }
+  }
+?>
+
+
+
 <body>
     <!-- Page Preloder -->
     <!-- <div id="preloder">
         <div class="loader"></div>
     </div> -->
+
+    
 
     <!-- Header Section Begin -->
     <header class="header-section">
@@ -232,6 +272,45 @@
         </div>
     </div>
     <!-- Banner Section End -->
+
+<!----------------------------------------------------------------------------------------------------------------------------------------------------- -->
+
+<div class="container">
+    <div class="row" >
+      <?php
+        if (mysqli_num_rows($result) > 0) {
+          // Loop through products
+          while ($row = mysqli_fetch_assoc($result)) {
+            ?>
+            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+              <div class="col-sm-6 col-6 m-auto py-3" class="img-fluid w-100">
+    
+                <div>
+                  <img src="admin/product_img/<?php echo $row['imgname']; ?>">
+                </div>
+    
+                <div>
+                  <h6 style="font-family: 'Poppins', sans-serif; font-size: 18px;"><?php echo $row["name"] ?></h6>
+                 <span style="font-family: 'Poppins', sans-serif; font-size: 18px;">&#8369;<?php echo $row["Price"] ?></span>
+                  <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
+                  <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
+                  <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>">
+      
+                  <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                   <input type="submit" class="btn btn-primary mt-2" value="Add to Cart" name="add_to_cart">
+                  <?php endif; ?>
+                </div>
+    
+              </div>
+            </form>
+            <?php
+          }
+        } else {
+          echo "No products available.";
+        }
+      ?>
+    </div>
+  </div>
 
     <!-- Women Banner Section Begin -->
     <section class="women-banner spad">
