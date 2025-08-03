@@ -18,11 +18,11 @@ if (isset($_POST['add_to_cart'])) {
             $cart_row = mysqli_fetch_assoc($select_cart);
             $new_quantity = $cart_row['quantity'] + 1;
             mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE id = '{$cart_row['id']}'");
-            header("Location: Clothing.php");
+            header("Location:shop.php");
             exit();
         } else {
             $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
-            header("Location: Clothing.php");
+            header("Location:shop.php");
             exit();
         }
     } else {
@@ -186,9 +186,14 @@ if (isset($_POST['add_to_cart'])) {
                                                <i class="icon_heart_alt"></i>
                                             </div>
                                              <ul>
+
                                                 <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                                <li class="w-icon active"><a href="#"><i class="icon_bag_alt" value="Add to Cart" name="add_to_cart"></i></a></li>
-                                                 <?php endif; ?>
+                                                    <li class="w-icon active">
+                                                        <button type="submit" name="add_to_cart" style="all: unset; cursor: pointer;">
+                                                            <i class="icon_bag_alt"></i>
+                                                        </button>
+                                                    </li>
+                                                <?php endif; ?>
 
                                                 <li class="quick-view"><a href="product.php">+ Quick View</a></li>
                                             <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
@@ -196,19 +201,20 @@ if (isset($_POST['add_to_cart'])) {
                                     </div>
                                     <div class="pi-text">
                                         <div class="catagory-name">Windbreaker</div>
-                                        <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
+                                        
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>
-                                            <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
-                                        </a>
+                                            
+                                        </a> 
                                         <div class="product-price">
                                             &#8369;<?php echo $row["Price"] ?>
                                             <span>500</span>
-                                            <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>">
+                                            
                                         </div>
+                                            <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
+                                            <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
+                                            <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>">
 
-
-                                        
                                     </div>
                                     </form>
                                 </div>

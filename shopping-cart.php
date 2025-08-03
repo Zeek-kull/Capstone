@@ -1,3 +1,126 @@
+<?php
+
+ include 'header.php';
+  include 'lib/connection.php';
+
+  // Check if user is authenticated
+  if (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1) {
+      header("location:login.php");
+      exit();
+  }
+
+  // Order handling
+  // Get user's address and phone from users table
+  $user_address = '';
+  $user_phone = '';
+  $user_id_for_address = isset($_SESSION['userid']) ? $_SESSION['userid'] : '';
+  if ($user_id_for_address) {
+      $user_info_query = mysqli_query($conn, "SELECT street, zone, barangay, city, province, phone FROM users WHERE id='$user_id_for_address'");
+      if ($user_info_query && mysqli_num_rows($user_info_query) > 0) {
+          $user_data = mysqli_fetch_assoc($user_info_query);
+          
+          // Build complete address from user data
+          $address_parts = array();
+          if (!empty($user_data['street'])) $address_parts[] = $user_data['street'];
+          if (!empty($user_data['zone'])) $address_parts[] = 'Zone ' . $user_data['zone'];
+          if (!empty($user_data['barangay'])) $address_parts[] = $user_data['barangay'];
+          if (!empty($user_data['city'])) $address_parts[] = $user_data['city'];
+          if (!empty($user_data['province'])) $address_parts[] = $user_data['province'];
+          
+          $user_address = implode(', ', $address_parts);
+          $user_phone = $user_data['phone'];
+      }
+  }
+  if (isset($_POST['order_btn'])) {
+      // Check if cart is empty
+      $cart_check = mysqli_query($conn, "SELECT COUNT(*) as cart_count FROM cart WHERE userid = '{$_SESSION['userid']}'");
+      $cart_count = mysqli_fetch_assoc($cart_check)['cart_count'];
+      
+      if ($cart_count == 0) {
+          echo "<script>alert('Your cart is empty. Please add items before placing an order.');</script>";
+          header("location:shopping-cart.php");
+          exit();
+      }
+      
+      $userid = $_POST['user_id'];
+      $name = $_POST['user_name'];
+      $number = $_POST['number'];
+      $address = $_POST['address'];
+      $mobnumber = isset($_POST['mobnumber']) ? $_POST['mobnumber'] : '';
+      $payment_method = $_POST['payment_method']; // User-selected payment method
+      $status = "pending";
+      $order_date = date('Y-m-d H:i:s'); // Current date and time
+
+      $cart_query = mysqli_query($conn, "SELECT * FROM `cart` WHERE userid='$userid'");
+      $price_total = 0;
+      $product_name = [];
+
+      // Calculate total price and update stock
+      if (mysqli_num_rows($cart_query) > 0) {
+          while ($product_item = mysqli_fetch_assoc($cart_query)) {
+              $product_name[] = $product_item['productid'] . ' (' . $product_item['quantity'] . ')';
+              $product_price = number_format($product_item['price'] * $product_item['quantity']);
+              $price_total += $product_price;
+
+              // Update product stock
+              $sql = "SELECT * FROM product WHERE p_id = '{$product_item['productid']}'";
+              $result = $conn->query($sql);
+              if (mysqli_num_rows($result) > 0) {
+                  while ($row = mysqli_fetch_assoc($result)) {
+                      if ($product_item['quantity'] <= $row['quantity']) {
+                          $update_quantity = $row['quantity'] - $product_item['quantity'];
+                          $update_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$update_quantity' WHERE p_id = '{$row['p_id']}'");
+                      } else {
+                          echo "Out of stock: " . $row['name'] . " Quantity: " . $row['quantity'];
+                      }
+                  }
+              }
+          }
+
+          // Insert order if products are available
+          $total_product = implode(', ', $product_name);
+          // Use only the correct column 'created_at' for the order date
+          $detail_query = mysqli_query($conn, "INSERT INTO `orders`(userid, name, address, phone, mobnumber, payment_method, totalproduct, totalprice, status, created_at) 
+              VALUES('$userid','$name','$address','$number','$mobnumber','$payment_method','$total_product','$price_total','$status', '$order_date')");
+
+          // Empty cart after successful order
+          $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE userid='$userid'");
+          header("location:index.php");
+          exit();
+      }
+  }
+
+  // Get user's cart
+  $id = $_SESSION['userid'];
+  $sql = "SELECT * FROM cart WHERE userid='$id'";
+  $result = $conn->query($sql);
+
+  // Update cart quantity
+  if (isset($_POST['update_update_btn'])) {
+      $update_value = $_POST['update_quantity'];
+      $update_id = $_POST['update_quantity_id'];
+      $update_quantity_query = mysqli_query($conn, "UPDATE `cart` SET quantity = '$update_value' WHERE c_id = '$update_id'");
+      if ($update_quantity_query) {
+          header('Location:shopping-cart.php');
+          exit();
+      }
+  }
+
+  // Remove item from cart
+if (isset($_GET['remove'])) {
+    $remove_id = intval($_GET['remove']); // Make sure it's an integer to prevent SQL injection
+    mysqli_query($conn, "DELETE FROM cart WHERE c_id = $remove_id");
+    header("Location:shopping-cart.php");
+    exit();
+}
+
+
+
+?>
+
+
+
+
 <!DOCTYPE html>
 <html lang="zxx">
 
@@ -24,138 +147,9 @@
 </head>
 
 <body>
-    <!-- Page Preloder -->
-    <!-- <div id="preloder">
-        <div class="loader"></div>
-    </div> -->
 
-    <!-- Header Section Begin -->
-    <header class="header-section">
 
-        <div class="container">
-            <div class="inner-header">
-                <div class="row">
-                    <div class="col-lg-2 col-md-2">
-                        <div class="logo">
-                            <a href="./index.php">
-                                <img src="img/amLogoo.png" alt="">
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-lg-7 col-md-7">
-                        <div class="advanced-search">
-                            <button type="button" class="category-btn">All Categories</button>
-                            <form action="#" class="input-group">
-                                <input type="text" placeholder="What do you need?">
-                                <button type="button"><i class="ti-search"></i></button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 text-right col-md-3">
-                        <ul class="nav-right">
-                            <li class="heart-icon"><a href="#">
-                                    <i class="icon_heart_alt"></i>
-                                    <span>1</span>
-                                </a>
-                            </li>
-                            <li class="cart-icon"><a href="#">
-                                    <i class="icon_bag_alt"></i>
-                                    <span>3</span>
-                                </a>
-                                <div class="cart-hover">
-                                    <div class="select-items">
-                                        <table>
-                                            <tbody>
-                                                <tr>
-                                                    <td class="si-pic"><img src="img/select-product-1.jpg" alt=""></td>
-                                                    <td class="si-text">
-                                                        <div class="product-selected">
-                                                            <p>$60.00 x 1</p>
-                                                            <h6>Kabino Bedside Table</h6>
-                                                        </div>
-                                                    </td>
-                                                    <td class="si-close">
-                                                        <i class="ti-close"></i>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="si-pic"><img src="img/select-product-2.jpg" alt=""></td>
-                                                    <td class="si-text">
-                                                        <div class="product-selected">
-                                                            <p>$60.00 x 1</p>
-                                                            <h6>Kabino Bedside Table</h6>
-                                                        </div>
-                                                    </td>
-                                                    <td class="si-close">
-                                                        <i class="ti-close"></i>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="select-total">
-                                        <span>total:</span>
-                                        <h5>$120.00</h5>
-                                    </div>
-                                    <div class="select-button">
-                                    <a href="./check-out.php" class="primary-btn checkout-btn">CHECK OUT</a>    
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="cart-price">$150.00</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="nav-item">
-            <div class="container">
-                <div class="nav-depart">
-                    <div class="depart-btn">
-                        <i class="ti-menu"></i>
-                        <span>All departments</span>
-                        <ul class="depart-hover">
-                            <li class="active"><a href="#">Women’s Clothing</a></li>
-                            <li><a href="./shop.php">Men’s Clothing</a></li>
-                            <li><a href="./shop.php">Underwear</a></li>
-                            <li><a href="./shop.php">Kid's Clothing</a></li>
-                            <li><a href="./shop.php">Brand Fashion</a></li>
-                            <li><a href="./shop.php">Accessories/Shoes</a></li>
-                            <li><a href="./shop.php">Luxury Brands</a></li>
-                            <li><a href="./shop.php">Brand Outdoor Apparel</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <nav class="nav-menu mobile-menu">
-                    <ul>
-                        <li><a href="./index.php">Home</a></li>
-                        <li><a href="./shop.php">Shop</a></li>
-                        <li><a href="#">Collection</a>
-                            <ul class="dropdown">
-                                <li><a href="./shop.php">Men's</a></li>
-                                <li><a href="./shop.php">Women's</a></li>
-                                <li><a href="./shop.php">Kid's</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="./blog.php">Blog</a></li>
-                        <li><a href="./contact.php">Contact</a></li>
-                        <li><a href="#">Pages</a>
-                            <ul class="dropdown">
-                                <li><a href="./blog-details.php">Blog Details</a></li>
-                                <li><a href="./shopping-cart.php">Shopping Cart</a></li>
-                                <li><a href="./check-out.php">Checkout</a></li>
-                                <li><a href="./faq.php">Faq</a></li>
-                                <li><a href="./register.php">Register</a></li>
-                                <li><a href="./login.php">Login</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </nav>
-                <div id="mobile-menu-wrap"></div>
-            </div>
-        </div>
-    </header>
-    <!-- Header End -->
+ 
 
     <!-- Breadcrumb Section Begin -->
     <div class="breacrumb-section">
@@ -191,89 +185,82 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                 <?php
+                                    $total = 0;
+                                    if (mysqli_num_rows($result) > 0) {
+                                    while ($row = mysqli_fetch_assoc($result)) {
+                                ?>
+                                
                                 <tr>
-                                    <td class="cart-pic first-row"><img src="img/cart-page/product-1.jpg" alt=""></td>
+                                    <td class="cart-pic first-row"><img src="product_img/<?php echo $row['imgname']; ?>"></td>
                                     <td class="cart-title first-row">
-                                        <h5>Pure Pineapple</h5>
+                                        <h5><?php echo $row["name"]; ?></h5>
                                     </td>
-                                    <td class="p-price first-row">$60.00</td>
+                                    <td class="p-price first-row">&#8369;<?php echo $row["price"] ?>.00</td>
                                     <td class="qua-col first-row">
                                         <div class="quantity">
+                                            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
                                             <div class="pro-qty">
-                                                <input type="text" value="1">
+                                            
+                                                <input type="hidden" name="update_quantity_id" value="<?php echo $row['c_id']; ?>">
+                                                <input type="text" value="<?php echo $row['quantity']; ?>">
+                                                
+
+
                                             </div>
+                                            </form>
                                         </div>
                                     </td>
-                                    <td class="total-price first-row">$60.00</td>
-                                    <td class="close-td first-row"><i class="ti-close"></i></td>
+                                    <td class="total-price first-row">&#8369;<?php echo number_format($row["price"] * $row["quantity"], 2); ?></td>
+                                    <?php $total += $row["price"] * $row["quantity"]; ?>
+                                    <td class="close-td first-row"><a href="shopping-cart.php?remove=<?php echo $row['c_id']; ?>"><i class="ti-close"></i></td>
                                 </tr>
-                                <tr>
-                                    <td class="cart-pic"><img src="img/cart-page/product-2.jpg" alt=""></td>
-                                    <td class="cart-title">
-                                        <h5>American lobster</h5>
-                                    </td>
-                                    <td class="p-price">$60.00</td>
-                                    <td class="qua-col">
-                                        <div class="quantity">
-                                            <div class="pro-qty">
-                                                <input type="text" value="1">
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="total-price">$60.00</td>
-                                    <td class="close-td"><i class="ti-close"></i></td>
-                                </tr>
-                                <tr>
-                                    <td class="cart-pic"><img src="img/cart-page/product-3.jpg" alt=""></td>
-                                    <td class="cart-title">
-                                        <h5>Guangzhou sweater</h5>
-                                    </td>
-                                    <td class="p-price">$60.00</td>
-                                    <td class="qua-col">
-                                        <div class="quantity">
-                                            <div class="pro-qty">
-                                                <input type="text" value="1">
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="total-price">$60.00</td>
-                                    <td class="close-td"><i class="ti-close"></i></td>
-                                </tr>
+                               
+                                      <?php
+            }
+        } else {
+            echo "<tr><td colspan='4' class='text-center'>No Products in the Cart</td></tr>";
+        }
+      ?>
                             </tbody>
                         </table>
-                    </div>
-                    <div class="row">
-                        <div class="col-lg-4">
-                            <div class="cart-buttons">
-                                <a href="#" class="primary-btn continue-shop">Continue shopping</a>
-                                <a href="#" class="primary-btn up-cart">Update cart</a>
-                            </div>
-                            <div class="discount-coupon">
-                                <h6>Discount Codes</h6>
-                                <form action="#" class="coupon-form">
-                                    <input type="text" placeholder="Enter your codes">
-                                    <button type="submit" class="site-btn coupon-btn">Apply</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 offset-lg-4">
-                            <div class="proceed-checkout">
-                                <ul>
-                                    <li class="subtotal">Subtotal <span>$240.00</span></li>
-                                    <li class="cart-total">Total <span>$240.00</span></li>
-                                </ul>
-                                <a href="#" class="proceed-btn">PROCEED TO CHECK OUT</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+                        <div class="text-right my-4">
+    <h4>Total Amount: <span class="text-danger"><?php echo number_format($total, 2); ?> </span></h4>
+  </div>
+
+  <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="orderForm" class="border p-4 rounded">
+    <input type="hidden" name="total" value="<?php echo $total ?>">
+    <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid']; ?>">
+    <input type="hidden" name="user_name" value="<?php echo $_SESSION['username']; ?>">
+
+    <div class="form-group">
+      <div class="input-group">
+        <input type="text" class="form-control" name="address" id="addressInput" placeholder="Shipping Address" value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?>>
+      </div>
+    </div>
+    <div class="form-group">
+      <input type="text" class="form-control" name="mobnumber" placeholder="Phone Number" pattern="[0-9]{11}" maxlength="11" value="<?php echo htmlspecialchars($user_phone); ?>" required <?php echo empty($user_phone) ? '' : 'readonly'; ?>>
+    </div>
+    <div class="form-group">
+      <select name="payment_method" id="payment_method" class="form-control" required>
+        <option value="" disabled selected>Select Payment Method</option>
+        <option value="COD">Cash on Delivery (COD)</option>
+        <option value="PayPal">PayPal</option>
+      </select>
+    </div>
+
+    <button type="submit" name="order_btn" class="btn btn-lg btn-block" id="orderButton" disabled>Place Order</button>
+  </form>
+</div>
+    <!-----------------------------------------------------------------------------------------------------------------------------------  --->
+                                
     </section>
     <!-- Shopping Cart Section End -->
 
     
     <?php include 'footer.php'; ?>
+
 
 
     <!-- Js Plugins -->
@@ -287,6 +274,36 @@
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
+
+    <script>
+  // Check if cart has items
+  var cartItems = <?php echo mysqli_num_rows($result); ?>;
+  
+  document.getElementById('orderForm').addEventListener('input', function () {
+      var address = document.querySelector('input[name="address"]').value;
+      var mobnumber = document.querySelector('input[name="mobnumber"]').value;
+      var payment_method = document.querySelector('select[name="payment_method"]').value;
+
+      // Validate phone number pattern
+      var phoneValid = /^[0-9]{11}$/.test(mobnumber);
+
+      // Check if cart has items AND form is valid
+      if (cartItems > 0 && address && mobnumber && payment_method && phoneValid) {
+          document.getElementById('orderButton').disabled = false;
+          document.getElementById('orderButton').style.backgroundColor = '#2ecc71';  // Green
+      } else {
+          document.getElementById('orderButton').disabled = true;
+          document.getElementById('orderButton').style.backgroundColor = '#ddd'; // Disabled gray
+      }
+  });
+  
+  // Initial check on page load
+  if (cartItems == 0) {
+      document.getElementById('orderButton').disabled = true;
+      document.getElementById('orderButton').style.backgroundColor = '#ddd';
+      document.getElementById('orderButton').textContent = 'Cart is Empty';
+  }
+</script> 
 </body>
 
 </html>

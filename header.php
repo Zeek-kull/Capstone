@@ -26,6 +26,19 @@
           $total++;
       }
   }
+
+    $sql = "SELECT * FROM product"; // Make sure this query is correct
+  $result = mysqli_query($conn, $sql); // Execute the query and store the result
+
+  if (!$result) {
+    // If the query fails, output an error and exit
+    die('Query failed: ' . mysqli_error($conn));
+  }
+
+  
+
+
+  
 ?>
   <!DOCTYPE html>
 <html lang="zxx">
@@ -91,50 +104,13 @@
                                 </a>
                             </li>
                             <li class="cart-icon">
-                                <a href="#">
+                                <a href="shopping-cart.php">
                                     <i class="icon_bag_alt"></i>
-                                    <span>3</span>
+                                    <span><?php echo $total; ?></span>
                                 </a>
-                                <div class="cart-hover">
-                                    <div class="select-items">
-                                        <table>
-                                            <tbody>
-                                                <tr>
-                                                    <td class="si-pic"><img src="img/select-product-1.jpg" alt=""></td>
-                                                    <td class="si-text">
-                                                        <div class="product-selected">
-                                                            <p>$60.00 x 1</p>
-                                                            <h6>Kabino Bedside Table</h6>
-                                                        </div>
-                                                    </td>
-                                                    <td class="si-close">
-                                                        <i class="ti-close"></i>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="si-pic"><img src="img/select-product-2.jpg" alt=""></td>
-                                                    <td class="si-text">
-                                                        <div class="product-selected">
-                                                            <p>$60.00 x 1</p>
-                                                            <h6>Kabino Bedside Table</h6>
-                                                        </div>
-                                                    </td>
-                                                    <td class="si-close">
-                                                        <i class="ti-close"></i>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="select-total">
-                                        <span>total:</span>
-                                        <h5>$120.00</h5>
-                                    </div>
-                                    <div class="select-button">
- 
-                                    <a href="./check-out.php" class="primary-btn checkout-btn">CHECK OUT</a>
-                                    </div>
-                                </div>
+                                
+                                
+
                             </li>
                             <li class="cart-price">$150.00</li>
                         </ul>
@@ -179,6 +155,7 @@
                                 <li><a href="./shopping-cart.php">Shopping Cart</a></li>
                                 <li><a href="./check-out.php">Checkout</a></li>
                                 <li><a href="./faq.php">Faq</a></li>
+                                <li><a href="./profile.php">Profile</a></li>
                                 <li><a href="./register.php">Register</a></li>
                                 <li><a href="./login.php">Login</a></li>
                             </ul>
@@ -190,6 +167,36 @@
         </div>
     </header>
     <!-- Header End -->
+
+       <script>
+  // Check if cart has items
+  var cartItems = <?php echo mysqli_num_rows($result); ?>;
+  
+  document.getElementById('orderForm').addEventListener('input', function () {
+      var address = document.querySelector('input[name="address"]').value;
+      var mobnumber = document.querySelector('input[name="mobnumber"]').value;
+      var payment_method = document.querySelector('select[name="payment_method"]').value;
+
+      // Validate phone number pattern
+      var phoneValid = /^[0-9]{11}$/.test(mobnumber);
+
+      // Check if cart has items AND form is valid
+      if (cartItems > 0 && address && mobnumber && payment_method && phoneValid) {
+          document.getElementById('orderButton').disabled = false;
+          document.getElementById('orderButton').style.backgroundColor = '#2ecc71';  // Green
+      } else {
+          document.getElementById('orderButton').disabled = true;
+          document.getElementById('orderButton').style.backgroundColor = '#ddd'; // Disabled gray
+      }
+  });
+  
+  // Initial check on page load
+  if (cartItems == 0) {
+      document.getElementById('orderButton').disabled = true;
+      document.getElementById('orderButton').style.backgroundColor = '#ddd';
+      document.getElementById('orderButton').textContent = 'Cart is Empty';
+  }
+</script> 
 </body>  
 
 </html>
