@@ -434,58 +434,54 @@ session_start();
                     </div>
                 </div>
             </div>
-            <div class="row">
-                      
-                <?php
-                        // Fetch related products (same category or random)
-                    $related_sql = "SELECT * FROM product WHERE p_id != ? ORDER BY RAND() LIMIT 5";
-                    $stmt = $conn->prepare($related_sql);
-                    $stmt->bind_param("i", $product_id);
-                    $stmt->execute();
-                    $related_result = $stmt->get_result();
-      
-                    while ($related = $related_result->fetch_assoc()) {
-                ?>
-                            <div class="col-lg-3 col-sm-6">     
-                                <div class="product-item">
-                                        <div class="pi-pic" style="width: 100%; height: 250px;">
-                                            <img src="img/A&M/<?php echo $related['imgname']; ?>" class="card-img-top" alt="<?php echo $related['name']; ?>">
-                                            <div class="icon">
-                                               <i class="icon_heart_alt"></i>
-                                            </div>
-                                             <ul>
+            <div class="row g-4">
+    <?php
+    $related_sql = "SELECT * FROM product WHERE p_id != ? ORDER BY RAND() LIMIT 4"; // Use 4 for perfect alignment
+    $stmt = $conn->prepare($related_sql);
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $related_result = $stmt->get_result();
 
-                                                <li style="width:75%;"><a href="product.php?id=<?php echo $related['p_id']; ?>" class="product-link">+ Quick View</a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="pi-text">
-                                        <div class="catagory-name">Windbreaker</div>
-                                        
-                                        <a href="#">
-                                            <h5><?php echo $related['name']; ?></h5>
-                                            
-                                        </a> 
-                                        <div class="product-price">
-                                            &#8369;<?php echo $related['Price']; ?> 
-                                            <span>500</span>                                            
-                                        </div>
-                                        <div>
-                                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                                <button type="submit" class="primary-btn pd-cart" name="add_to_cart">Add to Cart</button>
-                                            <?php else: ?>
-                                                <a href="login.php" class="primary-btn pd-cart">Login to Add to Cart</a>
-                                            <?php endif; ?>
-                                        </div>
-                                        
-                                            <input type="hidden" name="product_id" value="<?php echo $related['p_id']; ?>">
-                                            <input type="hidden" name="product_name" value="<?php echo $related['name']; ?>">
-                                            <input type="hidden" name="product_price" value="<?php echo $related['Price']; ?>">
-
-                                </div>
-                            </div>
-                <?php } ?>
-                
+    while ($related = $related_result->fetch_assoc()) {
+    ?>
+        <div class="col-lg-3 col-md-6 col-sm-6 d-flex">
+            <div class="product-item flex-fill d-flex flex-column">
+                <div class="pi-pic" style="height: 250px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+                    <img src="img/A&M/<?php echo $related['imgname']; ?>" alt="<?php echo $related['name']; ?>" style="max-height: 100%; max-width: 100%; object-fit: cover;">
+                    <div class="icon">
+                        <i class="icon_heart_alt"></i>
+                    </div>
+                    <ul>
+                        <li style="width: 75%;">
+                            <a href="product.php?id=<?php echo $related['p_id']; ?>" class="product-link">+ Quick View</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="pi-text flex-grow-1 d-flex flex-column">
+                    <div class="catagory-name">Windbreaker</div>
+                    <a href="#">
+                        <h5><?php echo $related['name']; ?></h5>
+                    </a>
+                    <div class="product-price mb-2">
+                        &#8369;<?php echo $related['Price']; ?>
+                        <span>500</span>
+                    </div>
+                    <form method="post" class="mt-auto">
+                        <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                            <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
+                        <?php else: ?>
+                            <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
+                        <?php endif; ?>
+                        <input type="hidden" name="product_id" value="<?php echo $related['p_id']; ?>">
+                        <input type="hidden" name="product_name" value="<?php echo $related['name']; ?>">
+                        <input type="hidden" name="product_price" value="<?php echo $related['Price']; ?>">
+                    </form>
+                </div>
             </div>
+        </div>
+    <?php } ?>
+</div>
+
         </div>
     </div>
     <!-- Related Products Section End -->

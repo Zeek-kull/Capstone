@@ -4435,4 +4435,22 @@ ol {
 	}
 }
 
+/*----------------------------------------*/
+.outline-btn {
+    display: inline-block;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--primary-color); /* Use your theme color */
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    text-align: center;
+}
 
+.outline-btn:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}

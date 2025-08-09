@@ -206,9 +206,9 @@ if (isset($_POST['add_to_cart'])) {
                                         </div>
                                         <div>
                                             <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                                <button type="submit" class="primary-btn pd-cart" name="add_to_cart">Add to Cart</button>
+                                                <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
                                             <?php else: ?>
-                                                <a href="login.php" class="primary-btn pd-cart">Login to Add to Cart</a>
+                                                <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
                                             <?php endif; ?>
                                         </div>
                                             <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">

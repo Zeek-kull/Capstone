@@ -253,7 +253,7 @@ session_start();
       </select>
     </div>
 
-    <button type="submit" name="order_btn" class="btn btn-lg btn-block" id="orderButton" disabled>Place Order</button>
+    <button type="submit" name="order_btn" class="site-btn login-btn w-100" id="orderButton" disabled>Place Order</button>
   </form>
 </div>
     <!-----------------------------------------------------------------------------------------------------------------------------------  --->

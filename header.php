@@ -125,8 +125,8 @@
                 </div>
                             <div class="ml-3">
                                 <?php else: ?>
-                                <a class="btn btn-outline-primary btn-sm" href="login.php">Login</a>
-                                <a class="btn btn-outline-success btn-sm ml-2" href="Register.php">Signup</a>
+                                    <a class="btn btn-outline-primary btn-sm" href="login.php">Login</a>
+                                    <a class="btn btn-outline-success btn-sm ml-2" href="Register.php">Signup</a>
                                 <?php endif; ?>
                             </div>
             </div>
@@ -162,12 +162,8 @@
                         </li>
                         <li><a href="./blog.php">Blog</a></li>
                         <li><a href="./contact.php">Contact</a></li>
-                        <li><a href="#">Pages</a>
-                            <ul class="dropdown">
-                                <li><a href="./blog-details.php">Blog Details</a></li>
-                                <li><a href="./faq.php">Faq</a></li>
-                            </ul>
-                        </li>
+                        <li><a href="./faq.php">Faq</a></li>
+                    
                     </ul>
                 </nav>
                 <div id="mobile-menu-wrap"></div>

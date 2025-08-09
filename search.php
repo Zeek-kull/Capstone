@@ -1,4 +1,6 @@
 <?php
+ob_start();
+session_start();
  include'header.php';
  include'lib/connection.php';
  $name=$_POST['name'];
@@ -59,35 +61,63 @@
               ?>
           <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
             <div class="col-md-3 col-sm-6 col-6">
-              <div>
-                <img src="admin/product_img/<?php echo $row['imgname']; ?>"  width="" height="300" style="vertical-align:left" >
-                <!-- <img src="smiley.gif" alt="Smiley face" width="42" height="42" style="vertical-align:middle"> -->
-              </div>
-              <div>
-              <div>
-                <h6><?php echo $row["name"] ?></h6> 
-                <span><?php echo $row["Price"] ?></span> 
-                <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'];?>" >
-                <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>"> 
-                <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
-                <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>">              
-              </div>
-              <input type="submit" class="btn btn btn-primary" value="Add to Cart" name="add_to_cart">
-              </div>
+                                      <div class="product-item">
+                                        <div class="pi-pic" style="width: 100%; height: 250px;">
+                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
+                                            <div class="icon">
+                                               <i class="icon_heart_alt"></i>
+                                            </div>
+                                             <ul>
+
+                                                <li style="width:75%;"><a href="product.php?id=<?php echo $row['p_id']; ?>" class="product-link">+ Quick View</a></li>
+                                            </ul>
+                                        </div>
+                                      <div>
+                                      <div class="pi-text">
+                                        <div class="catagory-name">Windbreaker</div>
+                                        
+                                        <a href="#">
+                                            <h5><?php echo $row["name"] ?></h5>
+                                            
+                                        </a> 
+                                        <div class="product-price">
+                                            &#8369;<?php echo $row["Price"] ?>
+                                            <span>500</span>                                            
+                                        </div>
+                                        <div>
+                                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                                <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
+                                            <?php else: ?>
+                                                <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
+                                            <?php endif; ?>
+                                        </div>
+
+
+                                    </div>
+                                            <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'];?>" >
+                                            <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>"> 
+                                            <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
+                                            <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>"> 
+                                      
               
             </div>
-            </form>
-            <?php 
-    }
-        } 
-        else 
+          </form>
+          <?php 
+            }
+          } 
+            else 
             echo "0 results";
-        ?>
+          ?>
 
             
           </div>
   </div>
 </div>
     
+
+<!--------------------------------------------------------------------------->
+
+
+                        </div>
 </body>
 </html>
