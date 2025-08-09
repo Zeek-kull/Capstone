@@ -1,6 +1,7 @@
 <?php
-
- include 'header.php';
+ob_start();
+session_start();
+  include 'header.php';
   include 'lib/connection.php';
 
   // Check if user is authenticated
@@ -90,9 +91,12 @@
       }
   }
 
-  // Get user's cart
+  // Get user's cart with product images
   $id = $_SESSION['userid'];
-  $sql = "SELECT * FROM cart WHERE userid='$id'";
+  $sql = "SELECT cart.*, product.imgname 
+          FROM cart 
+          LEFT JOIN product ON cart.productid = product.p_id 
+          WHERE cart.userid='$id'";
   $result = $conn->query($sql);
 
   // Update cart quantity
@@ -101,19 +105,18 @@
       $update_id = $_POST['update_quantity_id'];
       $update_quantity_query = mysqli_query($conn, "UPDATE `cart` SET quantity = '$update_value' WHERE c_id = '$update_id'");
       if ($update_quantity_query) {
-          header('Location:shopping-cart.php');
+          header('location:shopping-cart.php');
           exit();
       }
   }
 
   // Remove item from cart
-if (isset($_GET['remove'])) {
-    $remove_id = intval($_GET['remove']); // Make sure it's an integer to prevent SQL injection
-    mysqli_query($conn, "DELETE FROM cart WHERE c_id = $remove_id");
-    header("Location:shopping-cart.php");
-    exit();
-}
-
+  if (isset($_GET['remove'])) {
+      $remove_id = $_GET['remove'];
+      mysqli_query($conn, "DELETE FROM `cart` WHERE c_id = '$remove_id'");
+      header('location:shopping-cart.php');
+      exit();
+  }
 
 
 ?>
@@ -192,28 +195,28 @@ if (isset($_GET['remove'])) {
                                 ?>
                                 
                                 <tr>
-                                    <td class="cart-pic first-row"><img src="product_img/<?php echo $row['imgname']; ?>"></td>
+                                    <td class="cart-pic first-row">
+                                        <?php if (!empty($row['imgname'])): ?>
+                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row["name"]; ?>" class="cart-product-image">
+                                        <?php else: ?>
+                                            <img src="img/no-image.png" alt="No Image" class="cart-product-image">
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="cart-title first-row">
-                                        <h5><?php echo $row["name"]; ?></h5>
+                                        <h5 class="p-name"><?php echo $row["name"]; ?></h5>
                                     </td>
                                     <td class="p-price first-row">&#8369;<?php echo $row["price"] ?>.00</td>
-                                    <td class="qua-col first-row">
-                                        <div class="quantity">
-                                            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-                                            <div class="pro-qty">
-                                            
-                                                <input type="hidden" name="update_quantity_id" value="<?php echo $row['c_id']; ?>">
-                                                <input type="text" value="<?php echo $row['quantity']; ?>">
-                                                
-
-
-                                            </div>
-                                            </form>
-                                        </div>
+                                    
+                                    <td>
+                                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+                                            <input type="hidden" name="update_quantity_id" value="<?php echo $row['c_id']; ?>">
+                                            <input type="number" name="update_quantity" min="1" value="<?php echo $row['quantity']; ?>" class="form-control w-50 d-inline">
+                                            <input type="submit" value="Update" name="update_update_btn" class="btn site-btn login-btn" btn-sm ml-2">
+                                        </form>
                                     </td>
                                     <td class="total-price first-row">&#8369;<?php echo number_format($row["price"] * $row["quantity"], 2); ?></td>
                                     <?php $total += $row["price"] * $row["quantity"]; ?>
-                                    <td class="close-td first-row"><a href="shopping-cart.php?remove=<?php echo $row['c_id']; ?>"><i class="ti-close"></i></td>
+                                    <td class="close-td first-row"><a href="shopping-cart.php?remove=<?php echo $row['c_id']; ?>"><i class="ti-close"></i></a></td>
                                 </tr>
                                
                                       <?php

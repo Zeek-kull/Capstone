@@ -1,5 +1,6 @@
    <?php 
-  // Check if a session is already started before starting it
+
+
   if (session_status() == PHP_SESSION_NONE) {
       session_start();
   }
@@ -82,10 +83,8 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-lg-7 col-md-7">
+                    <div class="col-lg-7   col-md-2">
                         <form  action="search.php" method="post">
-
-
                         <div class="advanced-search">
                             <button type="button" class="category-btn">All Categories</button>
                             <div class="input-group">
@@ -95,6 +94,7 @@
                         </div>
                         </form>
                     </div>
+                    <?php if (isset($_SESSION['userid'])): ?>
                     <div class="col-lg-3 text-right col-md-3">
                         <ul class="nav-right">
                             <li class="heart-icon">
@@ -108,14 +108,27 @@
                                     <i class="icon_bag_alt"></i>
                                     <span><?php echo $total; ?></span>
                                 </a>
-                                
-                                
-
                             </li>
-                            <li class="cart-price">$150.00</li>
+                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                            <li class="user-icon">
+                                <a href="profile.php">
+                                    <i class="fa fa-user" style="text-decoration:none;color:black; "></i> 
+                                </a>
+                            </li>
+                            <li><a class="btn btn-outline-success btn-sm ml-2" href="logout.php">Logout</a></li>
                         </ul>
                     </div>
+                    <?php endif; ?>
+
+
+
                 </div>
+                            <div class="ml-3">
+                                <?php else: ?>
+                                <a class="btn btn-outline-primary btn-sm" href="login.php">Login</a>
+                                <a class="btn btn-outline-success btn-sm ml-2" href="Register.php">Signup</a>
+                                <?php endif; ?>
+                            </div>
             </div>
         </div>
         <div class="nav-item">
@@ -152,12 +165,7 @@
                         <li><a href="#">Pages</a>
                             <ul class="dropdown">
                                 <li><a href="./blog-details.php">Blog Details</a></li>
-                                <li><a href="./shopping-cart.php">Shopping Cart</a></li>
-                                <li><a href="./check-out.php">Checkout</a></li>
                                 <li><a href="./faq.php">Faq</a></li>
-                                <li><a href="./profile.php">Profile</a></li>
-                                <li><a href="./register.php">Register</a></li>
-                                <li><a href="./login.php">Login</a></li>
                             </ul>
                         </li>
                     </ul>

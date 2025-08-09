@@ -1,4 +1,6 @@
 <?php
+ob_start();
+session_start();
   include 'header.php';
   include 'lib/connection.php'; // Make sure this file includes your database connection logic.
 
@@ -17,12 +19,13 @@ if (isset($_POST['add_to_cart'])) {
             // Product already in cart, increment quantity
             $cart_row = mysqli_fetch_assoc($select_cart);
             $new_quantity = $cart_row['quantity'] + 1;
-            mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE id = '{$cart_row['id']}'");
-            header("Location:shop.php");
+            mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE c_id = '{$cart_row['c_id']}'");
+
+            header("Location: shop.php");
             exit();
         } else {
             $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
-            header("Location:shop.php");
+            header("Location: shop.php");
             exit();
         }
     } else {
@@ -179,24 +182,15 @@ if (isset($_POST['add_to_cart'])) {
                             
                                 <div class="col-lg-4 col-sm-6">
                                     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-                                     <div class="product-item">
-                                        <div class="pi-pic">
+                                    <div class="product-item">
+                                        <div class="pi-pic" style="width: 100%; height: 250px;">
                                             <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
                                             <div class="icon">
                                                <i class="icon_heart_alt"></i>
                                             </div>
                                              <ul>
 
-                                                <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                                    <li class="w-icon active">
-                                                        <button type="submit" name="add_to_cart" style="all: unset; cursor: pointer;">
-                                                            <i class="icon_bag_alt"></i>
-                                                        </button>
-                                                    </li>
-                                                <?php endif; ?>
-
-                                                <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                            <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
+                                                <li style="width:75%;"><a href="product.php?id=<?php echo $row['p_id']; ?>" class="product-link">+ Quick View</a></li>
                                         </ul>
                                     </div>
                                     <div class="pi-text">
@@ -208,8 +202,14 @@ if (isset($_POST['add_to_cart'])) {
                                         </a> 
                                         <div class="product-price">
                                             &#8369;<?php echo $row["Price"] ?>
-                                            <span>500</span>
-                                            
+                                            <span>500</span>                                            
+                                        </div>
+                                        <div>
+                                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                                <button type="submit" class="primary-btn pd-cart" name="add_to_cart">Add to Cart</button>
+                                            <?php else: ?>
+                                                <a href="login.php" class="primary-btn pd-cart">Login to Add to Cart</a>
+                                            <?php endif; ?>
                                         </div>
                                             <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
                                             <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">

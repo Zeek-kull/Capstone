@@ -1,3 +1,65 @@
+<?php
+ob_start();
+session_start();
+  include 'header.php';
+  include 'lib/connection.php';
+
+  // Check if product ID is provided
+  if (isset($_GET['id'])) {
+    $product_id = $_GET['id'];
+    
+    // Fetch product details
+    $sql = "SELECT * FROM product WHERE p_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+      $product = $result->fetch_assoc();
+    } else {
+      echo "<script>alert('Product not found!'); window.location.href='index.php';</script>";
+      exit();
+    }
+  } else {
+    echo "<script>window.location.href='index.php';</script>";
+    exit();
+  }
+
+  // Handle add to cart from product detail page
+  if (isset($_POST['add_to_cart'])) {
+    if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) { 
+      $user_id = $_SESSION['userid'];
+      $product_name = $_POST['product_name'];
+      $product_price = $_POST['product_price'];
+      $product_id = $_POST['product_id'];
+      $product_quantity = $_POST['quantity'];
+
+      // Check if the product is already in the cart
+      $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE productid = '$product_id' AND userid = '$user_id'");
+      if (mysqli_num_rows($select_cart) > 0) {
+        // Product exists, update quantity by adding new quantity
+        $cart_item = mysqli_fetch_assoc($select_cart);
+        $new_quantity = $cart_item['quantity'] + $product_quantity;
+        
+        // Update the existing cart item
+        $update_query = mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE productid = '$product_id' AND userid = '$user_id'");
+        $message[] = 'Product quantity updated in cart';
+      } else {
+        // Product doesn't exist, insert new cart item
+        $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
+        $message[] = 'Product added to cart successfully';
+      }
+      header('Location: product.php?id=' . $product_id);
+      exit();
+    } else {
+      header("Location: login.php");
+      exit();
+    }
+  }
+?>
+
+
 <!DOCTYPE html>
 <html lang="zxx">
 
@@ -24,138 +86,7 @@
 </head>
 
 <body>
-    <!-- Page Preloder -->
-    <!-- <div id="preloder">
-        <div class="loader"></div>
-    </div> -->
 
-    <!-- Header Section Begin -->
-    <header class="header-section">
-
-        <div class="container">
-            <div class="inner-header">
-                <div class="row">
-                    <div class="col-lg-2 col-md-2">
-                        <div class="logo">
-                            <a href="./index.php">
-                                <img src="img/amLogoo.png" alt="">
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-lg-7 col-md-7">
-                        <div class="advanced-search">
-                            <button type="button" class="category-btn">All Categories</button>
-                            <form action="#" class="input-group">
-                                <input type="text" placeholder="What do you need?">
-                                <button type="button"><i class="ti-search"></i></button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 text-right col-md-3">
-                        <ul class="nav-right">
-                            <li class="heart-icon"><a href="#">
-                                    <i class="icon_heart_alt"></i>
-                                    <span>1</span>
-                                </a>
-                            </li>
-                            <li class="cart-icon"><a href="#">
-                                    <i class="icon_bag_alt"></i>
-                                    <span>3</span>
-                                </a>
-                                <div class="cart-hover">
-                                    <div class="select-items">
-                                        <table>
-                                            <tbody>
-                                                <tr>
-                                                    <td class="si-pic"><img src="img/select-product-1.jpg" alt=""></td>
-                                                    <td class="si-text">
-                                                        <div class="product-selected">
-                                                            <p>$60.00 x 1</p>
-                                                            <h6>Kabino Bedside Table</h6>
-                                                        </div>
-                                                    </td>
-                                                    <td class="si-close">
-                                                        <i class="ti-close"></i>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="si-pic"><img src="img/select-product-2.jpg" alt=""></td>
-                                                    <td class="si-text">
-                                                        <div class="product-selected">
-                                                            <p>$60.00 x 1</p>
-                                                            <h6>Kabino Bedside Table</h6>
-                                                        </div>
-                                                    </td>
-                                                    <td class="si-close">
-                                                        <i class="ti-close"></i>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="select-total">
-                                        <span>total:</span>
-                                        <h5>$120.00</h5>
-                                    </div>
-                                    <div class="select-button">
-                                        
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="cart-price">$150.00</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="nav-item">
-            <div class="container">
-                <div class="nav-depart">
-                    <div class="depart-btn">
-                        <i class="ti-menu"></i>
-                        <span>All departments</span>
-                        <ul class="depart-hover">
-                            <li class="active"><a href="#">Women’s Clothing</a></li>
-                            <li><a href="./shop.php">Men’s Clothing</a></li>
-                            <li><a href="./shop.php">Underwear</a></li>
-                            <li><a href="./shop.php">Kid's Clothing</a></li>
-                            <li><a href="./shop.php">Brand Fashion</a></li>
-                            <li><a href="./shop.php">Accessories/Shoes</a></li>
-                            <li><a href="./shop.php">Luxury Brands</a></li>
-                            <li><a href="./shop.php">Brand Outdoor Apparel</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <nav class="nav-menu mobile-menu">
-                    <ul>
-                        <li><a href="./index.php">Home</a></li>
-                        <li><a href="./shop.php">Shop</a></li>
-                        <li><a href="#">Collection</a>
-                            <ul class="dropdown">
-                                <li><a href="./shop.php">Men's</a></li>
-                                <li><a href="./shop.php">Women's</a></li>
-                                <li><a href="./shop.php">Kid's</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="./blog.php">Blog</a></li>
-                        <li><a href="./contact.php">Contact</a></li>
-                        <li><a href="#">Pages</a>
-                            <ul class="dropdown">
-                                <li><a href="./blog-details.php">Blog Details</a></li>
-                                <li><a href="./shopping-cart.php">Shopping Cart</a></li>
-                                <li><a href="./check-out.php">Checkout</a></li>
-                                <li><a href="./faq.php">Faq</a></li>
-                                <li><a href="./register.php">Register</a></li>
-                                <li><a href="./login.php">Login</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </nav>
-                <div id="mobile-menu-wrap"></div>
-            </div>
-        </div>
-    </header>
-    <!-- Header End -->
 
     <!-- Breadcrumb Section Begin -->
     <div class="breacrumb-section">
@@ -186,39 +117,7 @@
                             <li><a href="#">Kids</a></li>
                         </ul>
                     </div>
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Brand</h4>
-                        <div class="fw-brand-check">
-                            <div class="bc-item">
-                                <label for="bc-calvin">
-                                    Calvin Klein
-                                    <input type="checkbox" id="bc-calvin">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="bc-item">
-                                <label for="bc-diesel">
-                                    Diesel
-                                    <input type="checkbox" id="bc-diesel">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="bc-item">
-                                <label for="bc-polo">
-                                    Polo
-                                    <input type="checkbox" id="bc-polo">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="bc-item">
-                                <label for="bc-tommy">
-                                    Tommy Hilfiger
-                                    <input type="checkbox" id="bc-tommy">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                    
                     <div class="filter-widget">
                         <h4 class="fw-title">Price</h4>
                         <div class="filter-range-wrap">
@@ -237,35 +136,7 @@
                         </div>
                         <a href="#" class="filter-btn">Filter</a>
                     </div>
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Color</h4>
-                        <div class="fw-color-choose">
-                            <div class="cs-item">
-                                <input type="radio" id="cs-black">
-                                <label class="cs-black" for="cs-black">Black</label>
-                            </div>
-                            <div class="cs-item">
-                                <input type="radio" id="cs-violet">
-                                <label class="cs-violet" for="cs-violet">Violet</label>
-                            </div>
-                            <div class="cs-item">
-                                <input type="radio" id="cs-blue">
-                                <label class="cs-blue" for="cs-blue">Blue</label>
-                            </div>
-                            <div class="cs-item">
-                                <input type="radio" id="cs-yellow">
-                                <label class="cs-yellow" for="cs-yellow">Yellow</label>
-                            </div>
-                            <div class="cs-item">
-                                <input type="radio" id="cs-red">
-                                <label class="cs-red" for="cs-red">Red</label>
-                            </div>
-                            <div class="cs-item">
-                                <input type="radio" id="cs-green">
-                                <label class="cs-green" for="cs-green">Green</label>
-                            </div>
-                        </div>
-                    </div>
+                    
                     <div class="filter-widget">
                         <h4 class="fw-title">Size</h4>
                         <div class="fw-size-choose">
@@ -287,24 +158,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Tags</h4>
-                        <div class="fw-tags">
-                            <a href="#">Towel</a>
-                            <a href="#">Shoes</a>
-                            <a href="#">Coat</a>
-                            <a href="#">Dresses</a>
-                            <a href="#">Trousers</a>
-                            <a href="#">Men's hats</a>
-                            <a href="#">Backpack</a>
-                        </div>
-                    </div>
+                    
                 </div>
                 <div class="col-lg-9">
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="product-pic-zoom">
-                                <img class="product-big-img" src="img/product-single/product-1.jpg" alt="">
+                                <img src="img/A&M/<?php echo $product['imgname']; ?>" class="img-fluid" alt="<?php echo $product['name']; ?>">
                                 <div class="zoom-icon">
                                     <i class="fa fa-search-plus"></i>
                                 </div>
@@ -326,7 +186,7 @@
                             <div class="product-details">
                                 <div class="pd-title">
                                     <span>oranges</span>
-                                    <h3>Pure Pineapple</h3>
+                                    <h3><?php echo $product['name']; ?></h3>
                                     <a href="#" class="heart-icon"><i class="icon_heart_alt"></i></a>
                                 </div>
                                 <div class="pd-rating">
@@ -338,57 +198,52 @@
                                     <span>(5)</span>
                                 </div>
                                 <div class="pd-desc">
-                                    <p>Lorem ipsum dolor sit amet, consectetur ing elit, sed do eiusmod tempor sum dolor
-                                        sit amet, consectetur adipisicing elit, sed do mod tempor</p>
-                                    <h4>$495.00 <span>629.99</span></h4>
-                                </div>
-                                <div class="pd-color">
-                                    <h6>Color</h6>
-                                    <div class="pd-color-choose">
-                                        <div class="cc-item">
-                                            <input type="radio" id="cc-black">
-                                            <label for="cc-black"></label>
+                                    <p><?php echo $product['description'] ?? 'No description available.'; ?></p>
+                                    <h4>&#8369;<?php echo $product['Price']; ?></h4>
+
+                                    <form action="<?php echo $_SERVER['PHP_SELF'] . '?id=' . $product_id; ?>" method="post">
+                                        <input type="hidden" name="product_id" value="<?php echo $product['p_id']; ?>">
+                                        <input type="hidden" name="product_name" value="<?php echo $product['name']; ?>">
+                                        <input type="hidden" name="product_price" value="<?php echo $product['Price']; ?>">
+
+
+                                        <div class="pd-size-choose" style="margin-top:20px;">
+                                            <div class="sc-item">
+                                                <input type="radio" id="sm-size">
+                                                <label for="sm-size">s</label>
+                                            </div>
+                                            <div class="sc-item">
+                                                <input type="radio" id="md-size">
+                                                <label for="md-size">m</label>
+                                            </div>
+                                            <div class="sc-item">
+                                                <input type="radio" id="lg-size">
+                                                <label for="lg-size">l</label>
+                                            </div>
+                                            <div class="sc-item">
+                                                <input type="radio" id="xl-size">
+                                                <label for="xl-size">xs</label>
+                                            </div>
                                         </div>
-                                        <div class="cc-item">
-                                            <input type="radio" id="cc-yellow">
-                                            <label for="cc-yellow" class="cc-yellow"></label>
+        
+                                        <div class="form-group">
+                                            <label for="quantity">Quantity:</label>
+                                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="10">
                                         </div>
-                                        <div class="cc-item">
-                                            <input type="radio" id="cc-violet">
-                                            <label for="cc-violet" class="cc-violet"></label>
-                                        </div>
-                                    </div>
+        
+                                        <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                            <button type="submit" class="site-btn login-btn" name="add_to_cart">Add to Cart</button>
+                                        <?php else: ?>
+                                            <a href="login.php" class="site-btn login-btn">Login to Add to Cart</a>
+                                            <?php endif; ?>
+                                    </form>
                                 </div>
-                                <div class="pd-size-choose">
-                                    <div class="sc-item">
-                                        <input type="radio" id="sm-size">
-                                        <label for="sm-size">s</label>
-                                    </div>
-                                    <div class="sc-item">
-                                        <input type="radio" id="md-size">
-                                        <label for="md-size">m</label>
-                                    </div>
-                                    <div class="sc-item">
-                                        <input type="radio" id="lg-size">
-                                        <label for="lg-size">l</label>
-                                    </div>
-                                    <div class="sc-item">
-                                        <input type="radio" id="xl-size">
-                                        <label for="xl-size">xs</label>
-                                    </div>
-                                </div>
-                                <div class="quantity">
-                                    <div class="pro-qty">
-                                        <input type="text" value="1">
-                                    </div>
-                                    <a href="#" class="primary-btn pd-cart">Add To Cart</a>
-                                </div>
-                                <ul class="pd-tags">
-                                    <li><span>CATEGORIES</span>: More Accessories, Wallets & Cases</li>
-                                    <li><span>TAGS</span>: Clothing, T-shirt, Woman</li>
-                                </ul>
+                                
+                                
+                                            
+                               
                                 <div class="pd-share">
-                                    <div class="p-code">Sku : 00012</div>
+                                    <div class="p-code">Product ID: <?php echo $product['p_id']; ?></div>
                                     <div class="pd-social">
                                         <a href="#"><i class="ti-facebook"></i></a>
                                         <a href="#"><i class="ti-twitter-alt"></i></a>
@@ -571,7 +426,7 @@
 
     <!-- Related Products Section End -->
     <div class="related-products spad">
-        <div class="container">
+        <div class="container mt-5">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="section-title">
@@ -580,104 +435,56 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-lg-3 col-sm-6">
-                    <div class="product-item">
-                        <div class="pi-pic">
-                            <img src="img/products/women-1.jpg" alt="">
-                            <div class="sale">Sale</div>
-                            <div class="icon">
-                                <i class="icon_heart_alt"></i>
+                      
+                <?php
+                        // Fetch related products (same category or random)
+                    $related_sql = "SELECT * FROM product WHERE p_id != ? ORDER BY RAND() LIMIT 5";
+                    $stmt = $conn->prepare($related_sql);
+                    $stmt->bind_param("i", $product_id);
+                    $stmt->execute();
+                    $related_result = $stmt->get_result();
+      
+                    while ($related = $related_result->fetch_assoc()) {
+                ?>
+                            <div class="col-lg-3 col-sm-6">     
+                                <div class="product-item">
+                                        <div class="pi-pic" style="width: 100%; height: 250px;">
+                                            <img src="img/A&M/<?php echo $related['imgname']; ?>" class="card-img-top" alt="<?php echo $related['name']; ?>">
+                                            <div class="icon">
+                                               <i class="icon_heart_alt"></i>
+                                            </div>
+                                             <ul>
+
+                                                <li style="width:75%;"><a href="product.php?id=<?php echo $related['p_id']; ?>" class="product-link">+ Quick View</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="pi-text">
+                                        <div class="catagory-name">Windbreaker</div>
+                                        
+                                        <a href="#">
+                                            <h5><?php echo $related['name']; ?></h5>
+                                            
+                                        </a> 
+                                        <div class="product-price">
+                                            &#8369;<?php echo $related['Price']; ?> 
+                                            <span>500</span>                                            
+                                        </div>
+                                        <div>
+                                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                                <button type="submit" class="primary-btn pd-cart" name="add_to_cart">Add to Cart</button>
+                                            <?php else: ?>
+                                                <a href="login.php" class="primary-btn pd-cart">Login to Add to Cart</a>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                            <input type="hidden" name="product_id" value="<?php echo $related['p_id']; ?>">
+                                            <input type="hidden" name="product_name" value="<?php echo $related['name']; ?>">
+                                            <input type="hidden" name="product_price" value="<?php echo $related['Price']; ?>">
+
+                                </div>
                             </div>
-                            <ul>
-                                <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                    <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                            </ul>
-                        </div>
-                        <div class="pi-text">
-                            <div class="catagory-name">Coat</div>
-                            <a href="#">
-                                <h5>Pure Pineapple</h5>
-                            </a>
-                            <div class="product-price">
-                                $14.00
-                                <span>$35.00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-sm-6">
-                    <div class="product-item">
-                        <div class="pi-pic">
-                            <img src="img/products/women-2.jpg" alt="">
-                            <div class="icon">
-                                <i class="icon_heart_alt"></i>
-                            </div>
-                            <ul>
-                                <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                    <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                            </ul>
-                        </div>
-                        <div class="pi-text">
-                            <div class="catagory-name">Shoes</div>
-                            <a href="#">
-                                <h5>Guangzhou sweater</h5>
-                            </a>
-                            <div class="product-price">
-                                $13.00
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-sm-6">
-                    <div class="product-item">
-                        <div class="pi-pic">
-                            <img src="img/products/women-3.jpg" alt="">
-                            <div class="icon">
-                                <i class="icon_heart_alt"></i>
-                            </div>
-                            <ul>
-                                <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                    <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                            </ul>
-                        </div>
-                        <div class="pi-text">
-                            <div class="catagory-name">Towel</div>
-                            <a href="#">
-                                <h5>Pure Pineapple</h5>
-                            </a>
-                            <div class="product-price">
-                                $34.00
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-sm-6">
-                    <div class="product-item">
-                        <div class="pi-pic">
-                            <img src="img/products/women-4.jpg" alt="">
-                            <div class="icon">
-                                <i class="icon_heart_alt"></i>
-                            </div>
-                            <ul>
-                                <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                    <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                            </ul>
-                        </div>
-                        <div class="pi-text">
-                            <div class="catagory-name">Towel</div>
-                            <a href="#">
-                                <h5>Converse Shoes</h5>
-                            </a>
-                            <div class="product-price">
-                                $34.00
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php } ?>
+                
             </div>
         </div>
     </div>
