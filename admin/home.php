@@ -34,7 +34,6 @@ include 'lib/connection.php';
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f8f9fa;
-            padding-top: 50px;
         }
 
         .homebody {

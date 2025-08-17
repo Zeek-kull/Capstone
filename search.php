@@ -1,42 +1,61 @@
 <?php
 ob_start();
 session_start();
- include'header.php';
- include'lib/connection.php';
- $name=$_POST['name'];
- $sql = "SELECT * FROM product where name='$name'  OR catagory='$name'";
- $result = $conn -> query ($sql);
- if(isset($_POST['add_to_cart'])){
+include 'header.php';
+include 'lib/connection.php';
 
-  if(isset($_SESSION['auth']))
-  {
-     if($_SESSION['auth']!=1)
-     {
-         header("location:login.php");
-     }
-  }
-  else
-  {
-     header("location:login.php");
-  }
-    $user_id=$_POST['user_id'];;
-    $product_name = $_POST['product_name'];
-    $product_price = $_POST['product_price'];
-    $product_id = $_POST['product_id'];
+// Fix undefined array key warning and prevent SQL injection
+$name = isset($_POST['name']) ? trim($_POST['name']) : '';
+$name = mysqli_real_escape_string($conn, $name);
+
+// Initialize result
+$result = null;
+
+if (!empty($name)) {
+    // Use prepared statement to prevent SQL injection
+    $sql = "SELECT * FROM product WHERE name LIKE ? OR catagory LIKE ?";
+    $stmt = $conn->prepare($sql);
+    $search_param = "%{$name}%";
+    $stmt->bind_param("ss", $search_param, $search_param);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    // Return empty result for empty search
+    $result = $conn->query("SELECT * FROM product LIMIT 0");
+}
+
+// Handle add to cart functionality
+if (isset($_POST['add_to_cart'])) {
+    if (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1) {
+        header("Location: login.php");
+        exit();
+    }
+    
+    $user_id = (int)$_POST['user_id'];
+    $product_name = mysqli_real_escape_string($conn, $_POST['product_name']);
+    $product_price = (float)$_POST['product_price'];
+    $product_id = (int)$_POST['product_id'];
     $product_quantity = 1;
-  
-    $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE productid = '$product_id'  && userid='$user_id'");
-  
-    if(mysqli_num_rows($select_cart) > 0){
-      echo $message[] = 'product already added to cart';
+
+    // Check if product already in cart
+    $select_cart = $conn->prepare("SELECT * FROM `cart` WHERE productid = ? AND userid = ?");
+    $select_cart->bind_param("ii", $product_id, $user_id);
+    $select_cart->execute();
+    $cart_result = $select_cart->get_result();
+
+    if ($cart_result->num_rows > 0) {
+        echo "Product already added to cart";
+    } else {
+        $insert_product = $conn->prepare("INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES(?, ?, ?, ?, ?)");
+        $insert_product->bind_param("iisid", $user_id, $product_id, $product_name, $product_quantity, $product_price);
+        
+        if ($insert_product->execute()) {
+            echo "Product added to cart successfully";
+        } else {
+            echo "Error adding product to cart";
+        }
     }
-    else{
-       $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
-     echo $message[] = 'product added to cart succesfully';
-     
-    }
-  
-  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -44,45 +63,40 @@ session_start();
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Search Results</title>
     <link rel="stylesheet" href="admin/css/pending_orders.css">
-
 </head>
 <body>
-
-<div class="container pendingbody">
-  <h5>Search Result</h5>
-  <div class="container">
-   <div class="row">
-   <?php
-          if (mysqli_num_rows($result) > 0) {
-            // output data of each row
-            while($row = mysqli_fetch_assoc($result)) {
-              ?>
-          <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-            <div class="col-md-3 col-sm-6 col-6">
-                                      <div class="product-item">
-                                        <div class="pi-pic" style="width: 100%; height: 250px;">
-                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
-                                            <div class="icon">
-                                               <i class="icon_heart_alt"></i>
-                                            </div>
-                                             <ul>
-
-                                                <li style="width:75%;"><a href="product.php?id=<?php echo $row['p_id']; ?>" class="product-link">+ Quick View</a></li>
-                                            </ul>
+    <div class="container pendingbody">
+        <h5>Search Result</h5>
+        <div class="container">
+            <div class="row">
+                <?php
+                if ($result && $result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        ?>
+                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
+                            <div class="col-md-3 col-sm-6 col-6">
+                                <div class="product-item">
+                                    <div class="pi-pic" style="width: 100%; height: 250px;">
+                                        <img src="img/A&M/<?php echo htmlspecialchars($row['imgname']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                                        <div class="icon">
+                                            <i class="icon_heart_alt"></i>
                                         </div>
-                                      <div>
-                                      <div class="pi-text">
+                                        <ul>
+                                            <li style="width:75%;">
+                                                <a href="product.php?id=<?php echo (int)$row['p_id']; ?>" class="product-link">+ Quick View</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="pi-text">
                                         <div class="catagory-name">Windbreaker</div>
-                                        
                                         <a href="#">
-                                            <h5><?php echo $row["name"] ?></h5>
-                                            
-                                        </a> 
+                                            <h5><?php echo htmlspecialchars($row["name"]); ?></h5>
+                                        </a>
                                         <div class="product-price">
-                                            &#8369;<?php echo $row["Price"] ?>
-                                            <span>500</span>                                            
+                                            &#8369;<?php echo number_format($row["Price"], 2); ?>
+                                            <span>500</span>
                                         </div>
                                         <div>
                                             <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
@@ -91,33 +105,25 @@ session_start();
                                                 <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
                                             <?php endif; ?>
                                         </div>
-
-
                                     </div>
-                                            <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'];?>" >
-                                            <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>"> 
-                                            <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
-                                            <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>"> 
-                                      
-              
+                                    <input type="hidden" name="user_id" value="<?php echo (int)$_SESSION['userid']; ?>">
+                                    <input type="hidden" name="product_id" value="<?php echo (int)$row['id']; ?>">
+                                    <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($row['name']); ?>">
+                                    <input type="hidden" name="product_price" value="<?php echo (float)$row['Price']; ?>">
+                                </div>
+                            </div>
+                        </form>
+                        <?php
+                    }
+                } else {
+                    echo "<div class='col-12'><p class='text-center'>No products found matching your search.</p></div>";
+                }
+                ?>
             </div>
-          </form>
-          <?php 
-            }
-          } 
-            else 
-            echo "0 results";
-          ?>
-
-            
-          </div>
-  </div>
-</div>
-    
-
-<!--------------------------------------------------------------------------->
-
-
-                        </div>
+        </div>
+    </div>
 </body>
 </html>
+<?php
+ob_end_flush();
+?>

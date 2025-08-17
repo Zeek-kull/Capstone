@@ -1,6 +1,4 @@
-   <?php 
-
-
+<?php 
   if (session_status() == PHP_SESSION_NONE) {
       session_start();
   }
@@ -15,8 +13,8 @@
   if (isset($_SESSION['userid'])) {
       $id = $_SESSION['userid'];
       
-      // Run query only if $id is set
-      $sql = "SELECT * FROM cart WHERE userid='$id'";
+      // Run query only if $id is set - using 'user_id' as per 1header.php
+      $sql = "SELECT * FROM cart WHERE user_id='$id'";
       $result = $conn->query($sql);
   }
 
@@ -28,18 +26,17 @@
       }
   }
 
-    $sql = "SELECT * FROM product"; // Make sure this query is correct
-  $result = mysqli_query($conn, $sql); // Execute the query and store the result
+  // Fetch distinct tags from the product table for dynamic navigation - from 1header.php
+  $tags_sql = "SELECT DISTINCT tags FROM product WHERE tags != '' AND tags IS NOT NULL ORDER BY tags";
+  $tags_result = mysqli_query($conn, $tags_sql);
+
+  // Original product query for other functionality
+  $sql = "SELECT * FROM product";
+  $result = mysqli_query($conn, $sql);
 
   if (!$result) {
-    // If the query fails, output an error and exit
     die('Query failed: ' . mysqli_error($conn));
   }
-
-  
-
-
-  
 ?>
   <!DOCTYPE html>
 <html lang="zxx">
@@ -160,6 +157,17 @@
                                 <li><a href="./shop.php">Kid's</a></li>
                             </ul>
                         </li>
+                        <?php
+                        // Add dynamic tags from 1header.php
+                        if ($tags_result && mysqli_num_rows($tags_result) > 0) {
+                            while ($tag_row = mysqli_fetch_assoc($tags_result)) {
+                                $tag = $tag_row['tags'];
+                                // Handle display name transformation (Kid -> Kids)
+                                $display_name = ($tag == 'Kid') ? 'Kids' : $tag;
+                                echo '<li><a href="shop.php?tags=' . urlencode($tag) . '">' . htmlspecialchars($display_name) . '</a></li>';
+                            }
+                        }
+                        ?>
                         <li><a href="./blog.php">Blog</a></li>
                         <li><a href="./contact.php">Contact</a></li>
                         <li><a href="./faq.php">Faq</a></li>

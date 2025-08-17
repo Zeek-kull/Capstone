@@ -15,16 +15,17 @@ else
  include 'header.php';
  include 'lib/connection.php';
 
- $sql = "SELECT * FROM product";
- $result = $conn -> query ($sql);
+  $sql = "SELECT * FROM product";
+  $result = $conn -> query ($sql);
 
  if(isset($_POST['update_update_btn'])){
   $name = $_POST['update_name'];
-  $catagory = $_POST['update_catagory'];
+  $category = $_POST['update_category'];
+  $tag = $_POST['update_tag'];
   $quantity = $_POST['update_quantity'];
   $price = $_POST['update_Price'];
   $update_id = $_POST['update_id'];
-  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , catagory='$catagory' ,price='$price'  WHERE p_id = '$update_id'");
+  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , price='$price'  WHERE p_id = '$update_id'");
   if($update_quantity_query){
      header('location:all_product.php');
   };
@@ -56,7 +57,7 @@ else
       <th scope="col">Image</th>
       <th scope="col">Name</th>
       <th scope="col">Category</th>
-
+      <th scope="col">Tag</th>
       <th scope="col">Quantity</th>
       <th scope="col">Price</th>
       <th scope="col">Action</th>
@@ -73,10 +74,10 @@ else
      <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
         <input type="hidden" name="update_id"  value="<?php echo  $row['p_id']; ?>" >
         <td><input type="text" name="update_name"  value="<?php echo $row['name']; ?>" ></td>
-        <td><input type="text" name="update_catagory"  value="<?php echo $row['catagory']; ?>" ></td>
-
+        <td><input type="text" name="update_category"  value="<?php echo $row['category']; ?>" ></td>
+        <td><input type="text" name="update_tag"  value="<?php echo $row['tags']; ?>" ></td>
         <td><input type="number" name="update_quantity"  value="<?php echo $row['quantity']; ?>" ></td>
-        <td> <input type="number" name="update_Price" value="<?php echo $row['Price']; ?>" ></td>
+        <td> <input type="number" name="update_Price" value="<?php echo $row['price']; ?>" ></td>
         <td> <input type="submit" value="update" name="update_update_btn">
       </form></td>
       <td><a href="all_product.php?remove=<?php echo $row['p_id']; ?>">remove</a></td>

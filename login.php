@@ -12,29 +12,47 @@ if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) {
 include "lib/connection.php";
 
 if (isset($_POST['submit'])) {
-    // Sanitize user inputs
-    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
-    $pass = md5($_POST['password']); // Consider using stronger hash algorithms like bcrypt
+    // Sanitize and validate user inputs
+    $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+    $password = $_POST['password'];
 
-    // Prepared statement to prevent SQL injection
-    $loginquery = "SELECT * FROM users WHERE email = ? AND pass = ?";
-    $stmt = $conn->prepare($loginquery);
-    $stmt->bind_param('ss', $email, $pass);
-    $stmt->execute();
-    $loginres = $stmt->get_result();
-
-    // Check login result
-    if ($loginres->num_rows > 0) {
-        // Fetch user data and store it in session
-        $result = $loginres->fetch_assoc();
-        $_SESSION['username'] = $result['f_name'];
-        $_SESSION['userid'] = $result['id'];
-        $_SESSION['auth'] = 1;
-
-        header("location: index.php");
-        exit;
+    // Validate email format
+    if (!$email) {
+        $error_message = "Invalid email format";
     } else {
-        $error_message = "Invalid email or password";
+        // Prepared statement to prevent SQL injection
+        // Select only needed columns and get the password hash
+        $loginquery = "SELECT id, f_name, pass FROM users WHERE email = ?";
+        $stmt = $conn->prepare($loginquery);
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $loginres = $stmt->get_result();
+
+        // Check if user exists
+        if ($loginres->num_rows > 0) {
+            // Fetch user data
+            $result = $loginres->fetch_assoc();
+            $stored_hash = $result['pass'];
+            
+            // Verify password using password_verify() for bcrypt compatibility
+            if (password_verify($password, $stored_hash)) {
+                // Regenerate session ID for security
+                session_regenerate_id(true);
+                
+                // Store user data in session
+                $_SESSION['username'] = $result['f_name'];
+                $_SESSION['userid'] = $result['id'];
+                $_SESSION['auth'] = 1;
+                $_SESSION['email'] = $email;
+                
+                header("location:index.php");
+                exit;
+            } else {
+                $error_message = "Invalid email or password";
+            }
+        } else {
+            $error_message = "Invalid email or password";
+        }
     }
 }
 ?>
@@ -97,11 +115,11 @@ if (isset($_POST['submit'])) {
                         <h2>Login</h2>
                         <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post" class="w-100" >
                             <div class="group-input">
-                                <label for="username"E>mail address *</label>
+                                <label for="username">Email address</label>
                                 <input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Enter Email Address" required>
                             </div>
                             <div class="group-input">
-                                <label for="pass">Password *</label>
+                                <label for="pass">Password</label>
                                 <input type="password" class="form-control form-control-user" id="password" name="password" placeholder="Password" required>
                             </div>
                             <div class="group-input gi-check">

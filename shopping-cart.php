@@ -34,8 +34,10 @@ session_start();
   }
   if (isset($_POST['order_btn'])) {
       // Check if cart is empty
-      $cart_check = mysqli_query($conn, "SELECT COUNT(*) as cart_count FROM cart WHERE userid = '{$_SESSION['userid']}'");
-      $cart_count = mysqli_fetch_assoc($cart_check)['cart_count'];
+      $user_id = $_SESSION['userid'] ?? '';
+      $cart_check = mysqli_query($conn, "SELECT COUNT(*) as cart_count FROM cart WHERE user_id = '$user_id'");
+      $cart_data = mysqli_fetch_assoc($cart_check);
+      $cart_count = $cart_data['cart_count'] ?? 0;
       
       if ($cart_count == 0) {
           echo "<script>alert('Your cart is empty. Please add items before placing an order.');</script>";
@@ -43,28 +45,28 @@ session_start();
           exit();
       }
       
-      $userid = $_POST['user_id'];
-      $name = $_POST['user_name'];
-      $number = $_POST['number'];
-      $address = $_POST['address'];
-      $mobnumber = isset($_POST['mobnumber']) ? $_POST['mobnumber'] : '';
-      $payment_method = $_POST['payment_method']; // User-selected payment method
+      $userid = $_POST['user_id'] ?? '';
+      $name = $_POST['user_name'] ?? '';
+      $number = $_POST['number'] ?? '';
+      $address = $_POST['address'] ?? '';
+      $mobnumber = $_POST['mobnumber'] ?? '';
+      $payment_method = $_POST['payment_method'] ?? ''; // User-selected payment method
       $status = "pending";
       $order_date = date('Y-m-d H:i:s'); // Current date and time
 
-      $cart_query = mysqli_query($conn, "SELECT * FROM `cart` WHERE userid='$userid'");
+      $cart_query = mysqli_query($conn, "SELECT * FROM `cart` WHERE user_id='$userid'");
       $price_total = 0;
       $product_name = [];
 
       // Calculate total price and update stock
       if (mysqli_num_rows($cart_query) > 0) {
           while ($product_item = mysqli_fetch_assoc($cart_query)) {
-              $product_name[] = $product_item['productid'] . ' (' . $product_item['quantity'] . ')';
-              $product_price = number_format($product_item['price'] * $product_item['quantity']);
+              $product_name[] = $product_item['product_id'] . ' (' . $product_item['quantity'] . ')';
+              $product_price = $product_item['price'] * $product_item['quantity'];
               $price_total += $product_price;
 
               // Update product stock
-              $sql = "SELECT * FROM product WHERE p_id = '{$product_item['productid']}'";
+              $sql = "SELECT * FROM product WHERE p_id = '{$product_item['product_id']}'";
               $result = $conn->query($sql);
               if (mysqli_num_rows($result) > 0) {
                   while ($row = mysqli_fetch_assoc($result)) {
@@ -81,48 +83,26 @@ session_start();
           // Insert order if products are available
           $total_product = implode(', ', $product_name);
           // Use only the correct column 'created_at' for the order date
-          $detail_query = mysqli_query($conn, "INSERT INTO `orders`(userid, name, address, phone, mobnumber, payment_method, totalproduct, totalprice, status, created_at) 
+          $detail_query = mysqli_query($conn, "INSERT INTO `orders`(user_id, name, address, phone, mobnumber, payment_method, totalproduct, totalprice, status, created_at) 
               VALUES('$userid','$name','$address','$number','$mobnumber','$payment_method','$total_product','$price_total','$status', '$order_date')");
 
           // Empty cart after successful order
-          $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE userid='$userid'");
+          $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE user_id='$userid'");
           header("location:index.php");
           exit();
       }
   }
 
   // Get user's cart with product images
-  $id = $_SESSION['userid'];
-  $sql = "SELECT cart.*, product.imgname 
+  $id = $_SESSION['userid'] ?? '';
+  $sql = "SELECT cart.*, product.imgname, product.name, product.price 
           FROM cart 
-          LEFT JOIN product ON cart.productid = product.p_id 
-          WHERE cart.userid='$id'";
+          LEFT JOIN product ON cart.product_id = product.p_id 
+          WHERE cart.user_id='$id'";
   $result = $conn->query($sql);
 
-  // Update cart quantity
-  if (isset($_POST['update_update_btn'])) {
-      $update_value = $_POST['update_quantity'];
-      $update_id = $_POST['update_quantity_id'];
-      $update_quantity_query = mysqli_query($conn, "UPDATE `cart` SET quantity = '$update_value' WHERE c_id = '$update_id'");
-      if ($update_quantity_query) {
-          header('location:shopping-cart.php');
-          exit();
-      }
-  }
-
-  // Remove item from cart
-  if (isset($_GET['remove'])) {
-      $remove_id = $_GET['remove'];
-      mysqli_query($conn, "DELETE FROM `cart` WHERE c_id = '$remove_id'");
-      header('location:shopping-cart.php');
-      exit();
-  }
-
-
+  // No traditional form handlers needed as we use AJAX
 ?>
-
-
-
 
 <!DOCTYPE html>
 <html lang="zxx">
@@ -147,12 +127,10 @@ session_start();
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="css/cart-ajax.css" type="text/css">
 </head>
 
 <body>
-
-
- 
 
     <!-- Breadcrumb Section Begin -->
     <div class="breacrumb-section">
@@ -194,7 +172,7 @@ session_start();
                                     while ($row = mysqli_fetch_assoc($result)) {
                                 ?>
                                 
-                                <tr>
+                                <tr data-cart-id="<?php echo $row['c_id']; ?>">
                                     <td class="cart-pic first-row">
                                         <?php if (!empty($row['imgname'])): ?>
                                             <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row["name"]; ?>" class="cart-product-image">
@@ -208,15 +186,19 @@ session_start();
                                     <td class="p-price first-row">&#8369;<?php echo $row["price"] ?>.00</td>
                                     
                                     <td>
-                                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-                                            <input type="hidden" name="update_quantity_id" value="<?php echo $row['c_id']; ?>">
-                                            <input type="number" name="update_quantity" min="1" value="<?php echo $row['quantity']; ?>" class="form-control w-50 d-inline">
-                                            <input type="submit" value="Update" name="update_update_btn" class="btn site-btn login-btn" btn-sm ml-2">
-                                        </form>
+                                        <div class="quantity-controls">
+                                            <button class="quantity-btn quantity-minus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="decrease">-</button>
+                                            <input type="number" class="quantity-input" min="1" value="<?php echo $row['quantity']; ?>" data-cart-id="<?php echo $row['c_id']; ?>">
+                                            <button class="quantity-btn quantity-plus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="increase">+</button>
+                                        </div>
                                     </td>
                                     <td class="total-price first-row">&#8369;<?php echo number_format($row["price"] * $row["quantity"], 2); ?></td>
                                     <?php $total += $row["price"] * $row["quantity"]; ?>
-                                    <td class="close-td first-row"><a href="shopping-cart.php?remove=<?php echo $row['c_id']; ?>"><i class="ti-close"></i></a></td>
+                                    <td class="close-td first-row">
+                                        <a href="#" class="remove-item-btn" data-cart-id="<?php echo $row['c_id']; ?>">
+                                            <i class="ti-close"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                                
                                       <?php
@@ -228,14 +210,24 @@ session_start();
                             </tbody>
                         </table>
 
-                        <div class="text-right my-4">
-    <h4>Total Amount: <span class="text-danger"><?php echo number_format($total, 2); ?> </span></h4>
+  <div class="text-right my-4">
+    <?php
+      // Calculate total quantity (merged from 1cart.php)
+      $total_quantity = 0;
+      $result_copy = $conn->query($sql);
+      if (mysqli_num_rows($result_copy) > 0) {
+          while ($row = mysqli_fetch_assoc($result_copy)) {
+              $total_quantity += $row['quantity'];
+          }
+      }
+    ?>
+    <h4>Total Quantity: <span class="text-primary"><?php echo $total_quantity; ?></span> | Total Amount: <span class="text-danger"><?php echo number_format($total, 2); ?> </span></h4>
   </div>
 
   <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="orderForm" class="border p-4 rounded">
-    <input type="hidden" name="total" value="<?php echo $total ?>">
-    <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid']; ?>">
-    <input type="hidden" name="user_name" value="<?php echo $_SESSION['username']; ?>">
+    <input type="hidden" name="total" value="<?php echo $total ?? 0 ?>">
+    <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'] ?? '' ?>">
+    <input type="hidden" name="user_name" value="<?php echo $_SESSION['username'] ?? '' ?>">
 
     <div class="form-group">
       <div class="input-group">
@@ -256,15 +248,10 @@ session_start();
     <button type="submit" name="order_btn" class="site-btn login-btn w-100" id="orderButton" disabled>Place Order</button>
   </form>
 </div>
-    <!-----------------------------------------------------------------------------------------------------------------------------------  --->
-                                
     </section>
     <!-- Shopping Cart Section End -->
 
-    
     <?php include 'footer.php'; ?>
-
-
 
     <!-- Js Plugins -->
     <script src="js/jquery-3.3.1.min.js"></script>
@@ -277,6 +264,7 @@ session_start();
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/cart-ajax-final.js"></script>
 
     <script>
   // Check if cart has items

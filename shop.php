@@ -14,7 +14,7 @@ if (isset($_POST['add_to_cart'])) {
         $product_quantity = 1;
 
         // Check if the product is already in the cart
-        $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE productid = '$product_id' AND userid = '$user_id'");
+        $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE product_id = '$product_id' AND user_id = '$user_id'");
         if (mysqli_num_rows($select_cart) > 0) {
             // Product already in cart, increment quantity
             $cart_row = mysqli_fetch_assoc($select_cart);
@@ -24,7 +24,7 @@ if (isset($_POST['add_to_cart'])) {
             header("Location: shop.php");
             exit();
         } else {
-            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
+            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(user_id, product_id, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
             header("Location: shop.php");
             exit();
         }
@@ -201,7 +201,7 @@ if (isset($_POST['add_to_cart'])) {
                                             
                                         </a> 
                                         <div class="product-price">
-                                            &#8369;<?php echo $row["Price"] ?>
+                                            &#8369;<?php echo $row["price"] ?>
                                             <span>500</span>                                            
                                         </div>
                                         <div>
@@ -213,7 +213,7 @@ if (isset($_POST['add_to_cart'])) {
                                         </div>
                                             <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
                                             <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
-                                            <input type="hidden" name="product_price" value="<?php echo $row['Price']; ?>">
+                                            <input type="hidden" name="product_price" value="<?php echo $row['price']; ?>">
 
                                     </div>
                                     </form>

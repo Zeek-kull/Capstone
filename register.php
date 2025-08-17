@@ -4,71 +4,97 @@ session_start();
 include 'header.php';
 include "lib/connection.php";
 
+// Initialize variables to store potential results and errors
 $result = null;
 $email_error = null;
+$phone_error = null;
+$pass_error = null;
+$name_error = null;
 
 if (isset($_POST['u_submit'])) {
-    $f_name = $_POST['u_name'];
-    $l_name = $_POST['l_name'];
-    $email = $_POST['email'];
+    // Retrieve POST variables from the registration form with proper sanitization
+    $f_name = ucfirst(strtolower(trim($_POST['u_name'])));
+    $l_name = ucfirst(strtolower(trim($_POST['l_name'])));
+    $email = trim($_POST['email']);
     $raw_pass = $_POST['pass'];
     $raw_cpass = $_POST['c_pass'];
     $region = $_POST['region_text'];
     $province = $_POST['province_text'];
     $city = $_POST['city_text'];
     $barangay = $_POST['barangay_text'];
-    $street = $_POST['street'];
-    $zone = isset($_POST['zone']) ? $_POST['zone'] : NULL;
-    $phone = $_POST['phone'];
+    $street = trim($_POST['street']);
+    $zone = isset($_POST['zone']) ? trim($_POST['zone']) : null;
+    $phone = trim($_POST['phone']);
 
-    // Phone number validation for Philippines
-    $phone_error = null;
+    // Server-side validation for first and last name (letters and spaces only)
+    if (!preg_match('/^[A-Za-z\s]+$/', $f_name)) {
+        $name_error = "First name must contain only letters and spaces (no numbers or special characters).";
+    } elseif (!preg_match('/^[A-Za-z\s]+$/', $l_name)) {
+        $name_error = "Last name must contain only letters and spaces (no numbers or special characters).";
+    }
+
+    // Process and validate phone number
     $phone = preg_replace('/[^0-9]/', '', $phone); // Remove non-numeric characters
+    // Validate phone length and format for Philippine numbers
     if (strlen($phone) < 10 || strlen($phone) > 11) {
         $phone_error = "Phone number must be 10-11 digits (e.g., 09123456789 or 9123456789)";
     } elseif (!preg_match('/^(09|\+639|639|9)\d{9}$/', $phone)) {
         $phone_error = "Invalid Philippine phone number format. Use format: 09123456789";
     }
 
-    // Password strength check
-    $pass_error = null;
+    // Password strength validation
     if (
         strlen($raw_pass) < 8 ||
-        !preg_match('/[A-Z]/', $raw_pass) ||      // at least one uppercase
-        !preg_match('/[a-z]/', $raw_pass) ||      // at least one lowercase
-        !preg_match('/[0-9]/', $raw_pass) ||      // at least one digit
-        !preg_match('/[\W_]/', $raw_pass)         // at least one special char
+        !preg_match('/[A-Z]/', $raw_pass) ||   // Ensure at least one uppercase letter
+        !preg_match('/[a-z]/', $raw_pass) ||      // Ensure at least one lowercase letter
+        !preg_match('/[0-9]/', $raw_pass) ||      // Ensure at least one digit
+        !preg_match('/[\W_]/', $raw_pass)          // Ensure at least one special character
     ) {
         $pass_error = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
     }
 
-    if ($pass_error || $phone_error) {
-        $result = $pass_error ? $pass_error : $phone_error;
+    // Merge errors
+    if ($name_error || $pass_error || $phone_error) {
+        $result = $name_error ? $name_error : ($pass_error ? $pass_error : $phone_error);
     } else {
-        $pass = md5($raw_pass);
-        $cpass = md5($raw_cpass);
-
-        // Check if email already exists
+        // Hash the password securely using password_hash()
+        $pass = password_hash($raw_pass, PASSWORD_DEFAULT);
+        
+        // Check if the email already exists in the database
         $email_check_sql = "SELECT email FROM users WHERE email = ?";
         if ($stmt_check = $conn->prepare($email_check_sql)) {
             $stmt_check->bind_param("s", $email);
             $stmt_check->execute();
             $stmt_check->store_result();
-
-            if ($stmt_check->num_rows > 0) {
+            if ($stmt_check->num_rows > 0) { // Email is already registered
                 $email_error = "Email is already taken.";
             } else {
-                // Proceed if the email is available
-                if ($pass == $cpass) {
-                    // Prepared statement to avoid SQL Injection
-                    $insertSql = "INSERT INTO users (f_name, l_name, email, pass, region, province, city, barangay, street, zone, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
+                // Verify that the passwords match using password_verify()
+                if (password_verify($raw_cpass, $pass)) {
+                    // Prepare insert SQL statement for account registration
+                    $insertSql = "INSERT INTO users (f_name, l_name, email, pass, region, province, city, barangay, street, zone, phone)
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     if ($stmt = $conn->prepare($insertSql)) {
-                        $stmt->bind_param("sssssssssss", $f_name, $l_name, $email, $pass, $region, $province, $city, $barangay, $street, $zone, $phone);
-
+                        $stmt->bind_param(
+                            "sssssssssss",
+                            $f_name,
+                            $l_name,
+                            $email,
+                            $pass,
+                            $region,
+                            $province,
+                            $city,
+                            $barangay,
+                            $street,
+                            $zone,
+                            $phone
+                        );
+                        // Execute the prepared statement
                         if ($stmt->execute()) {
                             $result = "Account Open success";
-                            header("location: login.php");
+                            // Redirect to login page upon successful registration
+                            header("Location: login.php");
+                            exit();
                         } else {
                             $result = "Error: " . $stmt->error;
                         }

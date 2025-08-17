@@ -13,13 +13,13 @@ if (isset($_SESSION['admin_auth'])) {
 }
 
 include 'lib/connection.php';
-$sql = "SELECT * FROM orders";
+$sql = "SELECT * FROM orders ORDER BY created_at DESC";
 $result = $conn->query($sql);
 
 if (isset($_POST['update_update_btn'])) {
     $update_value = $_POST['update_status'];
     $update_id = $_POST['update_id'];
-    $update_query = mysqli_query($conn, "UPDATE `orders` SET status = '$update_value' WHERE id = '$update_id'");
+    $update_query = mysqli_query($conn, "UPDATE `orders` SET status = '$update_value' WHERE o_id = '$update_id'");
     if ($update_query) {
         header('location:pending_orders.php');
     }
@@ -27,7 +27,7 @@ if (isset($_POST['update_update_btn'])) {
 
 if (isset($_GET['remove'])) {
     $remove_id = $_GET['remove'];
-    mysqli_query($conn, "DELETE FROM `orders` WHERE id = '$remove_id'");
+    mysqli_query($conn, "DELETE FROM `orders` WHERE o_id = '$remove_id'");
     header('location:pending_orders.php');
 }
 ?>
@@ -106,15 +106,15 @@ if (isset($_GET['remove'])) {
               <td><?php echo "₱" . number_format($row["totalprice"], 2); ?></td>
               <td>
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-                  <input type="hidden" name="update_id" value="<?php echo $row['id']; ?>">
+                  <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
                   <select name="update_status" class="form-control">
-                    <option selected disabled><?php echo $row['status']; ?></option>
+                    <option selected disabled><?php echo htmlspecialchars($row['status']); ?></option>
                     <?php
                     // Add all status options except the current one
                     $statuses = ["Pending", "Confirmed", "Cancel", "Delivered"];
                     foreach ($statuses as $status) {
                         if ($status !== $row['status']) {
-                            echo "<option value=\"$status\">$status</option>";
+                            echo "<option value=\"" . htmlspecialchars($status) . "\">" . htmlspecialchars($status) . "</option>";
                         }
                     }
                     ?>
@@ -122,7 +122,7 @@ if (isset($_GET['remove'])) {
                   <input type="submit" value="Update" name="update_update_btn" class="btn btn-primary btn-sm">
                 </form>
               </td>
-              <td><a href="pending_orders.php?remove=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">Remove</a></td>
+              <td><a href="pending_orders.php?remove=<?php echo urlencode($row['o_id']); ?>" class="btn btn-danger btn-sm">Remove</a></td>
             </tr>
             <?php
         }
