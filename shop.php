@@ -188,7 +188,7 @@ if (isset($_POST['add_to_cart'])) {
                              ?>
                             
                                 <div class="col-lg-4 col-sm-6">
-                                    <div class="product-item">
+                                    <div class="product-item" data-category="<?php echo htmlspecialchars($row['category']); ?>">
                                         <div class="pi-pic" style="width: 100%; height: 250px;">
                                             <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
                                             <div class="icon">
@@ -200,8 +200,10 @@ if (isset($_POST['add_to_cart'])) {
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name"></div>
-                                        
+                                        <div class="catagory-name">
+                                            <span><?php echo $row["category"] ?></span>
+                                        </div>
+                                            
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>
                                         </a> 
