@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 17, 2025 at 04:20 PM
+-- Generation Time: Aug 18, 2025 at 06:52 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -55,14 +55,6 @@ CREATE TABLE `cart` (
   `price` decimal(10,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `cart`
---
-
-INSERT INTO `cart` (`c_id`, `user_id`, `product_id`, `quantity`, `price`) VALUES
-(8, 2, 2, 4, 200.00),
-(9, 2, 3, 2, 100.00);
-
 -- --------------------------------------------------------
 
 --
@@ -81,6 +73,7 @@ CREATE TABLE `orders` (
   `totalproduct` varchar(100) NOT NULL,
   `totalprice` decimal(10,2) NOT NULL,
   `status` enum('Pending','Processing','Shipped','Completed','Cancelled') DEFAULT 'Pending',
+  `status_updated_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -88,10 +81,33 @@ CREATE TABLE `orders` (
 -- Dumping data for table `orders`
 --
 
-INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `mobnumber`, `payment_method`, `txid`, `totalproduct`, `totalprice`, `status`, `created_at`) VALUES
-(4, 2, 'William', '1329, Zone 6, Cansinala, Apalit, Pampanga', '09270415710', '09270415710', 'COD', NULL, '1 (10)', 1000.00, 'Pending', '2025-08-14 05:00:10.000000'),
-(5, 2, 'William', '1329, Zone 6, Cansinala, Apalit, Pampanga', '09270415710', '09270415710', 'PayPal', NULL, '2 (5)', 1000.00, 'Pending', '2025-08-14 05:15:44.000000'),
-(6, 2, 'William', '1329, Zone 6, Cansinala, Apalit, Pampanga', '09270415710', '09270415710', 'PayPal', NULL, '2 (2)', 400.00, 'Pending', '2025-08-14 05:17:50.000000');
+INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `mobnumber`, `payment_method`, `txid`, `totalproduct`, `totalprice`, `status`, `status_updated_at`, `created_at`) VALUES
+(12, 2, 'William', '1329, Zone 6, Cansinala, Apalit, Pampanga', '', '09270415710', 'PayPal', NULL, '6 (18)', 1800.00, 'Completed', '2025-08-18 16:51:02', '2025-08-18 10:35:48.000000');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `order_status_history`
+--
+
+CREATE TABLE `order_status_history` (
+  `id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `old_status` varchar(50) NOT NULL,
+  `new_status` varchar(50) NOT NULL,
+  `changed_by` int(11) NOT NULL,
+  `change_reason` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `order_status_history`
+--
+
+INSERT INTO `order_status_history` (`id`, `order_id`, `old_status`, `new_status`, `changed_by`, `change_reason`, `created_at`) VALUES
+(1, 12, 'Pending', 'Processing', 1, '', '2025-08-18 16:50:50'),
+(2, 12, 'Processing', 'Shipped', 1, '', '2025-08-18 16:50:59'),
+(3, 12, 'Shipped', 'Completed', 1, '', '2025-08-18 16:51:02');
 
 -- --------------------------------------------------------
 
@@ -116,8 +132,9 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`p_id`, `name`, `category`, `description`, `tags`, `quantity`, `price`, `imgname`, `created_at`) VALUES
-(2, 'CShirt', 'Clothing', 'Red na medyo may white', 'Women', 2, 200.00, '2203ce37-87c7-4b9e-8064-f08edd30cb25.jpeg', '2025-08-14 11:15:15'),
-(3, 'Shirt', 'Clothing', 'Red na medyo may white', 'Women', 4, 100.00, 't5 (1).jpg', '2025-08-14 11:21:27');
+(4, 'Shirt', 'Clothing', 'Red na medyo may white', 'Women', 0, 100.00, 'red_nike.jpg', '2025-08-18 16:14:48'),
+(5, 'CShirt', 'Clothing', 'Red na medyo may white', 'Kids', 4, 100.00, 'NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK.jpg', '2025-08-18 16:15:06'),
+(6, 'AShirt', 'Wata', 'Red na medyo may white', 'Kids', 4, 100.00, 'BAPE_Camo_Shorts.jpg', '2025-08-18 16:16:01');
 
 -- --------------------------------------------------------
 
@@ -175,6 +192,14 @@ ALTER TABLE `orders`
   ADD KEY `idx_orders_user` (`user_id`);
 
 --
+-- Indexes for table `order_status_history`
+--
+ALTER TABLE `order_status_history`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_history_order` (`order_id`),
+  ADD KEY `idx_history_admin` (`changed_by`);
+
+--
 -- Indexes for table `product`
 --
 ALTER TABLE `product`
@@ -201,19 +226,25 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- AUTO_INCREMENT for table `order_status_history`
+--
+ALTER TABLE `order_status_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -237,6 +268,13 @@ ALTER TABLE `cart`
 --
 ALTER TABLE `orders`
   ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `order_status_history`
+--
+ALTER TABLE `order_status_history`
+  ADD CONSTRAINT `order_status_history_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`o_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `order_status_history_ibfk_2` FOREIGN KEY (`changed_by`) REFERENCES `admin` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
