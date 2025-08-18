@@ -13,23 +13,75 @@ if (isset($_SESSION['admin_auth'])) {
 }
 
 include 'lib/connection.php';
-$sql = "SELECT * FROM orders ORDER BY created_at DESC";
-$result = $conn->query($sql);
 
+// Get admin ID for tracking
+$admin_userid = $_SESSION['admin_userid'] ?? 'admin';
+$admin_query = mysqli_query($conn, "SELECT id FROM admin WHERE userid = '$admin_userid'");
+$admin_data = mysqli_fetch_assoc($admin_query);
+$admin_id = $admin_data['id'] ?? 1;
+
+// Handle status update with process tracking
 if (isset($_POST['update_update_btn'])) {
     $update_value = $_POST['update_status'];
     $update_id = $_POST['update_id'];
-    $update_query = mysqli_query($conn, "UPDATE `orders` SET status = '$update_value' WHERE o_id = '$update_id'");
-    if ($update_query) {
-        header('location:pending_orders.php');
+    $change_reason = mysqli_real_escape_string($conn, $_POST['change_reason'] ?? '');
+    
+    // Get current status
+    $current_status_query = mysqli_query($conn, "SELECT status FROM orders WHERE o_id = '$update_id'");
+    $current_status = mysqli_fetch_assoc($current_status_query)['status'];
+    
+    // Validate status transition
+    $valid_transitions = [
+        'Pending' => ['Processing', 'Cancelled'],
+        'Processing' => ['Shipped', 'Cancelled'],
+        'Shipped' => ['Completed', 'Cancelled'],
+        'Completed' => [],
+        'Cancelled' => []
+    ];
+    
+    if (in_array($update_value, $valid_transitions[$current_status] ?? [])) {
+        // Start transaction
+        mysqli_begin_transaction($conn);
+        
+        try {
+            // Update order status
+            $update_query = mysqli_query($conn, "UPDATE orders SET status = '$update_value', status_updated_at = NOW() WHERE o_id = '$update_id'");
+            
+            // Record in history
+            $history_query = mysqli_query($conn, "INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, change_reason) VALUES ('$update_id', '$current_status', '$update_value', '$admin_id', '$change_reason')");
+            
+            if ($update_query && $history_query) {
+                mysqli_commit($conn);
+                $_SESSION['success_message'] = "Order status updated successfully from $current_status to $update_value";
+            } else {
+                throw new Exception("Database error");
+            }
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $_SESSION['error_message'] = "Failed to update order status";
+        }
+    } else {
+        $_SESSION['error_message'] = "Invalid status transition from $current_status to $update_value";
     }
+    
+    header('location:pending_orders.php');
+    exit();
 }
 
+// Handle order removal
 if (isset($_GET['remove'])) {
     $remove_id = $_GET['remove'];
     mysqli_query($conn, "DELETE FROM `orders` WHERE o_id = '$remove_id'");
+    $_SESSION['success_message'] = "Order removed successfully";
     header('location:pending_orders.php');
+    exit();
 }
+
+// Get all orders with latest status
+$sql = "SELECT o.*, u.email as user_email FROM orders o 
+        LEFT JOIN users u ON o.user_id = u.id 
+        ORDER BY o.created_at DESC";
+$result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,6 +113,30 @@ if (isset($_GET['remove'])) {
     <?php
     if (mysqli_num_rows($result) > 0) {
         while ($row = mysqli_fetch_assoc($result)) {
+            // Get status history count
+            $history_count_query = mysqli_query($conn, "SELECT COUNT(*) as count FROM order_status_history WHERE order_id = '{$row['o_id']}'");
+            $history_count = mysqli_fetch_assoc($history_count_query)['count'];
+            
+            // Get valid next statuses based on current status
+            $current_status = $row['status'];
+            $valid_next_statuses = [];
+            switch($current_status) {
+                case 'Pending':
+                    $valid_next_statuses = ['Processing', 'Cancelled'];
+                    break;
+                case 'Processing':
+                    $valid_next_statuses = ['Shipped', 'Cancelled'];
+                    break;
+                case 'Shipped':
+                    $valid_next_statuses = ['Completed'];
+                    break;
+                case 'Completed':
+                    $valid_next_statuses = [];
+                    break;
+                case 'Cancelled':
+                    $valid_next_statuses = [];
+                    break;
+            }
             ?>
             <tr>
               <td>
@@ -105,24 +181,53 @@ if (isset($_GET['remove'])) {
               </td>
               <td><?php echo "₱" . number_format($row["totalprice"], 2); ?></td>
               <td>
-                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-                  <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
-                  <select name="update_status" class="form-control">
-                    <option selected disabled><?php echo htmlspecialchars($row['status']); ?></option>
-                    <?php
-                    // Add all status options except the current one
-                    $statuses = ["Pending", "Confirmed", "Cancel", "Delivered"];
-                    foreach ($statuses as $status) {
-                        if ($status !== $row['status']) {
-                            echo "<option value=\"" . htmlspecialchars($status) . "\">" . htmlspecialchars($status) . "</option>";
-                        }
-                    }
-                    ?>
-                  </select>
-                  <input type="submit" value="Update" name="update_update_btn" class="btn btn-primary btn-sm">
-                </form>
+                <span class="badge badge-<?php 
+                  switch($row['status']) {
+                    case 'Pending': echo 'warning'; break;
+                    case 'Processing': echo 'info'; break;
+                    case 'Shipped': echo 'primary'; break;
+                    case 'Completed': echo 'success'; break;
+                    case 'Cancelled': echo 'danger'; break;
+                    default: echo 'secondary';
+                  }
+                ?>">
+                  <?php echo htmlspecialchars($row['status']); ?>
+                </span>
+                <?php if ($history_count > 0): ?>
+                  <br><small class="text-muted">
+                    <a href="#" onclick="showStatusHistory(<?php echo $row['o_id']; ?>)">
+                      View history (<?php echo $history_count; ?>)
+                    </a>
+                  </small>
+                <?php endif; ?>
               </td>
-              <td><a href="pending_orders.php?remove=<?php echo urlencode($row['o_id']); ?>" class="btn btn-danger btn-sm">Remove</a></td>
+              <td>
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="status-form">
+                  <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
+                  <div class="form-group">
+                    <select name="update_status" class="form-control form-control-sm" required>
+                      <option value="" disabled selected>Change status...</option>
+                      <?php
+                      foreach ($valid_next_statuses as $status) {
+                          echo "<option value=\"" . htmlspecialchars($status) . "\">" . htmlspecialchars($status) . "</option>";
+                      }
+                      ?>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <input type="text" name="change_reason" class="form-control form-control-sm" 
+                           placeholder="Reason for change (optional)">
+                  </div>
+                  <button type="submit" name="update_update_btn" class="btn btn-primary btn-sm btn-block">
+                    Update Status
+                  </button>
+                </form>
+                <a href="pending_orders.php?remove=<?php echo urlencode($row['o_id']); ?>" 
+                   class="btn btn-danger btn-sm btn-block mt-1" 
+                   onclick="return confirm('Are you sure you want to remove this order?')">
+                  Remove
+                </a>
+              </td>
             </tr>
             <?php
         }
