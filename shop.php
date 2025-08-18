@@ -24,7 +24,7 @@ if (isset($_POST['add_to_cart'])) {
             header("Location: shop.php");
             exit();
         } else {
-            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(user_id, product_id, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
+            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(user_id, product_id, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
             header("Location: shop.php");
             exit();
         }
@@ -108,9 +108,13 @@ if (isset($_POST['add_to_cart'])) {
                     <div class="filter-widget">
                         <h4 class="fw-title">Categories</h4>
                         <ul class="filter-catagories">
-                            <li><a href="#">Men</a></li>
-                            <li><a href="#">Women</a></li>
-                            <li><a href="#">Kids</a></li>
+                            <?php foreach ($categories as $category): ?>
+                            <li>
+                                <a href="#" class="category-link" data-category="<?php echo htmlspecialchars($category); ?>">
+                                    <?php echo htmlspecialchars($category); ?>
+                                </a>
+                            </li>
+                            <?php endforeach; ?>
                         </ul>
                     </div>
                     
@@ -137,19 +141,19 @@ if (isset($_POST['add_to_cart'])) {
                         <h4 class="fw-title">Size</h4>
                         <div class="fw-size-choose">
                             <div class="sc-item">
-                                <input type="radio" id="s-size">
+                                <input type="radio" id="s-size" name="size" value="S">
                                 <label for="s-size">s</label>
                             </div>
                             <div class="sc-item">
-                                <input type="radio" id="m-size">
+                                <input type="radio" id="m-size" name="size" value="M">
                                 <label for="m-size">m</label>
                             </div>
                             <div class="sc-item">
-                                <input type="radio" id="l-size">
+                                <input type="radio" id="l-size" name="size" value="L">
                                 <label for="l-size">l</label>
                             </div>
                             <div class="sc-item">
-                                <input type="radio" id="xs-size">
+                                <input type="radio" id="xs-size" name="size" value="XS">
                                 <label for="xs-size">xs</label>
                             </div>
                         </div>
@@ -158,7 +162,7 @@ if (isset($_POST['add_to_cart'])) {
                 <div class="col-lg-9 order-1 order-lg-2">
                         <!-- Filter Dropdown -->
                     <div class="filter-section mb-4">
-                        <div class="row" id="productsContainer">
+                        <div class="row">
                             <div class="col-md-4">
                                 <label for="categoryFilter" class="form-label">Filter by Category:</label>
                                 <select id="categoryFilter" class="form-select">
@@ -180,7 +184,7 @@ if (isset($_POST['add_to_cart'])) {
       <!---------------------------------------------------------------------------------------------------------------------------- -->
 
                     <div class="product-list">
-                        <div class="row">
+                        <div class="row" id="productsContainer">
                             <?php
                             if (mysqli_num_rows($result) > 0) {
                             // Loop through products
@@ -188,7 +192,7 @@ if (isset($_POST['add_to_cart'])) {
                              ?>
                             
                                 <div class="col-lg-4 col-sm-6">
-                                    <div class="product-item" data-category="<?php echo htmlspecialchars($row['category']); ?>">
+                                    <div class="product-item">
                                         <div class="pi-pic" style="width: 100%; height: 250px;">
                                             <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
                                             <div class="icon">
@@ -200,10 +204,8 @@ if (isset($_POST['add_to_cart'])) {
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name">
-                                            <span><?php echo $row["category"] ?></span>
-                                        </div>
-                                            
+                                        <div class="catagory-name"></div>
+                                        
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>
                                         </a> 
@@ -260,7 +262,7 @@ $(document).ready(function() {
         var selectedCategory = $(this).val();
         
         $.ajax({
-            url: 'filter_products.php',
+            url: 'ajax/filter_products.php',
             type: 'POST',
             data: { category: selectedCategory },
             success: function(response) {
