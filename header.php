@@ -130,22 +130,7 @@
         </div>
         <div class="nav-item">
             <div class="container">
-                <div class="nav-depart">
-                    <div class="depart-btn">
-                        <i class="ti-menu"></i>
-                        <span>All departments</span>
-                        <ul class="depart-hover">
-                            <li class="active"><a href="#">Women’s Clothing</a></li>
-                            <li><a href="./shop.php">Men’s Clothing</a></li>
-                            <li><a href="./shop.php">Underwear</a></li>
-                            <li><a href="./shop.php">Kid's Clothing</a></li>
-                            <li><a href="./shop.php">Brand Fashion</a></li>
-                            <li><a href="./shop.php">Accessories/Shoes</a></li>
-                            <li><a href="./shop.php">Luxury Brands</a></li>
-                            <li><a href="./shop.php">Brand Outdoor Apparel</a></li>
-                        </ul>
-                    </div>
-                </div>
+
                 <nav class="nav-menu mobile-menu">
                     <ul>
                         <li class="active"><a href="./index.php">Home</a></li>
@@ -180,7 +165,7 @@
     </header>
     <!-- Header End -->
 
-       <script>
+<!-- <script>
   // Check if cart has items
   var cartItems = <?php echo mysqli_num_rows($result); ?>;
   
@@ -208,7 +193,7 @@
       document.getElementById('orderButton').style.backgroundColor = '#ddd';
       document.getElementById('orderButton').textContent = 'Cart is Empty';
   }
-</script> 
+</script>  -->
 </body>  
 
 </html>

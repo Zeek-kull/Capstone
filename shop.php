@@ -35,6 +35,14 @@ if (isset($_POST['add_to_cart'])) {
     }
 }
 
+// Get all distinct categories for the filter dropdown
+  $category_sql = "SELECT DISTINCT category FROM product ORDER BY category";
+  $category_result = mysqli_query($conn, $category_sql);
+  $categories = [];
+  while ($row = mysqli_fetch_assoc($category_result)) {
+    $categories[] = $row['category'];
+  }
+
   // Query to fetch products from the database
   $sql = "SELECT * FROM product"; // Make sure this query is correct
   $result = mysqli_query($conn, $sql); // Execute the query and store the result
@@ -148,22 +156,21 @@ if (isset($_POST['add_to_cart'])) {
                     </div>
                 </div>
                 <div class="col-lg-9 order-1 order-lg-2">
-                    <div class="product-show-option">
-                        <div class="row">
-                            <div class="col-lg-7 col-md-7">
-                                <div class="select-option">
-                                    <select class="sorting">
-                                        <option value="">Default Sorting</option>
-                                    </select>
-                                    <select class="p-show">
-                                        <option value="">Show:</option>
-                                    </select>
-                                </div>
+                        <!-- Filter Dropdown -->
+                    <div class="filter-section mb-4">
+                        <div class="row" id="productsContainer">
+                            <div class="col-md-4">
+                                <label for="categoryFilter" class="form-label">Filter by Category:</label>
+                                <select id="categoryFilter" class="form-select">
+                                    <option value="">All Categories</option>
+                                        <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo htmlspecialchars($category); ?>">
+                                        <?php echo htmlspecialchars($category); ?>
+                                    </option>
+                                         <?php endforeach; ?>
+                                </select>
                             </div>
-                            <div class="col-lg-5 col-md-5 text-right">
-                                <p>Show 01- 09 Of 36 Product</p>
-                            </div>
-                        </div>
+                         </div>
                     </div>
 
 <!----------------------------------------------------------- PRODUCT ITEM ------------------------------>        
@@ -181,7 +188,6 @@ if (isset($_POST['add_to_cart'])) {
                              ?>
                             
                                 <div class="col-lg-4 col-sm-6">
-                                    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
                                     <div class="product-item">
                                         <div class="pi-pic" style="width: 100%; height: 250px;">
                                             <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
@@ -194,11 +200,10 @@ if (isset($_POST['add_to_cart'])) {
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name">Windbreaker</div>
+                                        <div class="catagory-name"></div>
                                         
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>
-                                            
                                         </a> 
                                         <div class="product-price">
                                             &#8369;<?php echo $row["price"] ?>
@@ -216,7 +221,6 @@ if (isset($_POST['add_to_cart'])) {
                                             <input type="hidden" name="product_price" value="<?php echo $row['price']; ?>">
 
                                     </div>
-                                    </form>
                                 </div>
                             </div>
                             
@@ -232,10 +236,12 @@ if (isset($_POST['add_to_cart'])) {
     </section>
     <!-- Product Shop Section End -->
 
-    <?php include 'footer.php'; ?>
+    
+
+<?php include 'footer.php'; ?>
 
     <!-- Js Plugins -->
-    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>
@@ -245,6 +251,32 @@ if (isset($_POST['add_to_cart'])) {
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
+
+    <script>
+$(document).ready(function() {
+    $('#categoryFilter').change(function() {
+        var selectedCategory = $(this).val();
+        
+        $.ajax({
+            url: 'filter_products.php',
+            type: 'POST',
+            data: { category: selectedCategory },
+            success: function(response) {
+                $('#productsContainer').html(response);
+            },
+            error: function(xhr, status, error) {
+                console.log('AJAX Error:', error);
+                alert('Error loading products. Please try again.');
+            }
+        });
+    });
+});
+</script>
+
+
 </body>
 
 </html>
+
+
+

@@ -463,7 +463,7 @@ session_start();
                         <h5><?php echo $related['name']; ?></h5>
                     </a>
                     <div class="product-price mb-2">
-                        &#8369;<?php echo $related['Price']; ?>
+                        &#8369;<?php echo $related['price']; ?>
                         <span>500</span>
                     </div>
                     <form method="post" class="mt-auto">
@@ -474,7 +474,7 @@ session_start();
                         <?php endif; ?>
                         <input type="hidden" name="product_id" value="<?php echo $related['p_id']; ?>">
                         <input type="hidden" name="product_name" value="<?php echo $related['name']; ?>">
-                        <input type="hidden" name="product_price" value="<?php echo $related['Price']; ?>">
+                        <input type="hidden" name="product_price" value="<?php echo $related['price']; ?>">
                     </form>
                 </div>
             </div>
@@ -489,7 +489,7 @@ session_start();
     <?php include 'footer.php'; ?>
 
     <!-- Js Plugins -->
-    <script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>
