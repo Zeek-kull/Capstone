@@ -25,8 +25,8 @@ $(document).ready(function() {
                     $row.find('.total-price').text('₱' + response.subtotal);
                     
                     // Update cart totals
-                    $('.total-amount').text(response.total_amount);
-                    $('.total-quantity').text(response.total_quantity);
+                    $('.total-amount-display').text('₱' + response.total_amount);
+                    $('.total-quantity-display').text(response.total_quantity);
                     
                     // Update quantity input with validated value
                     $row.find('.quantity-input').val(response.quantity);
@@ -107,8 +107,8 @@ $(document).ready(function() {
                             $(this).remove();
                             
                             // Update cart totals
-                            $('.total-amount').text(response.total_amount);
-                            $('.total-quantity').text(response.total_quantity);
+                            $('.total-amount-display').text('₱' + response.total_amount);
+                            $('.total-quantity-display').text(response.total_quantity);
                             
                             // Check if cart is empty
                             if (response.cart_empty) {

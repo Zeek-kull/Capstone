@@ -221,7 +221,7 @@ session_start();
           }
       }
     ?>
-    <h4>Total Quantity: <span class="text-primary"><?php echo $total_quantity; ?></span> | Total Amount: <span class="text-danger"><?php echo number_format($total, 2); ?> </span></h4>
+    <h4>Total Quantity: <span class="text-primary total-quantity-display"><?php echo $total_quantity; ?></span> | Total Amount: <span class="text-danger total-amount-display">₱<?php echo number_format($total, 2); ?></span></h4>
   </div>
 
   <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="orderForm" class="border p-4 rounded">
