@@ -13,7 +13,7 @@ $result = null;
 
 if (!empty($name)) {
     // Use prepared statement to prevent SQL injection
-    $sql = "SELECT * FROM product WHERE name LIKE ? OR catagory LIKE ?";
+    $sql = "SELECT * FROM product WHERE name LIKE ? OR category LIKE ?";
     $stmt = $conn->prepare($sql);
     $search_param = "%{$name}%";
     $stmt->bind_param("ss", $search_param, $search_param);
@@ -75,7 +75,7 @@ if (isset($_POST['add_to_cart'])) {
                 if ($result && $result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
                         ?>
-                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
+                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] ?? 'search.php'); ?>" method="post">
                             <div class="col-md-3 col-sm-6 col-6">
                                 <div class="product-item">
                                     <div class="pi-pic" style="width: 100%; height: 250px;">
@@ -95,7 +95,7 @@ if (isset($_POST['add_to_cart'])) {
                                             <h5><?php echo htmlspecialchars($row["name"]); ?></h5>
                                         </a>
                                         <div class="product-price">
-                                            &#8369;<?php echo number_format($row["Price"], 2); ?>
+                                            &#8369;<?php echo number_format($row["price"], 2); ?>
                                             <span>500</span>
                                         </div>
                                         <div>
@@ -106,10 +106,10 @@ if (isset($_POST['add_to_cart'])) {
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <input type="hidden" name="user_id" value="<?php echo (int)$_SESSION['userid']; ?>">
-                                    <input type="hidden" name="product_id" value="<?php echo (int)$row['id']; ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo (int)($_SESSION['userid'] ?? ''); ?>">
+                                    <input type="hidden" name="product_id" value="<?php echo (int)$row['p_id']; ?>">
                                     <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($row['name']); ?>">
-                                    <input type="hidden" name="product_price" value="<?php echo (float)$row['Price']; ?>">
+                                    <input type="hidden" name="product_price" value="<?php echo (float)$row['price']; ?>">
                                 </div>
                             </div>
                         </form>
