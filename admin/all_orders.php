@@ -14,7 +14,7 @@ if (isset($_SESSION['admin_auth'])) {
 include 'lib/connection.php';
 
 // Query to select delivered orders along with the payment method and order date
-$sql = "SELECT * FROM orders WHERE status='delivered'";
+$sql = "SELECT * FROM orders WHERE status='Completed' ORDER BY created_at DESC";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>

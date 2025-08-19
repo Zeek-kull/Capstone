@@ -68,20 +68,24 @@ if (isset($_POST['update_update_btn'])) {
     exit();
 }
 
-// Handle order removal
-if (isset($_GET['remove'])) {
-    $remove_id = $_GET['remove'];
-    mysqli_query($conn, "DELETE FROM `orders` WHERE o_id = '$remove_id'");
-    $_SESSION['success_message'] = "Order removed successfully";
-    header('location:pending_orders.php');
-    exit();
-}
-
 // Get all orders with latest status
 $sql = "SELECT o.*, u.email as user_email FROM orders o 
         LEFT JOIN users u ON o.user_id = u.id 
         ORDER BY o.created_at DESC";
 $result = $conn->query($sql);
+
+// Get order statistics
+$stats_sql = "SELECT 
+    COUNT(*) as total_orders,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
+    SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing_count,
+    SUM(CASE WHEN status = 'Shipped' THEN 1 ELSE 0 END) as shipped_count,
+    SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
+    SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_count,
+    SUM(totalprice) as total_revenue
+    FROM orders";
+$stats_result = $conn->query($stats_sql);
+$stats = $stats_result->fetch_assoc();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -94,22 +98,72 @@ $result = $conn->query($sql);
 </head>
 <body>
 
-<div class="container pendingbody">
-  <h5>Order Management</h5>
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Date</th>
-        <th scope="col">Name</th>
-        <th scope="col">Address</th>
-        <th scope="col">Phone</th>
-        <th scope="col">Total Product</th>
-        <th scope="col">Total Price</th>
-        <th scope="col">Status</th>
-        <th scope="col">Action</th>
-      </tr>
-    </thead>
-    <tbody>
+<div class="pendingbody">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Order Management</h1>
+            <p class="page-subtitle">Manage and track all customer orders</p>
+        </div>
+    </div>
+
+    <!-- Controls Section -->
+    <div class="controls-section">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search orders...">
+        </div>
+        <div class="filter-group">
+            <label for="statusFilter">Status:</label>
+            <select id="statusFilter">
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="sortBy">Sort by:</label>
+            <select id="sortBy">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="price-low">Price: Low to High</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--primary-color);"><?php echo $stats['total_orders']; ?></div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--warning-color);"><?php echo $stats['pending_count']; ?></div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['processing_count']; ?></div>
+            <div class="stat-label">Processing</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--success-color);"><?php echo $stats['completed_count']; ?></div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--danger-color);"><?php echo $stats['cancelled_count']; ?></div>
+            <div class="stat-label">Cancelled</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--success-color);">₱<?php echo number_format($stats['total_revenue'], 2); ?></div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+
+    <!-- Orders Container -->
+    <div class="orders-container" id="ordersContainer">
     <?php
     if (mysqli_num_rows($result) > 0) {
         while ($row = mysqli_fetch_assoc($result)) {
@@ -137,106 +191,194 @@ $result = $conn->query($sql);
                     $valid_next_statuses = [];
                     break;
             }
-            ?>
-            <tr>
-              <td>
-                <?php 
-                // Adjust order date with timezone using 'created_at' column
-                if (!empty($row["created_at"])) {
-                  $date = new DateTime($row["created_at"]);
-                  $date->setTimezone(new DateTimeZone('Asia/Manila'));
-                  echo $date->format("F j, Y, g:i A");
-                } else {
-                  echo "N/A";
+            
+            // Parse products
+            $products = explode(',', $row["totalproduct"]);
+            $product_details = [];
+            foreach ($products as $prod) {
+                if (preg_match('/^(.+)\((\d+)\)$/', trim($prod), $matches)) {
+                    $product_details[] = [
+                        'name' => trim($matches[1]),
+                        'quantity' => (int)$matches[2]
+                    ];
                 }
-                ?>
-              </td>
-              <td><?php echo htmlspecialchars($row["name"]); ?></td>
-              <td><?php echo htmlspecialchars($row["address"]); ?></td>
-              <td>
-                <?php
-                  // If phone is valid, show it; else show mobnumber if available
-                  $phone = $row["phone"];
-                  if (preg_match('/^[0-9]+$/', $phone) && strlen($phone) >= 7 && strlen($phone) <= 15) {
-                    echo htmlspecialchars($phone);
-                  } elseif (!empty($row["mobnumber"])) {
-                    echo htmlspecialchars($row["mobnumber"]);
-                  } else {
-                    echo "N/A";
-                  }
-                ?>
-              </td>
-              <td>
-                <?php
-                  // Sum all product quantities for this order
-                  $products = explode(',', $row["totalproduct"]);
-                  $total_quantity = 0;
-                  foreach ($products as $prod) {
-                    if (preg_match('/\((\d+)\)/', $prod, $matches)) {
-                      $total_quantity += (int)$matches[1];
-                    }
-                  }
-                  echo htmlspecialchars($total_quantity);
-                ?>
-              </td>
-              <td><?php echo "₱" . number_format($row["totalprice"], 2); ?></td>
-              <td>
-                <span class="badge badge-<?php 
-                  switch($row['status']) {
-                    case 'Pending': echo 'warning'; break;
-                    case 'Processing': echo 'info'; break;
-                    case 'Shipped': echo 'primary'; break;
-                    case 'Completed': echo 'success'; break;
-                    case 'Cancelled': echo 'danger'; break;
-                    default: echo 'secondary';
-                  }
-                ?>">
-                  <?php echo htmlspecialchars($row['status']); ?>
-                </span>
-                <?php if ($history_count > 0): ?>
-                  <br><small class="text-muted">
-                    <a href="#" onclick="showStatusHistory(<?php echo $row['o_id']; ?>)">
-                      View history (<?php echo $history_count; ?>)
+            }
+            ?>
+            <div class="order-card" data-status="<?php echo strtolower($row['status']); ?>" data-price="<?php echo $row['totalprice']; ?>" data-date="<?php echo strtotime($row['created_at']); ?>">
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-number">Order #<?php echo $row['o_id']; ?></div>
+                        <div class="order-date">
+                            <?php 
+                            if (!empty($row["created_at"])) {
+                                $date = new DateTime($row["created_at"]);
+                                $date->setTimezone(new DateTimeZone('Asia/Manila'));
+                                echo $date->format("F j, Y, g:i A");
+                            } else {
+                                echo "N/A";
+                            }
+                            ?>
+                        </div>
+                    </div>
+                    <div class="order-status">
+                        <span class="status-badge status-<?php echo strtolower($row['status']); ?>">
+                            <?php 
+                            $display_status = $row['status'];
+                            if ($display_status == 'Completed') {
+                                $display_status = 'Delivered';
+                            }
+                            echo htmlspecialchars($display_status); 
+                            ?>
+                        </span>
+                        <?php if ($history_count > 0): ?>
+                            <a href="#" onclick="showStatusHistory(<?php echo $row['o_id']; ?>)" class="btn btn-sm btn-outline">
+                                View History (<?php echo $history_count; ?>)
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="order-body">
+                    <div class="customer-info">
+                        <h4>Customer Information</h4>
+                        <div class="customer-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Name</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($row["name"]); ?></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($row["user_email"]); ?></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Phone</span>
+                                <span class="detail-value">
+                                    <?php
+                                    $phone = $row["phone"];
+                                    if (preg_match('/^[0-9]+$/', $phone) && strlen($phone) >= 7 && strlen($phone) <= 15) {
+                                        echo htmlspecialchars($phone);
+                                    } elseif (!empty($row["mobnumber"])) {
+                                        echo htmlspecialchars($row["mobnumber"]);
+                                    } else {
+                                        echo "N/A";
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Address</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($row["address"]); ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-summary">
+                        <h4>Order Summary</h4>
+                        <div class="products-list">
+                            <?php foreach ($product_details as $product): ?>
+                                <div class="product-item">
+                                    <span class="product-name"><?php echo htmlspecialchars($product['name']); ?></span>
+                                    <span class="product-quantity">Qty: <?php echo $product['quantity']; ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="total-price">
+                            Total: ₱<?php echo number_format($row["totalprice"], 2); ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="order-actions">
+                    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="status-form" style="display: contents;">
+                        <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
+                        
+                        <select name="update_status" class="btn btn-sm btn-outline" required>
+                            <option value="" disabled selected>Update Status</option>
+                            <?php foreach ($valid_next_statuses as $status): ?>
+                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        
+                        <input type="text" name="change_reason" class="btn btn-sm btn-outline" placeholder="Reason (optional)" style="flex: 1;">
+                        
+                        <button type="submit" name="update_update_btn" class="btn btn-sm btn-primary">
+                            Update
+                        </button>
+                    </form>
+                    
+                    <a href="pending_orders.php?remove=<?php echo urlencode($row['o_id']); ?>" 
+                       class="btn btn-sm btn-danger" 
+                       onclick="return confirm('Are you sure you want to remove this order?')">
+                        Remove
                     </a>
-                  </small>
-                <?php endif; ?>
-              </td>
-              <td>
-                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="status-form">
-                  <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
-                  <div class="form-group">
-                    <select name="update_status" class="form-control form-control-sm" required>
-                      <option value="" disabled selected>Change status...</option>
-                      <?php
-                      foreach ($valid_next_statuses as $status) {
-                          echo "<option value=\"" . htmlspecialchars($status) . "\">" . htmlspecialchars($status) . "</option>";
-                      }
-                      ?>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <input type="text" name="change_reason" class="form-control form-control-sm" 
-                           placeholder="Reason for change (optional)">
-                  </div>
-                  <button type="submit" name="update_update_btn" class="btn btn-primary btn-sm btn-block">
-                    Update Status
-                  </button>
-                </form>
-                <a href="pending_orders.php?remove=<?php echo urlencode($row['o_id']); ?>" 
-                   class="btn btn-danger btn-sm btn-block mt-1" 
-                   onclick="return confirm('Are you sure you want to remove this order?')">
-                  Remove
-                </a>
-              </td>
-            </tr>
+                </div>
+            </div>
             <?php
         }
     } else {
-        echo "<tr><td colspan='8' class='text-center'>No orders found</td></tr>";
+        echo '<div class="order-card"><div class="order-body"><p class="text-center">No orders found</p></div></div>';
     }
     ?>
-    </tbody>
-  </table>
+    </div>
 </div>
+
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const orders = document.querySelectorAll('.order-card');
+    
+    orders.forEach(order => {
+        const text = order.textContent.toLowerCase();
+        order.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Status filter
+document.getElementById('statusFilter').addEventListener('change', function(e) {
+    const statusFilter = e.target.value.toLowerCase();
+    const orders = document.querySelectorAll('.order-card');
+    
+    orders.forEach(order => {
+        const orderStatus = order.getAttribute('data-status');
+        if (!statusFilter || orderStatus === statusFilter) {
+            order.style.display = '';
+        } else {
+            order.style.display = 'none';
+        }
+    });
+});
+
+// Sort functionality
+document.getElementById('sortBy').addEventListener('change', function(e) {
+    const sortBy = e.target.value;
+    const container = document.getElementById('ordersContainer');
+    const orders = Array.from(container.children);
+    
+    orders.sort((a, b) => {
+        switch(sortBy) {
+            case 'newest':
+                return parseInt(b.getAttribute('data-date')) - parseInt(a.getAttribute('data-date'));
+            case 'oldest':
+                return parseInt(a.getAttribute('data-date')) - parseInt(b.getAttribute('data-date'));
+            case 'price-high':
+                return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+            case 'price-low':
+                return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+            default:
+                return 0;
+        }
+    });
+    
+    orders.forEach(order => container.appendChild(order));
+});
+
+// Show status history
+function showStatusHistory(orderId) {
+    // This would typically open a modal with status history
+    alert('Status history for order #' + orderId + ' would be displayed here');
+}
+</script>
+
 </body>
 </html>

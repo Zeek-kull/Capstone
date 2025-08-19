@@ -1,30 +1,33 @@
 <?php
 ob_start();
 session_start();
-  include 'header.php';
-  include 'lib/connection.php';
+include 'header.php';
+include 'lib/connection.php';
 
-  // Check if product ID is provided
-  if (isset($_GET['id'])) {
-    $product_id = $_GET['id'];
-    
-    // Fetch product details
-    $sql = "SELECT * FROM product WHERE p_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-      $product = $result->fetch_assoc();
-    } else {
-      echo "<script>alert('Product not found!'); window.location.href='index.php';</script>";
-      exit();
-    }
-  } else {
-    echo "<script>window.location.href='index.php';</script>";
+// Validate product_id parameter
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    echo "<script>alert('Invalid product ID!'); window.location.href='index.php';</script>";
     exit();
-  }
+}
+
+$product_id = intval($_GET['id']);
+
+// Debugging: Output the product ID (after validation, as HTML comment)
+echo "<!-- Debug: Product ID: " . htmlspecialchars($product_id) . " -->";
+
+// Fetch product details
+$sql = "SELECT * FROM product WHERE p_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $product_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $product = $result->fetch_assoc();
+} else {
+    echo "<script>alert('Product not found!'); window.location.href='index.php';</script>";
+    exit();
+}
 
   // Handle add to cart from product detail page
   if (isset($_POST['add_to_cart'])) {
@@ -83,6 +86,7 @@ session_start();
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="css/out-of-stock.css" type="text/css">
 </head>
 
 <body>
@@ -163,8 +167,11 @@ session_start();
                 <div class="col-lg-9">
                     <div class="row">
                         <div class="col-lg-6">
-                            <div class="product-pic-zoom">
-                                <img src="img/A&M/<?php echo $product['imgname']; ?>" class="img-fluid" alt="<?php echo $product['name']; ?>">
+                            <div class="product-pic-zoom" style="position: relative;">
+                                <?php if ($product['quantity'] <= 0): ?>
+                                    <div class="out-of-stock-badge">Out of Stock</div>
+                                <?php endif; ?>
+                                <img src="img/A&M/<?php echo $product['imgname']; ?>" class="img-fluid <?php echo $product['quantity'] <= 0 ? 'out-of-stock-img' : ''; ?>" alt="<?php echo $product['name']; ?>">
                                 <div class="zoom-icon">
                                     <i class="fa fa-search-plus"></i>
                                 </div>
@@ -200,6 +207,14 @@ session_start();
                                 <div class="pd-desc">
                                     <p><?php echo $product['description'] ?? 'No description available.'; ?></p>
                                     <h4>&#8369;<?php echo $product['price']; ?></h4>
+                                    
+                                    <div class="availability-status mb-3">
+                                        <?php if ($product['quantity'] <= 0): ?>
+                                            <span class="text-danger font-weight-bold">Out of Stock</span>
+                                        <?php else: ?>
+                                            <span class="text-success font-weight-bold"><?php echo $product['quantity']; ?> in stock</span>
+                                        <?php endif; ?>
+                                    </div>
 
                                     <form action="<?php echo $_SERVER['PHP_SELF'] . '?id=' . $product_id; ?>" method="post">
                                         <input type="hidden" name="product_id" value="<?php echo $product['p_id']; ?>">
@@ -228,14 +243,18 @@ session_start();
         
                                         <div class="form-group">
                                             <label for="quantity">Quantity:</label>
-                                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="10">
+                                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="<?php echo $product['quantity'] > 0 ? $product['quantity'] : 1; ?>" <?php echo $product['quantity'] <= 0 ? 'disabled' : ''; ?>>
                                         </div>
         
                                         <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                            <button type="submit" class="site-btn login-btn" name="add_to_cart">Add to Cart</button>
+                                            <?php if ($product['quantity'] <= 0): ?>
+                                                <button type="button" class="site-btn login-btn" disabled>Out of Stock</button>
+                                            <?php else: ?>
+                                                <button type="submit" class="site-btn login-btn" name="add_to_cart">Add to Cart</button>
+                                            <?php endif; ?>
                                         <?php else: ?>
                                             <a href="login.php" class="site-btn login-btn">Login to Add to Cart</a>
-                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     </form>
                                 </div>
                                 
@@ -321,7 +340,13 @@ session_start();
                                             <tr>
                                                 <td class="p-catagory">Availability</td>
                                                 <td>
-                                                    <div class="p-stock">22 in stock</div>
+                                                    <div class="p-stock">
+                                                        <?php if ($product['quantity'] <= 0): ?>
+                                                            <span class="text-danger">Out of Stock</span>
+                                                        <?php else: ?>
+                                                            <span class="text-success"><?php echo $product['quantity']; ?> in stock</span>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -445,8 +470,11 @@ session_start();
     while ($related = $related_result->fetch_assoc()) {
     ?>
         <div class="col-lg-3 col-md-6 col-sm-6 d-flex">
-            <div class="product-item flex-fill d-flex flex-column">
-                <div class="pi-pic" style="height: 250px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+            <div class="product-item flex-fill d-flex flex-column <?php echo $related['quantity'] <= 0 ? 'out-of-stock' : ''; ?>">
+                <div class="pi-pic" style="height: 250px; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
+                    <?php if ($related['quantity'] <= 0): ?>
+                        <div class="out-of-stock-badge">Out of Stock</div>
+                    <?php endif; ?>
                     <img src="admin/product_img/<?php echo $related['imgname']; ?>" alt="<?php echo $related['name']; ?>" style="max-height: 100%; max-width: 100%; object-fit: cover;">
                     <div class="icon">
                         <i class="icon_heart_alt"></i>
@@ -468,7 +496,11 @@ session_start();
                     </div>
                     <form method="post" class="mt-auto">
                         <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                            <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
+                            <?php if ($related['quantity'] <= 0): ?>
+                                <button type="button" class="site-btn login-btn w-100" disabled>Out of Stock</button>
+                            <?php else: ?>
+                                <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
+                            <?php endif; ?>
                         <?php else: ?>
                             <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
                         <?php endif; ?>

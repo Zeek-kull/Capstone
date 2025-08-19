@@ -19,12 +19,16 @@ if (!empty($selectedCategory)) {
 // Generate HTML for filtered products
 if (mysqli_num_rows($result) > 0) {
     while ($row = mysqli_fetch_assoc($result)) {
+        $isOutOfStock = isset($row['quantity']) && $row['quantity'] <= 0;
         ?>
         <div class="col-lg-4 col-sm-6">
             <form method="POST" action="shop.php">
-                <div class="product-item">
-                    <div class="pi-pic" style="width: 100%; height: 250px;">
-                        <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row['name']; ?>">
+                <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
+                    <div class="pi-pic" style="width: 100%; height: 250px; position: relative;">
+                        <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row['name']; ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
+                        <?php if ($isOutOfStock): ?>
+                            <div class="out-of-stock-badge">OUT OF STOCK</div>
+                        <?php endif; ?>
                         <div class="icon">
                            <i class="icon_heart_alt"></i>
                         </div>
@@ -39,10 +43,11 @@ if (mysqli_num_rows($result) > 0) {
                         </a> 
                         <div class="product-price">
                             &#8369;<?php echo $row["price"] ?>
-                            <span>500</span>                                            
                         </div>
                         <div>
-                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                            <?php if ($isOutOfStock): ?>
+                                <button type="button" class="site-btn login-btn w-100" disabled style="background-color: #ccc; cursor: not-allowed;">Out of Stock</button>
+                            <?php elseif (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
                                 <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
                             <?php else: ?>
                                 <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>

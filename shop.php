@@ -24,7 +24,7 @@ if (isset($_POST['add_to_cart'])) {
             header("Location: shop.php");
             exit();
         } else {
-            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(user_id, product_id, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
+            $insert_product = mysqli_query($conn, "INSERT INTO `cart`(user_id, product_id, quantity, price) VALUES('$user_id', '$product_id', '$product_quantity', '$product_price')");
             header("Location: shop.php");
             exit();
         }
@@ -77,6 +77,7 @@ if (isset($_POST['add_to_cart'])) {
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="css/out-of-stock.css" type="text/css">
 </head>
 
 
@@ -189,13 +190,17 @@ if (isset($_POST['add_to_cart'])) {
                             if (mysqli_num_rows($result) > 0) {
                             // Loop through products
                             while ($row = mysqli_fetch_assoc($result)) {
+                                $isOutOfStock = isset($row['quantity']) && $row['quantity'] <= 0;
                              ?>
                             
                                 <div class="col-lg-4 col-sm-6">
                                     <form method="POST" action="">
-                                        <div class="product-item">
-                                            <div class="pi-pic" style="width: 100%; height: 250px;">
-                                                <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
+                                        <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
+                                            <div class="pi-pic" style="width: 100%; height: 250px; position: relative;">
+                                                <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row['name']; ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
+                                                <?php if ($isOutOfStock): ?>
+                                                    <div class="out-of-stock-badge">OUT OF STOCK</div>
+                                                <?php endif; ?>
                                                 <div class="icon">
                                                    <i class="icon_heart_alt"></i>
                                                 </div>
@@ -213,7 +218,9 @@ if (isset($_POST['add_to_cart'])) {
                                                     &#8369;<?php echo $row["price"] ?>                                            
                                                 </div>
                                                 <div>
-                                                    <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                                    <?php if ($isOutOfStock): ?>
+                                                        <button type="button" class="site-btn login-btn w-100" disabled style="background-color: #ccc; cursor: not-allowed;">Out of Stock</button>
+                                                    <?php elseif (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
                                                         <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
                                                     <?php else: ?>
                                                         <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
