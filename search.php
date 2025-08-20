@@ -69,34 +69,35 @@ if (isset($_POST['add_to_cart'])) {
 <body>
     <div class="container pendingbody">
         <h5>Search Result</h5>
-        <div class="container">
-            <div class="row">
-                <?php
-                if ($result && $result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        ?>
-                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] ?? 'search.php'); ?>" method="post">
-                            <div class="col-md-3 col-sm-6 col-6">
-                                <div class="product-item">
-                                    <div class="pi-pic" style="width: 100%; height: 250px;">
-                                        <img src="img/A&M/<?php echo htmlspecialchars($row['imgname']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
-                                        <div class="icon">
-                                            <i class="icon_heart_alt"></i>
-                                        </div>
-                                        <ul>
-                                            <li style="width:75%;">
-                                                <a href="product.php?id=<?php echo (int)$row['p_id']; ?>" class="product-link">+ Quick View</a>
-                                            </li>
+        <div class="product-list">
+                        <div class="row" id="productsContainer">
+                            <?php
+                            if (mysqli_num_rows($result) > 0) {
+                            // Loop through products
+                            while ($row = mysqli_fetch_assoc($result)) {
+                             ?>
+                            
+                                <div class="col-lg-3 col-sm-4">
+                                    <div class="product-item">
+                                        <div class="pi-pic" style="width: 100%; height: 250px;">
+                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
+                                            <div class="icon">
+                                               <i class="icon_heart_alt"></i>
+                                            </div>
+                                             <ul>
+
+                                                <li style="width:75%;"><a href="product.php?id=<?php echo $row['p_id']; ?>" class="product-link">+ Quick View</a></li>
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name">Windbreaker</div>
+                                        <div class="catagory-name"><?php echo $row["category"] ?></div>
+                                        
                                         <a href="#">
-                                            <h5><?php echo htmlspecialchars($row["name"]); ?></h5>
-                                        </a>
+                                            <h5><?php echo $row["name"] ?></h5>
+                                        </a> 
                                         <div class="product-price">
-                                            &#8369;<?php echo number_format($row["price"], 2); ?>
-                                            <span>500</span>
+                                            &#8369;<?php echo $row["price"] ?>
+                                            <span>500</span>                                            
                                         </div>
                                         <div>
                                             <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
@@ -105,22 +106,22 @@ if (isset($_POST['add_to_cart'])) {
                                                 <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
                                             <?php endif; ?>
                                         </div>
+                                            <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
+                                            <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
+                                            <input type="hidden" name="product_price" value="<?php echo $row['price']; ?>">
+
                                     </div>
-                                    <input type="hidden" name="user_id" value="<?php echo (int)($_SESSION['userid'] ?? ''); ?>">
-                                    <input type="hidden" name="product_id" value="<?php echo (int)$row['p_id']; ?>">
-                                    <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($row['name']); ?>">
-                                    <input type="hidden" name="product_price" value="<?php echo (float)$row['price']; ?>">
                                 </div>
                             </div>
-                        </form>
-                        <?php
-                    }
-                } else {
-                    echo "<div class='col-12'><p class='text-center'>No products found matching your search.</p></div>";
-                }
-                ?>
-            </div>
-        </div>
+                            
+                            <?php
+                            }
+                            } else {
+                           echo "No products available.";
+                          }
+                            ?>
+                        </div>
+                    </div>
     </div>
 </body>
 </html>
