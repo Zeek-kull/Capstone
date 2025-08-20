@@ -204,7 +204,7 @@ if (isset($_POST['add_to_cart'])) {
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name"></div>
+                                        <div class="catagory-name"><?php echo $row["category"] ?></div>
                                         
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>

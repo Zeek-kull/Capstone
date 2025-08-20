@@ -66,9 +66,14 @@ if (isset($_POST['submit']))
     <input type="text" name="category"  class="form-control" id="exampleInputType" required>
   </div>
 
-  <div class="mb-3">
-    <label for="exampleInputTag" class="form-label">Tag</label>
-    <input type="text" name="tags" class="form-control" id="exampleInputTag" required>
+<div class="mb-3">
+  <label for="exampleInputTag" class="form-label">Tag</label>
+  <select name="tags" class="form-control" id="exampleInputTag" required>
+    <option value="Men">Men</option>
+    <option value="Women">Women</option>
+    <option value="Kid's">Kid's</option>
+  </select>
+</div>
 
   <div class="mb-3">
     <label for="exampleInputDescription" class="form-label">Description</label>

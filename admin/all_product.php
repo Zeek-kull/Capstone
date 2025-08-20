@@ -70,18 +70,26 @@ else
             while($row = mysqli_fetch_assoc($result)) {
               ?>
     <tr>
-      <td><img src="product_img/<?php echo $row['imgname']; ?>" style="width:50px;"></td>
-     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-        <input type="hidden" name="update_id"  value="<?php echo  $row['p_id']; ?>" >
-        <td><input type="text" name="update_name"  value="<?php echo $row['name']; ?>" ></td>
-        <td><input type="text" name="update_category"  value="<?php echo $row['category']; ?>" ></td>
-        <td><input type="text" name="update_tag"  value="<?php echo $row['tags']; ?>" ></td>
-        <td><input type="number" name="update_quantity"  value="<?php echo $row['quantity']; ?>" ></td>
-        <td> <input type="number" name="update_Price" value="<?php echo $row['price']; ?>" ></td>
-        <td> <input type="submit" value="update" name="update_update_btn">
-      </form></td>
-      <td><a href="all_product.php?remove=<?php echo $row['p_id']; ?>">remove</a></td>
-    </tr>
+  <td><img src="product_img/<?php echo $row['imgname']; ?>" style="width:50px;"></td>
+  <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+    <input type="hidden" name="update_id" value="<?php echo $row['p_id']; ?>">
+    <td><input type="text" name="update_name" value="<?php echo $row['name']; ?>"></td>
+    <td><input type="text" name="update_category" value="<?php echo $row['category']; ?>"></td>
+    <td>
+      <select name="update_tag">
+        <option value="">-- Select Tag --</option>
+        <option value="Men" <?php if($row['tags'] == "Men") echo "selected"; ?>>Men</option>
+        <option value="Women" <?php if($row['tags'] == "Women") echo "selected"; ?>>Women</option>
+        <option value="Kids" <?php if($row['tags'] == "Kid's") echo "selected"; ?>>Kid's</option>
+      </select>
+    </td>
+    <td><input type="number" name="update_quantity" value="<?php echo $row['quantity']; ?>"></td>
+    <td><input type="number" name="update_Price" value="<?php echo $row['price']; ?>"></td>
+    <td><input type="submit" value="update" name="update_update_btn"></td>
+  </form>
+  <td><a href="all_product.php?remove=<?php echo $row['p_id']; ?>">remove</a></td>
+</tr>
+
     <?php 
     }
         } 

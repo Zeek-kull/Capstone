@@ -135,13 +135,6 @@
                     <ul>
                         <li class="active"><a href="./index.php">Home</a></li>
                         <li><a href="./shop.php">Shop</a></li>
-                        <li><a href="#">Collection</a>
-                            <ul class="dropdown">
-                                <li><a href="./shop.php">Men's</a></li>
-                                <li><a href="./shop.php">Women's</a></li>
-                                <li><a href="./shop.php">Kid's</a></li>
-                            </ul>
-                        </li>
                         <?php
                         // Add dynamic tags from 1header.php
                         if ($tags_result && mysqli_num_rows($tags_result) > 0) {

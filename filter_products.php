@@ -36,9 +36,7 @@ if (mysqli_num_rows($result) > 0) {
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name">
-                                            <span><?php echo $row["price"] ?></span>
-                                        </div>
+                                        <div class="catagory-name"><?php echo $row["category"] ?></div>
                                             
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>
