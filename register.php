@@ -183,50 +183,58 @@ if (isset($_POST['u_submit'])) {
                             <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
                                         <label for="fname">First Name</label>
-                                        <input type="text" class="form-control form-control-user" id="exampleFirstName" placeholder="First Name" name="u_name" required>
+                                        <input type="text" class="form-control form-control-user" id="exampleFirstName" placeholder="First Name" name="u_name" value="<?php echo isset($_POST['u_name']) ? htmlspecialchars($_POST['u_name']) : ''; ?>" required>
                                     </div>
                                     <div class="col-sm-6">
                                         <label for="lname">Last Name</label>
-                                        <input type="text" class="form-control form-control-user" id="exampleLastName" placeholder="Last Name" name="l_name" required>
+                                        <input type="text" class="form-control form-control-user" id="exampleLastName" placeholder="Last Name" name="l_name" value="<?php echo isset($_POST['l_name']) ? htmlspecialchars($_POST['l_name']) : ''; ?>" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="street">Street Number/House Number</label>
-                                    <input type="text" class="form-control" id="street" name="street" required>
+                                    <input type="text" class="form-control" id="street" name="street" value="<?php echo isset($_POST['street']) ? htmlspecialchars($_POST['street']) : ''; ?>" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="zone">Zone (optional)</label>
-                                    <input type="text" class="form-control" id="zone" name="zone">
+                                    <input type="text" class="form-control" id="zone" name="zone" value="<?php echo isset($_POST['zone']) ? htmlspecialchars($_POST['zone']) : ''; ?>">
                                 </div>
                                 <!-- Philippine Address Dropdowns START -->
                                 <div class="form-group">
                                     <label for="region">Region</label>
-                                    <select id="region" class="form-control" required></select>
-                                    <input type="hidden" name="region_text" id="region-text">
+                                    <select id="region" class="form-control" required>
+                                        <option value="<?php echo isset($_POST['region_text']) ? htmlspecialchars($_POST['region_text']) : ''; ?>"><?php echo isset($_POST['region_text']) ? htmlspecialchars($_POST['region_text']) : 'Select Region'; ?></option>
+                                    </select>
+                                    <input type="hidden" name="region_text" id="region-text" value="<?php echo isset($_POST['region_text']) ? htmlspecialchars($_POST['region_text']) : ''; ?>">
                                 </div>
                                 <div class="form-group">
                                     <label for="province">Province</label>
-                                    <select id="province" class="form-control" required></select>
-                                    <input type="hidden" name="province_text" id="province-text">
+                                    <select id="province" class="form-control" required>
+                                        <option value="<?php echo isset($_POST['province_text']) ? htmlspecialchars($_POST['province_text']) : ''; ?>"><?php echo isset($_POST['province_text']) ? htmlspecialchars($_POST['province_text']) : 'Select Province'; ?></option>
+                                    </select>
+                                    <input type="hidden" name="province_text" id="province-text" value="<?php echo isset($_POST['province_text']) ? htmlspecialchars($_POST['province_text']) : ''; ?>">
                                 </div>
                                 <div class="form-group">
                                     <label for="city">City/Municipality</label>
-                                    <select id="city" class="form-control" required></select>
-                                    <input type="hidden" name="city_text" id="city-text">
+                                    <select id="city" class="form-control" required>
+                                        <option value="<?php echo isset($_POST['city_text']) ? htmlspecialchars($_POST['city_text']) : ''; ?>"><?php echo isset($_POST['city_text']) ? htmlspecialchars($_POST['city_text']) : 'Select City'; ?></option>
+                                    </select>
+                                    <input type="hidden" name="city_text" id="city-text" value="<?php echo isset($_POST['city_text']) ? htmlspecialchars($_POST['city_text']) : ''; ?>">
                                 </div>
                                 <div class="form-group">
                                     <label for="barangay">Barangay</label>
-                                    <select id="barangay" class="form-control" required></select>
-                                    <input type="hidden" name="barangay_text" id="barangay-text">
+                                    <select id="barangay" class="form-control" required>
+                                        <option value="<?php echo isset($_POST['barangay_text']) ? htmlspecialchars($_POST['barangay_text']) : ''; ?>"><?php echo isset($_POST['barangay_text']) ? htmlspecialchars($_POST['barangay_text']) : 'Select Barangay'; ?></option>
+                                    </select>
+                                    <input type="hidden" name="barangay_text" id="barangay-text" value="<?php echo isset($_POST['barangay_text']) ? htmlspecialchars($_POST['barangay_text']) : ''; ?>">
                                 </div>
                                 <!-- Philippine Address Dropdowns END -->
                                 <div class="form-group">
                                     <label for="email">Email</label>
-                                    <input type="email" class="form-control form-control-user" id="exampleInputEmail" placeholder="Email Address" name="email" required>
+                                    <input type="email" class="form-control form-control-user" id="exampleInputEmail" placeholder="Email Address" name="email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="phone">Phone Number</label>
-                                    <input type="tel" class="form-control form-control-user" id="phone" placeholder="09123456789" name="phone" pattern="[0-9]{11}" maxlength="11" required>
+                                    <input type="tel" class="form-control form-control-user" id="phone" placeholder="09123456789" name="phone" pattern="[0-9]{11}" maxlength="11" value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>" required>
                                     <small class="form-text text-muted">Format: 09123456789 (11 digits starting with 09)</small>
                                 </div>
                                 <div class="form-group row">
@@ -330,7 +338,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
 
     <!-- Js Plugins -->
     <script src="js/jquery-3.6.0.min.js"></script>
-<script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>
@@ -343,6 +350,22 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
     <script src="js/main.js"></script>
 
     <script>
+        // Preserve form values on page load
+        window.addEventListener('load', function() {
+            <?php if (isset($_POST['region_text'])): ?>
+            document.getElementById('region-text').value = '<?php echo htmlspecialchars($_POST['region_text']); ?>';
+            <?php endif; ?>
+            <?php if (isset($_POST['province_text'])): ?>
+            document.getElementById('province-text').value = '<?php echo htmlspecialchars($_POST['province_text']); ?>';
+            <?php endif; ?>
+            <?php if (isset($_POST['city_text'])): ?>
+            document.getElementById('city-text').value = '<?php echo htmlspecialchars($_POST['city_text']); ?>';
+            <?php endif; ?>
+            <?php if (isset($_POST['barangay_text'])): ?>
+            document.getElementById('barangay-text').value = '<?php echo htmlspecialchars($_POST['barangay_text']); ?>';
+            <?php endif; ?>
+        });
+
         document.querySelector('form').addEventListener('submit', function(e) {
             var pass = document.getElementById('exampleInputPassword').value;
             var cpass = document.getElementById('exampleRepeatPassword').value;

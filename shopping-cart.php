@@ -183,7 +183,7 @@ session_start();
                                     <td class="cart-title first-row">
                                         <h5 class="p-name"><?php echo $row["name"]; ?></h5>
                                     </td>
-                                    <td class="p-price first-row">&#8369;<?php echo $row["price"] ?>.00</td>
+                                    <td class="p-price first-row">&#8369;<?php echo $row["price"] ?></td>
                                     
                                     <td>
                                         <div class="quantity-controls">

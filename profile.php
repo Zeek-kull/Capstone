@@ -134,12 +134,16 @@ $result = $conn->query($sql);
                 <?php
                   // Simple order tracking status
                   if ($row["status"] == "Pending") {
+                    echo "<span class='badge badge-warning'>Order placed</span>";
+                  } elseif ($row["status"] == "Processing") {
                     echo "<span class='badge badge-warning'>Order is being processed</span>";
+                  } elseif ($row["status"] == "Shipped") {
+                    echo "<span class='badge badge-info'>Order shipped</span>";
                   } elseif ($row["status"] == "Confirmed") {
                     echo "<span class='badge badge-info'>Order confirmed</span>";
-                  } elseif ($row["status"] == "Delivered") {
+                  } elseif ($row["status"] == "Completed") {
                     echo "<span class='badge badge-success'>Delivered</span>";
-                  } elseif ($row["status"] == "Cancel") {
+                  } elseif ($row["status"] == "Cancelled") {
                     echo "<span class='badge badge-danger'>Cancelled</span>";
                   } else {
                     echo htmlspecialchars($row["status"]);

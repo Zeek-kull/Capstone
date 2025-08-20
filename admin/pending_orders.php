@@ -32,7 +32,8 @@ if (isset($_POST['update_update_btn'])) {
     
     // Validate status transition
     $valid_transitions = [
-        'Pending' => ['Processing', 'Cancelled'],
+        'Pending' => ['Confirmed', 'Processing', 'Cancelled'],
+        'Confirmed' => ['Processing', 'Cancelled'],
         'Processing' => ['Shipped', 'Cancelled'],
         'Shipped' => ['Completed', 'Cancelled'],
         'Completed' => [],
@@ -78,6 +79,7 @@ $result = $conn->query($sql);
 $stats_sql = "SELECT 
     COUNT(*) as total_orders,
     SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
+    SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed_count,
     SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing_count,
     SUM(CASE WHEN status = 'Shipped' THEN 1 ELSE 0 END) as shipped_count,
     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
@@ -115,12 +117,13 @@ $stats = $stats_result->fetch_assoc();
         <div class="filter-group">
             <label for="statusFilter">Status:</label>
             <select id="statusFilter">
-                <option value="">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
             </select>
         </div>
         <div class="filter-group">
@@ -143,6 +146,10 @@ $stats = $stats_result->fetch_assoc();
         <div class="stat-card">
             <div class="stat-value" style="color: var(--warning-color);"><?php echo $stats['pending_count']; ?></div>
             <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['confirmed_count']; ?></div>
+            <div class="stat-label">Confirmed</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['processing_count']; ?></div>
