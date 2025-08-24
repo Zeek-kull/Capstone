@@ -264,8 +264,6 @@ $stats = $stats_result->fetch_assoc();
                                     $phone = $row["phone"];
                                     if (preg_match('/^[0-9]+$/', $phone) && strlen($phone) >= 7 && strlen($phone) <= 15) {
                                         echo htmlspecialchars($phone);
-                                    } elseif (!empty($row["mobnumber"])) {
-                                        echo htmlspecialchars($row["mobnumber"]);
                                     } else {
                                         echo "N/A";
                                     }

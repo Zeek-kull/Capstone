@@ -48,9 +48,9 @@
     
 
    <!-- Header Section Begin -->
+   <?php if (empty($hideHeader)): ?>
     <header class="header-section">
-        <div class="header-top">
-        </div>
+        <div class="header-top"></div>
         <div class="container">
             <div class="inner-header">
                 <div class="row">
@@ -97,21 +97,17 @@
                         </ul>
                     </div>
                     <?php endif; ?>
-
-
-
                 </div>
-                            <div class="ml-3">
-                                <?php else: ?>
-                                    <a class="btn btn-outline-primary btn-sm" href="login.php">Login</a>
-                                    <a class="btn btn-outline-success btn-sm ml-2" href="Register.php">Signup</a>
-                                <?php endif; ?>
-                            </div>
+                <div class="ml-3">
+                    <?php else: ?>
+                        <a class="btn btn-outline-primary btn-sm" href="login.php" id="header-login-btn">Login</a>
+                        <a class="btn btn-outline-success btn-sm ml-2" href="register.php" id="header-register-btn">Signup</a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <div class="nav-item">
             <div class="container">
-
                 <nav class="nav-menu mobile-menu">
                     <ul>
                         <li class="active"><a href="./index.php">Home</a></li>
@@ -130,13 +126,13 @@
                         <li><a href="./blog.php">Blog</a></li>
                         <li><a href="./contact.php">Contact</a></li>
                         <li><a href="./faq.php">Faq</a></li>
-                    
                     </ul>
                 </nav>
                 <div id="mobile-menu-wrap"></div>
             </div>
         </div>
     </header>
+   <?php endif; ?>
     <!-- Header End -->
 
 <script>
@@ -148,10 +144,10 @@
         if (orderForm && orderButton) {
             orderForm.addEventListener('input', function () {
                 var address = document.querySelector('input[name="address"]')?.value;
-                var mobnumber = document.querySelector('input[name="mobnumber"]')?.value;
+                // mobnumber JS reference removed
                 var payment_method = document.querySelector('select[name="payment_method"]')?.value;
-                var phoneValid = /^[0-9]{11}$/.test(mobnumber);
-                if (cartItems > 0 && address && mobnumber && payment_method && phoneValid) {
+                // phoneValid for mobnumber removed
+                if (cartItems > 0 && address && payment_method) {
                     orderButton.disabled = false;
                     orderButton.style.backgroundColor = '#2ecc71';
                 } else {
@@ -165,6 +161,14 @@
                 orderButton.style.backgroundColor = '#ddd';
                 orderButton.textContent = 'Cart is Empty';
             }
+        }
+
+        // Focus email input on login page when Login button is clicked
+        var loginBtn = document.getElementById('header-login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', function() {
+                localStorage.setItem('focusEmailOnLogin', '1');
+            });
         }
     });
 </script>

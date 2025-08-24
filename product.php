@@ -261,7 +261,6 @@ if ($result->num_rows > 0) {
                                             
                                
                                 <div class="pd-share">
-                                    <div class="p-code">Product ID: <?php echo $product['p_id']; ?></div>
                                     <div class="pd-social">
                                         <a href="#"><i class="ti-facebook"></i></a>
                                         <a href="#"><i class="ti-twitter-alt"></i></a>

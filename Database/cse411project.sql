@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 18, 2025 at 06:52 PM
+-- Generation Time: Aug 24, 2025 at 07:11 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -67,9 +67,7 @@ CREATE TABLE `orders` (
   `name` varchar(100) NOT NULL,
   `address` varchar(255) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
-  `mobnumber` varchar(15) DEFAULT NULL,
   `payment_method` varchar(50) NOT NULL,
-  `txid` varchar(100) DEFAULT NULL,
   `totalproduct` varchar(100) NOT NULL,
   `totalprice` decimal(10,2) NOT NULL,
   `status` enum('Pending','Processing','Shipped','Completed','Cancelled') DEFAULT 'Pending',
@@ -81,8 +79,10 @@ CREATE TABLE `orders` (
 -- Dumping data for table `orders`
 --
 
-INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `mobnumber`, `payment_method`, `txid`, `totalproduct`, `totalprice`, `status`, `status_updated_at`, `created_at`) VALUES
-(12, 2, 'William', '1329, Zone 6, Cansinala, Apalit, Pampanga', '', '09270415710', 'PayPal', NULL, '6 (18)', 1800.00, 'Completed', '2025-08-18 16:51:02', '2025-08-18 10:35:48.000000');
+INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `payment_method`, `totalproduct`, `totalprice`, `status`, `status_updated_at`, `created_at`) VALUES
+(19, 20, 'William Ken', '1329, Zone Zone 6, Cansinala, Apalit, Pampanga', '', 'COD', '4 (1)', 100.00, 'Pending', NULL, '2025-08-24 10:55:22.000000'),
+(20, 20, 'William Ken', '1329, Zone Zone 6, Cansinala, Apalit, Pampanga', '09270417510', 'COD', '4 (2)', 200.00, 'Pending', NULL, '2025-08-24 11:04:23.000000'),
+(21, 20, 'William Ken', '1329 Zone 6 Cansinala, Apalit, Pampanga', '09270417510', 'COD', '4 (1)', 100.00, 'Cancelled', '2025-08-24 17:10:10', '2025-08-24 11:09:24.000000');
 
 -- --------------------------------------------------------
 
@@ -105,9 +105,7 @@ CREATE TABLE `order_status_history` (
 --
 
 INSERT INTO `order_status_history` (`id`, `order_id`, `old_status`, `new_status`, `changed_by`, `change_reason`, `created_at`) VALUES
-(1, 12, 'Pending', 'Processing', 1, '', '2025-08-18 16:50:50'),
-(2, 12, 'Processing', 'Shipped', 1, '', '2025-08-18 16:50:59'),
-(3, 12, 'Shipped', 'Completed', 1, '', '2025-08-18 16:51:02');
+(17, 21, 'Pending', 'Cancelled', 1, '', '2025-08-24 17:10:10');
 
 -- --------------------------------------------------------
 
@@ -132,9 +130,9 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`p_id`, `name`, `category`, `description`, `tags`, `quantity`, `price`, `imgname`, `created_at`) VALUES
-(4, 'Shirt', 'Clothing', 'Red na medyo may white', 'Women', 0, 100.00, 'red_nike.jpg', '2025-08-18 16:14:48'),
-(5, 'CShirt', 'Clothing', 'Red na medyo may white', 'Kids', 4, 100.00, 'NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK.jpg', '2025-08-18 16:15:06'),
-(6, 'AShirt', 'Wata', 'Red na medyo may white', 'Kids', 4, 100.00, 'BAPE_Camo_Shorts.jpg', '2025-08-18 16:16:01');
+(4, 'Shirt', 'Clothing', 'Red na medyo may white', 'Kids', 5, 100.00, 'red_nike.jpg', '2025-08-18 16:14:48'),
+(5, 'CShirt', 'Clothing', 'Red na medyo may white', 'Women', 10, 1000.00, 'NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK.jpg', '2025-08-18 16:15:06'),
+(6, 'AShirt', 'Wata', 'Red na medyo may white', 'Men', 10, 200.00, 'BAPE_Camo_Shorts.jpg', '2025-08-18 16:16:01');
 
 -- --------------------------------------------------------
 
@@ -163,7 +161,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `f_name`, `l_name`, `email`, `phone`, `pass`, `zone`, `street`, `barangay`, `city`, `province`, `region`, `created_at`) VALUES
-(2, 'William', 'Emperado', 'wemperado004@gmail.com', '09270415710', '$2y$10$TktefArINOdIG2SWpb/Rc.d.ZaeLJ5NZZz9IotIYcjyosuzkbe1fq', '6', '1329', 'Cansinala', 'Apalit', 'Pampanga', 'Region III (Central Luzon)', '2025-08-14 10:42:59');
+(20, 'William Ken', 'Emperado', 'wemperado004@gmail.com', '09270417510', '$2y$10$8T3ESnmz67WR3J8nOfoFeeNAGikCGIrZNZK1wgOTq6AnwPUjIHGb.', 'Zone 6', '1329', 'Cansinala', 'Apalit', 'Pampanga', 'Region III (Central Luzon)', '2025-08-24 16:42:42');
 
 --
 -- Indexes for dumped tables
@@ -226,19 +224,19 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `order_status_history`
 --
 ALTER TABLE `order_status_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `product`
@@ -250,7 +248,7 @@ ALTER TABLE `product`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- Constraints for dumped tables

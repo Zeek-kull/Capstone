@@ -1,7 +1,8 @@
 <?php 
     ob_start();
     session_start();
-  include 'header.php';
+    $hideHeader = true;
+    include 'header.php';
 
 // Redirect if already authenticated
 if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) {
@@ -11,47 +12,44 @@ if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) {
 
 include "lib/connection.php";
 
+// CSRF protection
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (isset($_POST['submit'])) {
-    // Sanitize and validate user inputs
-    $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
-    $password = $_POST['password'];
-
-    // Validate email format
-    if (!$email) {
-        $error_message = "Invalid email format";
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $error_message = "Invalid request.";
     } else {
-        // Prepared statement to prevent SQL injection
-        // Select only needed columns and get the password hash
-        $loginquery = "SELECT id, f_name, pass FROM users WHERE email = ?";
-        $stmt = $conn->prepare($loginquery);
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $loginres = $stmt->get_result();
+        $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+        $password = $_POST['password'];
 
-        // Check if user exists
-        if ($loginres->num_rows > 0) {
-            // Fetch user data
-            $result = $loginres->fetch_assoc();
-            $stored_hash = $result['pass'];
-            
-            // Verify password using password_verify() for bcrypt compatibility
-            if (password_verify($password, $stored_hash)) {
-                // Regenerate session ID for security
-                session_regenerate_id(true);
-                
-                // Store user data in session
-                $_SESSION['username'] = $result['f_name'];
-                $_SESSION['userid'] = $result['id'];
-                $_SESSION['auth'] = 1;
-                $_SESSION['email'] = $email;
-                
-                header("location:index.php");
-                exit;
+        if (!$email) {
+            $error_message = "Invalid email format";
+        } else {
+            $loginquery = "SELECT id, f_name, pass FROM users WHERE email = ?";
+            $stmt = $conn->prepare($loginquery);
+            $stmt->bind_param('s', $email);
+            $stmt->execute();
+            $loginres = $stmt->get_result();
+
+            if ($loginres->num_rows > 0) {
+                $result = $loginres->fetch_assoc();
+                $stored_hash = $result['pass'];
+                if (password_verify($password, $stored_hash)) {
+                    session_regenerate_id(true);
+                    $_SESSION['username'] = $result['f_name'];
+                    $_SESSION['userid'] = $result['id'];
+                    $_SESSION['auth'] = 1;
+                    $_SESSION['email'] = $email;
+                    header("location:index.php");
+                    exit;
+                } else {
+                    $error_message = "Invalid email or password";
+                }
             } else {
                 $error_message = "Invalid email or password";
             }
-        } else {
-            $error_message = "Invalid email or password";
         }
     }
 }
@@ -82,7 +80,7 @@ if (isset($_POST['submit'])) {
     <link rel="stylesheet" href="css/style.css" type="text/css">
 </head>
 
-<body>
+<body class="hide-header">
     <!-- Page Preloder -->
     <!-- <div id="preloder">
         <div class="loader"></div>
@@ -113,24 +111,29 @@ if (isset($_POST['submit'])) {
                 <div class="col-lg-6 offset-lg-3">
                     <div class="login-form">
                         <h2>Login</h2>
-                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post" class="w-100" >
+                        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post" class="w-100">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <div class="group-input">
-                                <label for="username">Email address</label>
+                                <label for="email">Email address</label>
                                 <input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Enter Email Address" required>
                             </div>
                             <div class="group-input">
-                                <label for="pass">Password</label>
+                                <label for="password">Password</label>
                                 <input type="password" class="form-control form-control-user" id="password" name="password" placeholder="Password" required>
                             </div>
-                            <div class="group-input gi-check">
-                                
-                            </div>
                             <input class="site-btn login-btn" type="submit" name="submit" value="Login">
-
                         </form>
-                        <div class="switch-login">
-                            <a href="./register.php" class="or-login">Or Create An Account</a>
-                        </div>
+                                                <div class="switch-login">
+                                                        <a href="./register.php" class="or-login" id="register-link">Or Create An Account</a>
+                                                </div>
+                                                <script>
+                                                    document.getElementById('register-link').addEventListener('click', function() {
+                                                        localStorage.setItem('focusFirstNameOnRegister', '1');
+                                                    });
+                                                </script>
+                        <?php if (isset($error_message)): ?>
+                            <div class="alert alert-danger mt-3"><?php echo htmlspecialchars($error_message); ?></div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -140,9 +143,8 @@ if (isset($_POST['submit'])) {
 
     <?php include 'footer.php'; ?>   
 
-    <!-- Js Plugins -->
-    <script src="js/jquery-3.5.1.slim.min.js"></script>
-<script src="js/jquery-3.6.0.min.js"></script>
+    <!-- JS Plugins -->
+    <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>
@@ -152,6 +154,18 @@ if (isset($_POST['submit'])) {
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var emailInput = document.getElementById('email');
+            // Focus email if coming from register page
+            if (localStorage.getItem('focusEmailOnLogin') === '1') {
+                        if (emailInput) {
+                            emailInput.focus();
+                        }
+                        localStorage.removeItem('focusEmailOnLogin');
+                    }
+                });
+            </script>
 </body>
 
 </html>

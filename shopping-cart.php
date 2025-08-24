@@ -20,16 +20,20 @@ if ($user_id_for_address) {
     if ($user_info_query && mysqli_num_rows($user_info_query) > 0) {
         $user_data = mysqli_fetch_assoc($user_info_query);
         
-        // Build complete address from user data
-        $address_parts = array();
-        if (!empty($user_data['street'])) $address_parts[] = $user_data['street'];
-        if (!empty($user_data['zone'])) $address_parts[] = 'Zone ' . $user_data['zone'];
-        if (!empty($user_data['barangay'])) $address_parts[] = $user_data['barangay'];
-        if (!empty($user_data['city'])) $address_parts[] = $user_data['city'];
-        if (!empty($user_data['province'])) $address_parts[] = $user_data['province'];
-        
-        $user_address = implode(', ', $address_parts);
-        $user_phone = $user_data['phone'];
+                // Build complete address from user data (profile.php style)
+                $address_main = [];
+                if (!empty($user_data['street'])) $address_main[] = $user_data['street'];
+                if (!empty($user_data['zone'])) $address_main[] = $user_data['zone'];
+                if (!empty($user_data['barangay'])) $address_main[] = $user_data['barangay'];
+                $address_first = implode(' ', $address_main);
+                $address_second = [];
+                if (!empty($user_data['city'])) $address_second[] = $user_data['city'];
+                if (!empty($user_data['province'])) $address_second[] = $user_data['province'];
+                $user_address = $address_first;
+                if (!empty($address_second)) {
+                    $user_address .= ', ' . implode(', ', $address_second);
+                }
+                $user_phone = $user_data['phone'];
     }
 }
 
@@ -50,7 +54,7 @@ if (isset($_POST['order_btn'])) {
     $name = $_POST['user_name'] ?? '';
     $number = $_POST['number'] ?? '';
     $address = $_POST['address'] ?? '';
-    $mobnumber = $_POST['mobnumber'] ?? '';
+    // $mobnumber removed
     $payment_method = $_POST['payment_method'] ?? ''; // User-selected payment method
     $status = "pending";
     $order_date = date('Y-m-d H:i:s'); // Current date and time
@@ -84,8 +88,8 @@ if (isset($_POST['order_btn'])) {
         // Insert order if products are available
         $total_product = implode(', ', $product_name);
         // Use only the correct column 'created_at' for the order date
-        $detail_query = mysqli_query($conn, "INSERT INTO `orders`(user_id, name, address, phone, mobnumber, payment_method, totalproduct, totalprice, status, created_at) 
-            VALUES('$userid','$name','$address','$number','$mobnumber','$payment_method','$total_product','$price_total','$status', '$order_date')");
+        $detail_query = mysqli_query($conn, "INSERT INTO `orders`(user_id, name, address, phone, payment_method, totalproduct, totalprice, status, created_at) 
+            VALUES('$userid','$name','$address','$number','$payment_method','$total_product','$price_total','$status', '$order_date')");
 
         // Empty cart after successful order
         $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE user_id='$userid'");
@@ -231,12 +235,14 @@ $result = $conn->query($sql);
                             <input type="hidden" name="user_name" value="<?php echo $_SESSION['username'] ?? '' ?>">
 
                             <div class="form-group">
+                                <label for="addressInput" class="mb-1">Shipping Address</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" name="address" id="addressInput" placeholder="Shipping Address" value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?>>
+                                    <input type="text" class="form-control" name="address" id="addressInput"  value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?>>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <input type="text" class="form-control" name="mobnumber" placeholder="Phone Number" pattern="[0-9]{11}" maxlength="11" value="<?php echo htmlspecialchars($user_phone); ?>" required <?php echo empty($user_phone) ? '' : 'readonly'; ?>>
+                                <label for="phoneInput" class="mb-1">Phone Number</label>
+                                <input type="text" class="form-control" name="number" id="phoneInput" value="<?php echo htmlspecialchars($user_phone); ?>" required readonly>
                             </div>
                             <div class="form-group">
                                 <select name="payment_method" id="payment_method" class="form-control" required>
@@ -276,14 +282,10 @@ $result = $conn->query($sql);
         
         document.getElementById('orderForm').addEventListener('input', function () {
             var address = document.querySelector('input[name="address"]').value;
-            var mobnumber = document.querySelector('input[name="mobnumber"]').value;
+
             var payment_method = document.querySelector('select[name="payment_method"]').value;
 
-            // Validate phone number pattern
-            var phoneValid = /^[0-9]{11}$/.test(mobnumber);
-
-            // Check if cart has items AND form is valid
-            if (cartItems > 0 && address && mobnumber && payment_method && phoneValid) {
+            if (cartItems > 0 && address && payment_method) {
                 document.getElementById('orderButton').disabled = false;
                 document.getElementById('orderButton').style.backgroundColor = '#2ecc71';  // Green
             } else {

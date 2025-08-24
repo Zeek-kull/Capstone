@@ -80,7 +80,7 @@ else
         <option value="">-- Select Tag --</option>
         <option value="Men" <?php if($row['tags'] == "Men") echo "selected"; ?>>Men</option>
         <option value="Women" <?php if($row['tags'] == "Women") echo "selected"; ?>>Women</option>
-        <option value="Kids" <?php if($row['tags'] == "Kid's") echo "selected"; ?>>Kid's</option>
+        <option value="Kids" <?php if($row['tags'] == "Kids") echo "selected"; ?>>Kid's</option>
       </select>
     </td>
     <td><input type="number" name="update_quantity" value="<?php echo $row['quantity']; ?>"></td>
