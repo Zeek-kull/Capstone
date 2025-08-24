@@ -64,6 +64,7 @@ if (isset($_POST['add_to_cart'])) {
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Results</title>
+    <link rel="stylesheet" href="css/css.css" type="text/css">
     <link rel="stylesheet" href="admin/css/pending_orders.css">
 </head>
 <body>

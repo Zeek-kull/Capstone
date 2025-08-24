@@ -64,10 +64,9 @@ if (isset($_POST['add_to_cart'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
-
-    <!-- Css Styles -->
+    <!-- Local Muli Font -->
+    <link rel="stylesheet" href="css/css.css" type="text/css">
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css">
     <link rel="stylesheet" href="css/themify-icons.css" type="text/css">
@@ -250,7 +249,7 @@ if (isset($_POST['add_to_cart'])) {
 
 <?php include 'footer.php'; ?>
 
-    <!-- Js Plugins -->
+    <!-- JS Plugins -->
     <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
@@ -263,25 +262,24 @@ if (isset($_POST['add_to_cart'])) {
     <script src="js/main.js"></script>
 
     <script>
-$(document).ready(function() {
-    $('#categoryFilter').change(function() {
-        var selectedCategory = $(this).val();
-        
-        $.ajax({
-            url: 'ajax/filter_products.php',
-            type: 'POST',
-            data: { category: selectedCategory },
-            success: function(response) {
-                $('#productsContainer').html(response);
-            },
-            error: function(xhr, status, error) {
-                console.log('AJAX Error:', error);
-                alert('Error loading products. Please try again.');
-            }
+    $(document).ready(function() {
+        $('#categoryFilter').change(function() {
+            var selectedCategory = $(this).val();
+            $.ajax({
+                url: 'ajax/filter_products.php',
+                type: 'POST',
+                data: { category: selectedCategory },
+                success: function(response) {
+                    $('#productsContainer').html(response);
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', error);
+                    alert('Error loading products. Please try again.');
+                }
+            });
         });
     });
-});
-</script>
+    </script>
 
 
 </body>

@@ -8,10 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
-
-    <!-- Css Styles -->
+    <!-- Local Muli Font -->
+    <link rel="stylesheet" href="css/css.css" type="text/css">
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css">
     <link rel="stylesheet" href="css/themify-icons.css" type="text/css">
@@ -488,8 +487,8 @@
 
     <?php include 'footer.php'; ?>
 
-    <!-- Js Plugins -->
-<script src="js/jquery-3.6.0.min.js"></script>
+    <!-- JS Plugins -->
+    <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>

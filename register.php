@@ -138,6 +138,7 @@ if (isset($_POST['u_submit'])) {
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="css/css.css" type="text/css">
 </head>
 
 <body>

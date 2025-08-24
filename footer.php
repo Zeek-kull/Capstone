@@ -13,10 +13,9 @@
     <title><?php echo $title; ?></title>
 
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
-
-    <!-- Css Styles -->
+    <!-- Local Muli Font -->
+    <link rel="stylesheet" href="css/css.css" type="text/css">
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css">
     <link rel="stylesheet" href="css/themify-icons.css" type="text/css">

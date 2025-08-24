@@ -5,38 +5,19 @@
 
   include "lib/connection.php";
 
-  // Initialize variables
-  $id = null; 
-  $result = null;
-
-  // Check if 'userid' exists in the session (i.e., the user is logged in)
+  // Get cart count only if user is logged in
+  $total = 0;
   if (isset($_SESSION['userid'])) {
       $id = $_SESSION['userid'];
-      
-      // Run query only if $id is set - using 'user_id' as per 1header.php
-      $sql = "SELECT * FROM cart WHERE user_id='$id'";
-      $result = $conn->query($sql);
-  }
-
-  // Calculate total items in the cart
-  $total = 0;
-  if ($result && mysqli_num_rows($result) > 0) {
-      while ($row = mysqli_fetch_assoc($result)) {
-          $total++;
+      $cart_result = $conn->query("SELECT * FROM cart WHERE user_id='$id'");
+      if ($cart_result && mysqli_num_rows($cart_result) > 0) {
+          $total = mysqli_num_rows($cart_result);
       }
   }
 
-  // Fetch distinct tags from the product table for dynamic navigation - from 1header.php
+  // Fetch distinct tags from the product table for dynamic navigation
   $tags_sql = "SELECT DISTINCT tags FROM product WHERE tags != '' AND tags IS NOT NULL ORDER BY tags";
   $tags_result = mysqli_query($conn, $tags_sql);
-
-  // Original product query for other functionality
-  $sql = "SELECT * FROM product";
-  $result = mysqli_query($conn, $sql);
-
-  if (!$result) {
-    die('Query failed: ' . mysqli_error($conn));
-  }
 ?>
   <!DOCTYPE html>
 <html lang="zxx">
@@ -48,8 +29,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
+    <!-- Local Muli Font -->
+    <link rel="stylesheet" href="css/css.css" type="text/css">
 
     <!-- Css Styles -->
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
@@ -158,35 +139,35 @@
     </header>
     <!-- Header End -->
 
-<!-- <script>
-  // Check if cart has items
-  var cartItems = <?php echo mysqli_num_rows($result); ?>;
-  
-  document.getElementById('orderForm').addEventListener('input', function () {
-      var address = document.querySelector('input[name="address"]').value;
-      var mobnumber = document.querySelector('input[name="mobnumber"]').value;
-      var payment_method = document.querySelector('select[name="payment_method"]').value;
-
-      // Validate phone number pattern
-      var phoneValid = /^[0-9]{11}$/.test(mobnumber);
-
-      // Check if cart has items AND form is valid
-      if (cartItems > 0 && address && mobnumber && payment_method && phoneValid) {
-          document.getElementById('orderButton').disabled = false;
-          document.getElementById('orderButton').style.backgroundColor = '#2ecc71';  // Green
-      } else {
-          document.getElementById('orderButton').disabled = true;
-          document.getElementById('orderButton').style.backgroundColor = '#ddd'; // Disabled gray
-      }
-  });
-  
-  // Initial check on page load
-  if (cartItems == 0) {
-      document.getElementById('orderButton').disabled = true;
-      document.getElementById('orderButton').style.backgroundColor = '#ddd';
-      document.getElementById('orderButton').textContent = 'Cart is Empty';
-  }
-</script>  -->
+<script>
+    // Only run if orderForm and orderButton exist
+    document.addEventListener('DOMContentLoaded', function () {
+        var orderForm = document.getElementById('orderForm');
+        var orderButton = document.getElementById('orderButton');
+        var cartItems = <?php echo json_encode($total); ?>;
+        if (orderForm && orderButton) {
+            orderForm.addEventListener('input', function () {
+                var address = document.querySelector('input[name="address"]')?.value;
+                var mobnumber = document.querySelector('input[name="mobnumber"]')?.value;
+                var payment_method = document.querySelector('select[name="payment_method"]')?.value;
+                var phoneValid = /^[0-9]{11}$/.test(mobnumber);
+                if (cartItems > 0 && address && mobnumber && payment_method && phoneValid) {
+                    orderButton.disabled = false;
+                    orderButton.style.backgroundColor = '#2ecc71';
+                } else {
+                    orderButton.disabled = true;
+                    orderButton.style.backgroundColor = '#ddd';
+                }
+            });
+            // Initial check on page load
+            if (cartItems == 0) {
+                orderButton.disabled = true;
+                orderButton.style.backgroundColor = '#ddd';
+                orderButton.textContent = 'Cart is Empty';
+            }
+        }
+    });
+</script>
 </body>  
 
 </html>

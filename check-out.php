@@ -8,10 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
+    <!-- Local Font CSS -->
+    <link rel="stylesheet" href="css/css.css" type="text/css">
 
-    <!-- Css Styles -->
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css">
     <link rel="stylesheet" href="css/themify-icons.css" type="text/css">
@@ -24,12 +24,9 @@
 </head>
 
 <body>
-    <!-- Page Preloder -->
-    <!-- <div id="preloder">
-        <div class="loader"></div>
-    </div> -->
+    <!-- ...existing code... -->
 
-    <!-- Header Section Begin -->
+    <!-- Header Section -->
     <header class="header-section">
 
         <div class="container">
@@ -158,7 +155,7 @@
     </header>
     <!-- Header End -->
 
-    <!-- Breadcrumb Section Begin -->
+    <!-- Breadcrumb Section -->
     <div class="breacrumb-section">
         <div class="container">
             <div class="row">
@@ -174,7 +171,7 @@
     </div>
     <!-- Breadcrumb Section Begin -->
 
-    <!-- Shopping Cart Section Begin -->
+    <!-- Shopping Cart Section -->
     <section class="checkout-section spad">
         <div class="container">
             <form action="#" class="checkout-form">
@@ -274,7 +271,7 @@
 
     
 
-    <!-- Footer Section Begin -->
+    <!-- Footer Section -->
     <footer class="footer-section">
         <div class="container">
             <div class="row">
@@ -349,8 +346,8 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
     </footer>
     <!-- Footer Section End -->
 
-    <!-- Js Plugins -->
-<script src="js/jquery-3.6.0.min.js"></script>
+    <!-- JS Plugins -->
+    <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>

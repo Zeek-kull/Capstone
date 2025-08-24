@@ -1,3 +1,4 @@
+    <link rel="stylesheet" href="css/css.css" type="text/css">
 <?php
   include 'header.php';
   include 'lib/connection.php';

@@ -10,10 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
+    <!-- Local Font CSS -->
+    <link rel="stylesheet" href="css/css.css" type="text/css">
 
-    <!-- Css Styles -->
+    <!-- CSS Styles -->
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css">
     <link rel="stylesheet" href="css/themify-icons.css" type="text/css">
@@ -28,7 +28,7 @@
 <body>
    
 
-    <!-- Breadcrumb Section Begin -->
+    <!-- Breadcrumb Section -->
     <div class="breacrumb-section">
         <div class="container">
             <div class="row">
@@ -44,7 +44,7 @@
     </div>
     <!-- Breadcrumb Section Begin -->
 
-    <!-- Map Section Begin -->
+    <!-- Map Section -->
     <div class="map spad">
         <div class="container">
             <div class="map-inner">
@@ -60,7 +60,7 @@
     </div>
     <!-- Map Section Begin -->
 
-    <!-- Contact Section Begin -->
+    <!-- Contact Section -->
     <section class="contact-section spad">
         <div class="container">
             <div class="row">
@@ -129,8 +129,8 @@
 
     <?php include 'footer.php'; ?>
 
-    <!-- Js Plugins -->
-<script src="js/jquery-3.6.0.min.js"></script>
+    <!-- JS Plugins -->
+    <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/jquery.countdown.min.js"></script>
