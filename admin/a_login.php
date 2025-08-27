@@ -71,10 +71,10 @@ if (isset($_POST['submit'])) {
                 <!-- Form with client-side validation -->
                 <form name="loginForm" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" onsubmit="return validateForm()">
                     <div class="input-group form-group">
-                        <input type="text" class="form-control" placeholder="Admin Name" name="email" required>
+                        <input type="text" class="form-control cp-form-control" placeholder="Admin Name" name="email" required>
                     </div>
                     <div class="input-group form-group">
-                        <input type="password" class="form-control" placeholder="Password" name="password" required>
+                        <input type="password" class="form-control cp-form-control" placeholder="Password" name="password" required>
                     </div>
                     <div class="form-group">
                         <input type="submit" value="Login" class="btn btn-primary" name="submit">

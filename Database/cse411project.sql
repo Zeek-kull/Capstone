@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 24, 2025 at 07:11 PM
+-- Generation Time: Aug 27, 2025 at 08:58 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -132,7 +132,9 @@ CREATE TABLE `product` (
 INSERT INTO `product` (`p_id`, `name`, `category`, `description`, `tags`, `quantity`, `price`, `imgname`, `created_at`) VALUES
 (4, 'Shirt', 'Clothing', 'Red na medyo may white', 'Kids', 5, 100.00, 'red_nike.jpg', '2025-08-18 16:14:48'),
 (5, 'CShirt', 'Clothing', 'Red na medyo may white', 'Women', 10, 1000.00, 'NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK.jpg', '2025-08-18 16:15:06'),
-(6, 'AShirt', 'Wata', 'Red na medyo may white', 'Men', 10, 200.00, 'BAPE_Camo_Shorts.jpg', '2025-08-18 16:16:01');
+(6, 'AShirt', 'Wata', 'Red na medyo may white', 'Men', 10, 200.00, 'BAPE_Camo_Shorts.jpg', '2025-08-18 16:16:01'),
+(10, 'VShirt', 'Cloth', 'asdfasd', 'Women', 10, 10.00, 'See_Through_Polo.jpg', '2025-08-27 15:41:13'),
+(11, 'asdasd', 'Clothing', 'asd', 'Women', 201, 1212.00, '480648836_599490912990708_956140709740030837_n.jpg', '2025-08-27 16:07:29');
 
 -- --------------------------------------------------------
 
@@ -242,7 +244,7 @@ ALTER TABLE `order_status_history`
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `users`
