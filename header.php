@@ -113,13 +113,47 @@
                         <li class="active"><a href="./index.php">Home</a></li>
                         <li><a href="./shop.php">Shop</a></li>
                         <?php
-                        // Add dynamic tags from 1header.php
+                        // Add dynamic tags to navigation. Normalize 'Kid' => 'Kids' and order
                         if ($tags_result && mysqli_num_rows($tags_result) > 0) {
+                            $tags = [];
                             while ($tag_row = mysqli_fetch_assoc($tags_result)) {
-                                $tag = $tag_row['tags'];
-                                // Handle display name transformation (Kid -> Kids)
-                                $display_name = ($tag == 'Kid') ? 'Kids' : $tag;
-                                echo '<li><a href="shop.php?tags=' . urlencode($tag) . '">' . htmlspecialchars($display_name) . '</a></li>';
+                                $orig = $tag_row['tags'];
+                                // Normalize display name (Kid -> Kids)
+                                $display = ($orig === 'Kid') ? 'Kids' : $orig;
+                                $tags[] = ['orig' => $orig, 'display' => $display];
+                            }
+
+                            // Preferred ordering: Kids, Women, Men
+                            $preferred = ['Kids', 'Women', 'Men'];
+                            $seenDisplays = [];
+
+                            // First, output preferred tags in order if present
+                            foreach ($preferred as $p) {
+                                foreach ($tags as $t) {
+                                    if (!in_array($t['display'], $seenDisplays, true) && strcasecmp($t['display'], $p) === 0) {
+                                        echo '<li><a href="Others.php?tags=' . urlencode($t['orig']) . '">' . htmlspecialchars($t['display']) . '</a></li>';
+                                        $seenDisplays[] = $t['display'];
+                                    }
+                                }
+                            }
+
+                            // Collect remaining tags (not already shown)
+                            $remaining = [];
+                            foreach ($tags as $t) {
+                                if (!in_array($t['display'], $seenDisplays, true)) {
+                                    $remaining[$t['display']] = $t['orig'];
+                                }
+                            }
+
+                            // Sort remaining by display name and output
+                            if (!empty($remaining)) {
+                                ksort($remaining, SORT_NATURAL | SORT_FLAG_CASE);
+                                foreach ($remaining as $display => $orig) {
+                                    // avoid duplicates if display already output
+                                    if (in_array($display, $seenDisplays, true)) continue;
+                                    echo '<li><a href="Others.php?tags=' . urlencode($orig) . '">' . htmlspecialchars($display) . '</a></li>';
+                                    $seenDisplays[] = $display;
+                                }
                             }
                         }
                         ?>
