@@ -68,7 +68,8 @@ if (isset($_POST['add_to_cart'])) {
 </head>
 <body>
     <div class="container pendingbody">
-        <h5>Search Result</h5>
+        <h5> <br> Search Result </h5>
+        <br>
         <div class="product-list">
                         <div class="row" id="productsContainer">
                             <?php
@@ -80,7 +81,28 @@ if (isset($_POST['add_to_cart'])) {
                                 <div class="col-lg-3 col-sm-4">
                                     <div class="product-item">
                                         <div class="pi-pic" style="width: 100%; height: 250px;">
-                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="">
+                                            <?php
+                                            $search_img = 'img/hero-1.jpg';
+                                            if (!empty($row['imgname'])) {
+                                                $names = array_filter(array_map('trim', explode(',', $row['imgname'])));
+                                                if (count($names) > 0) {
+                                                    $first = $names[0];
+                                                    $candidates = [
+                                                        'img/A&M/thumbs/' . $first,
+                                                        'admin/uploaded_products/thumbs/' . $first,
+                                                        'img/A&M/' . $first,
+                                                        'admin/uploaded_products/' . $first,
+                                                    ];
+                                                    foreach ($candidates as $p) {
+                                                        if (file_exists($p)) {
+                                                            $search_img = $p;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            ?>
+                                            <img src="<?php echo htmlspecialchars($search_img); ?>" alt="">
                                             <div class="icon">
                                                <i class="icon_heart_alt"></i>
                                             </div>
@@ -90,14 +112,13 @@ if (isset($_POST['add_to_cart'])) {
                                         </ul>
                                     </div>
                                     <div class="pi-text">
-                                        <div class="catagory-name"><?php echo $row["category"] ?></div>
+                                        <div class="category-name"><?php echo $row["category"] ?></div>
                                         
                                         <a href="#">
                                             <h5><?php echo $row["name"] ?></h5>
                                         </a> 
                                         <div class="product-price">
-                                            &#8369;<?php echo $row["price"] ?>
-                                            <span>500</span>                                            
+                                            &#8369;<?php echo number_format((float)$row["price"], 2); ?>                                           
                                         </div>
                                         <div>
                                             <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
@@ -108,7 +129,7 @@ if (isset($_POST['add_to_cart'])) {
                                         </div>
                                             <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
                                             <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
-                                            <input type="hidden" name="product_price" value="<?php echo $row['price']; ?>">
+                                            <input type="hidden" name="product_price" value="<?php echo htmlspecialchars($row['price']); ?>">
 
                                     </div>
                                 </div>

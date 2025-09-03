@@ -101,7 +101,32 @@
                                         <form method="POST" action="">
                                             <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
                                                 <div class="pi-pic" style="width: 100%; height: 250px; position: relative;">
-                                                    <img src="img/A&M/<?php echo htmlspecialchars($row['imgname']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
+                                                            <?php
+                                                            // resolve image (handle CSV imgname) and prefer thumbs/
+                                                            $img_field = $row['imgname'] ?? '';
+                                                            $first_img = '';
+                                                            if ($img_field !== '') {
+                                                                $parts = array_filter(array_map('trim', explode(',', $img_field)));
+                                                                if (!empty($parts)) $first_img = $parts[0];
+                                                            }
+                                                            $img_src = 'img/hero-1.jpg';
+                                                            if ($first_img) {
+                                                                $thumbA = __DIR__ . '/img/A&M/thumbs/' . $first_img;
+                                                                $origA = __DIR__ . '/img/A&M/' . $first_img;
+                                                                $thumbU = __DIR__ . '/admin/uploaded_products/thumbs/' . $first_img;
+                                                                $origU = __DIR__ . '/admin/uploaded_products/' . $first_img;
+                                                                if (file_exists($thumbA)) {
+                                                                    $img_src = 'img/A&M/thumbs/' . $first_img;
+                                                                } elseif (file_exists($origA)) {
+                                                                    $img_src = 'img/A&M/' . $first_img;
+                                                                } elseif (file_exists($thumbU)) {
+                                                                    $img_src = 'admin/uploaded_products/thumbs/' . $first_img;
+                                                                } elseif (file_exists($origU)) {
+                                                                    $img_src = 'admin/uploaded_products/' . $first_img;
+                                                                }
+                                                            }
+                                                            ?>
+                                                            <img src="<?php echo htmlspecialchars($img_src); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
                                                     <?php if ($isOutOfStock): ?>
                                                         <div class="out-of-stock-badge">OUT OF STOCK</div>
                                                     <?php endif; ?>
@@ -113,13 +138,13 @@
                                                     </ul>
                                                 </div>
                                                 <div class="pi-text">
-                                                    <div class="catagory-name"></div>
+                                                    <div class="category-name"></div>
                                                 
                                                     <a href="#">
                                                         <h5><?php echo htmlspecialchars($row["name"]) ?></h5>
                                                     </a> 
                                                     <div class="product-price">
-                                                        &#8369;<?php echo htmlspecialchars($row["price"]) ?>                                            
+                                                        &#8369;<?php echo number_format((float)$row["price"], 2); ?>                                            
                                                     </div>
                                                     <div>
                                                         <?php if ($isOutOfStock): ?>

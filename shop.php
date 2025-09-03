@@ -106,14 +106,17 @@ if (isset($_POST['add_to_cart'])) {
             <div class="row">
                 <div class="col-lg-3 col-md-6 col-sm-8 order-2 order-lg-1 produts-sidebar-filter">
                     <div class="filter-widget">
-                        <h4 class="fw-title">Categories</h4>
                         <ul class="filter-catagories">
-                            <?php foreach ($categories as $category): ?>
-                            <li>
-                                <a href="#" class="category-link" data-category="<?php echo htmlspecialchars($category); ?>">
-                                    <?php echo htmlspecialchars($category); ?>
-                                </a>
-                            </li>
+                            <?php foreach ($categories as $category): 
+                                // skip unwanted sidebar categories (case-insensitive)
+                                $catNorm = strtolower(trim($category));
+                                if (in_array($catNorm, ['med','top'])) continue;
+                            ?>
+                                <li>
+                                    <a href="#" class="category-link" data-category="<?php echo htmlspecialchars($category); ?>">
+                                        <?php echo htmlspecialchars($category); ?>
+                                    </a>
+                                </li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
@@ -137,34 +140,14 @@ if (isset($_POST['add_to_cart'])) {
                         <a href="#" class="filter-btn">Filter</a>
                     </div>
                     
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Size</h4>
-                        <div class="fw-size-choose">
-                            <div class="sc-item">
-                                <input type="radio" id="s-size" name="size" value="S">
-                                <label for="s-size">s</label>
-                            </div>
-                            <div class="sc-item">
-                                <input type="radio" id="m-size" name="size" value="M">
-                                <label for="m-size">m</label>
-                            </div>
-                            <div class="sc-item">
-                                <input type="radio" id="l-size" name="size" value="L">
-                                <label for="l-size">l</label>
-                            </div>
-                            <div class="sc-item">
-                                <input type="radio" id="xs-size" name="size" value="XS">
-                                <label for="xs-size">xs</label>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Size filter removed -->
                 </div>
                 <div class="col-lg-9 order-1 order-lg-2">
                         <!-- Filter Dropdown -->
                     <div class="filter-section mb-4">
                         <div class="row">
                             <div class="col-md-4">
-                                <label for="categoryFilter" class="form-label">Filter by Category:</label>
+                                <label for="categoryFilter" class="form-label">Category:</label>
                                 <select id="categoryFilter" class="form-select">
                                     <option value="">All Categories</option>
                                         <?php foreach ($categories as $category): ?>
@@ -196,7 +179,41 @@ if (isset($_POST['add_to_cart'])) {
                                     <form method="POST" action="">
                                         <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
                                             <div class="pi-pic" style="width: 100%; height: 250px; position: relative;">
-                                                <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row['name']; ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
+                                                <?php
+                                                // resolve image when imgname can be a comma-separated list
+                                                $img_field = $row['imgname'] ?? '';
+                                                $first_img = '';
+                                                if ($img_field !== '') {
+                                                    if (strpos($img_field, ',') !== false) {
+                                                        $parts = explode(',', $img_field);
+                                                        $first_img = trim($parts[0]);
+                                                    } else {
+                                                        $first_img = trim($img_field);
+                                                    }
+                                                }
+                                                $img_src = '';
+                                                if ($first_img) {
+                                                    // prefer thumb_ variants when available
+                                                    $thumbA = __DIR__ . '/img/A&M/thumbs/' . $first_img;
+                                                    $origA = __DIR__ . '/img/A&M/' . $first_img;
+                                                    $thumbU = __DIR__ . '/admin/uploaded_products/thumbs/' . $first_img;
+                                                    $origU = __DIR__ . '/admin/uploaded_products/' . $first_img;
+                                                    if (file_exists($thumbA)) {
+                                                        $img_src = 'img/A&M/thumbs/' . $first_img;
+                                                    } elseif (file_exists($origA)) {
+                                                        $img_src = 'img/A&M/' . $first_img;
+                                                    } elseif (file_exists($thumbU)) {
+                                                        $img_src = 'admin/uploaded_products/thumbs/' . $first_img;
+                                                    } elseif (file_exists($origU)) {
+                                                        $img_src = 'admin/uploaded_products/' . $first_img;
+                                                    } else {
+                                                        $img_src = 'img/hero-1.jpg';
+                                                    }
+                                                } else {
+                                                    $img_src = 'img/hero-1.jpg';
+                                                }
+                                                ?>
+                                                <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
                                                 <?php if ($isOutOfStock): ?>
                                                     <div class="out-of-stock-badge">OUT OF STOCK</div>
                                                 <?php endif; ?>
@@ -208,13 +225,13 @@ if (isset($_POST['add_to_cart'])) {
                                                 </ul>
                                             </div>
                                             <div class="pi-text">
-                                                <div class="catagory-name"></div>
+                                                <div class="category-name"></div>
                                                 
-                                                <a href="#">
+                                                <a>
                                                     <h5><?php echo $row["name"] ?></h5>
                                                 </a> 
                                                 <div class="product-price">
-                                                    &#8369;<?php echo $row["price"] ?>                                            
+                                                    &#8369;<?php echo number_format((float)$row["price"], 2); ?>                                            
                                                 </div>
                                                 <div>
                                                     <?php if ($isOutOfStock): ?>

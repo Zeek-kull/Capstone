@@ -29,6 +29,46 @@ if ($result->num_rows > 0) {
     exit();
 }
 
+// Helper: resolve a product image filename to an existing web path (prefer thumbnails when asked)
+function resolve_product_image($filename, $preferThumb = true) {
+    $filename = trim($filename);
+    if ($filename === '') return 'img/hero-1.jpg';
+
+    $candidates = [];
+    if ($preferThumb) {
+        $candidates = [
+            ['fs' => __DIR__ . '/admin/uploaded_products/thumbs/' . $filename, 'web' => 'admin/uploaded_products/thumbs/' . $filename],
+            ['fs' => __DIR__ . '/admin/uploaded_products/' . $filename, 'web' => 'admin/uploaded_products/' . $filename],
+            ['fs' => __DIR__ . '/img/A&M/thumbs/' . $filename, 'web' => 'img/A&M/thumbs/' . $filename],
+            ['fs' => __DIR__ . '/img/A&M/' . $filename, 'web' => 'img/A&M/' . $filename],
+        ];
+    } else {
+        $candidates = [
+            ['fs' => __DIR__ . '/admin/uploaded_products/' . $filename, 'web' => 'admin/uploaded_products/' . $filename],
+            ['fs' => __DIR__ . '/admin/uploaded_products/thumbs/' . $filename, 'web' => 'admin/uploaded_products/thumbs/' . $filename],
+            ['fs' => __DIR__ . '/img/A&M/' . $filename, 'web' => 'img/A&M/' . $filename],
+            ['fs' => __DIR__ . '/img/A&M/thumbs/' . $filename, 'web' => 'img/A&M/thumbs/' . $filename],
+        ];
+    }
+
+    foreach ($candidates as $c) {
+        if (file_exists($c['fs'])) return $c['web'];
+    }
+    return 'img/hero-1.jpg';
+}
+
+// Build images array from CSV stored in imgname
+$images = [];
+if (!empty($product['imgname'])) {
+    $parts = explode(',', $product['imgname']);
+    foreach ($parts as $p) {
+        $p = trim($p);
+        if ($p !== '') $images[] = $p;
+    }
+}
+if (empty($images)) $images[] = 'hero-1.jpg';
+$main_img = resolve_product_image($images[0], false);
+
   // Handle add to cart from product detail page
   if (isset($_POST['add_to_cart'])) {
     if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) { 
@@ -111,101 +151,38 @@ if ($result->num_rows > 0) {
     <section class="product-shop spad page-details">
         <div class="container">
             <div class="row">
-                <div class="col-lg-3">
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Categories</h4>
-                        <ul class="filter-catagories">
-                            <li><a href="#">Men</a></li>
-                            <li><a href="#">Women</a></li>
-                            <li><a href="#">Kids</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Price</h4>
-                        <div class="filter-range-wrap">
-                            <div class="range-slider">
-                                <div class="price-input">
-                                    <input type="text" id="minamount">
-                                    <input type="text" id="maxamount">
-                                </div>
-                            </div>
-                            <div class="price-range ui-slider ui-corner-all ui-slider-horizontal ui-widget ui-widget-content"
-                                data-min="33" data-max="98">
-                                <div class="ui-slider-range ui-corner-all ui-widget-header"></div>
-                                <span tabindex="0" class="ui-slider-handle ui-corner-all ui-state-default"></span>
-                                <span tabindex="0" class="ui-slider-handle ui-corner-all ui-state-default"></span>
-                            </div>
-                        </div>
-                        <a href="#" class="filter-btn">Filter</a>
-                    </div>
-                    
-                    <div class="filter-widget">
-                        <h4 class="fw-title">Size</h4>
-                        <div class="fw-size-choose">
-                            <div class="sc-item">
-                                <input type="radio" id="s-size">
-                                <label for="s-size">s</label>
-                            </div>
-                            <div class="sc-item">
-                                <input type="radio" id="m-size">
-                                <label for="m-size">m</label>
-                            </div>
-                            <div class="sc-item">
-                                <input type="radio" id="l-size">
-                                <label for="l-size">l</label>
-                            </div>
-                            <div class="sc-item">
-                                <input type="radio" id="xs-size">
-                                <label for="xs-size">xs</label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
-                <div class="col-lg-9">
+                <div class="col-lg-12">
                     <div class="row">
                         <div class="col-lg-6">
-                            <div class="product-pic-zoom" style="position: relative;">
+                                <div class="product-pic-zoom" style="position: relative;">
                                 <?php if ($product['quantity'] <= 0): ?>
                                     <div class="out-of-stock-badge">Out of Stock</div>
                                 <?php endif; ?>
-                                <img src="img/A&M/<?php echo $product['imgname']; ?>" class="img-fluid <?php echo $product['quantity'] <= 0 ? 'out-of-stock-img' : ''; ?>" alt="<?php echo $product['name']; ?>">
+                                <img id="main-product-image" src="<?php echo $main_img; ?>" class="product-big-img img-fluid <?php echo $product['quantity'] <= 0 ? 'out-of-stock-img' : ''; ?>" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES); ?>">
                                 <div class="zoom-icon">
                                     <i class="fa fa-search-plus"></i>
                                 </div>
                             </div>
                             <div class="product-thumbs">
-                                <div class="product-thumbs-track ps-slider owl-carousel">
-                                    <div class="pt active" data-imgbigurl="img/product-single/product-1.jpg"><img
-                                            src="img/product-single/product-1.jpg" alt=""></div>
-                                    <div class="pt" data-imgbigurl="img/product-single/product-2.jpg"><img
-                                            src="img/product-single/product-2.jpg" alt=""></div>
-                                    <div class="pt" data-imgbigurl="img/product-single/product-3.jpg"><img
-                                            src="img/product-single/product-3.jpg" alt=""></div>
-                                    <div class="pt" data-imgbigurl="img/product-single/product-3.jpg"><img
-                                            src="img/product-single/product-3.jpg" alt=""></div>
+                                <div id="thumbs-track" class="product-thumbs-track ps-slider owl-carousel">
+                                    <?php foreach ($images as $img):
+                                        $thumb = resolve_product_image($img, true);
+                                        $full = resolve_product_image($img, false);
+                                    ?>
+                                    <div class="pt" data-full="<?php echo $full; ?>" data-thumb="<?php echo $thumb; ?>" data-imgbigurl="<?php echo $full; ?>">
+                                        <img src="<?php echo $thumb; ?>" alt="">
+                                    </div>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div class="product-details">
                                 <div class="pd-title">
-                                    <span>oranges</span>
                                     <h3><?php echo $product['name']; ?></h3>
-                                    <a href="#" class="heart-icon"><i class="icon_heart_alt"></i></a>
-                                </div>
-                                <div class="pd-rating">
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star-o"></i>
-                                    <span>(5)</span>
                                 </div>
                                 <div class="pd-desc">
-                                    <p><?php echo $product['description'] ?? 'No description available.'; ?></p>
-                                    <h4>&#8369;<?php echo $product['price']; ?></h4>
+                                    <h4>&#8369;<?php echo number_format((float)$product['price'], 2); ?></h4>
                                     
                                     <div class="availability-status mb-3">
                                         <?php if ($product['quantity'] <= 0): ?>
@@ -221,24 +198,7 @@ if ($result->num_rows > 0) {
                                         <input type="hidden" name="product_price" value="<?php echo $product['price']; ?>">
 
 
-                                        <div class="pd-size-choose" style="margin-top:20px;">
-                                            <div class="sc-item">
-                                                <input type="radio" id="sm-size">
-                                                <label for="sm-size">s</label>
-                                            </div>
-                                            <div class="sc-item">
-                                                <input type="radio" id="md-size">
-                                                <label for="md-size">m</label>
-                                            </div>
-                                            <div class="sc-item">
-                                                <input type="radio" id="lg-size">
-                                                <label for="lg-size">l</label>
-                                            </div>
-                                            <div class="sc-item">
-                                                <input type="radio" id="xl-size">
-                                                <label for="xl-size">xs</label>
-                                            </div>
-                                        </div>
+                                        <!-- Size selection removed per requirements -->
         
                                         <div class="form-group">
                                             <label for="quantity">Quantity:</label>
@@ -262,183 +222,34 @@ if ($result->num_rows > 0) {
                                
                                 <div class="pd-share">
                                     <div class="pd-social">
-                                        <a href="#"><i class="ti-facebook"></i></a>
-                                        <a href="#"><i class="ti-twitter-alt"></i></a>
-                                        <a href="#"><i class="ti-linkedin"></i></a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                        <div class="pd-share">
+                                            <div class="pd-social">
+                                                <a href="#"><i class="ti-facebook"></i></a>
+                                                <a href="#"><i class="ti-twitter-alt"></i></a>
+                                                <a href="#"><i class="ti-linkedin"></i></a>
+                                            </div>
+                                        </div>
                     </div>
                     <div class="product-tab">
                         <div class="tab-item">
                             <ul class="nav" role="tablist">
                                 <li>
-                                    <a class="active" data-toggle="tab" href="#tab-1" role="tab">DESCRIPTION</a>
-                                </li>
-                                <li>
-                                    <a data-toggle="tab" href="#tab-2" role="tab">SPECIFICATIONS</a>
-                                </li>
-                                <li>
-                                    <a data-toggle="tab" href="#tab-3" role="tab">Customer Reviews (02)</a>
-                                </li>
-                            </ul>
+                                            <li>
+                                                <a class="active" data-toggle="tab" href="#tab-1" role="tab">DESCRIPTION</a>
+                                            </li>
                         </div>
                         <div class="tab-item-content">
                             <div class="tab-content">
                                 <div class="tab-pane fade-in active" id="tab-1" role="tabpanel">
-                                    <div class="product-content">
-                                        <div class="row">
-                                            <div class="col-lg-7">
-                                                <h5>Introduction</h5>
-                                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
-                                                    eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-                                                    ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-                                                    aliquip ex ea commodo consequat. Duis aute irure dolor in </p>
-                                                <h5>Features</h5>
-                                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
-                                                    eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-                                                    ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-                                                    aliquip ex ea commodo consequat. Duis aute irure dolor in </p>
-                                            </div>
-                                            <div class="col-lg-5">
-                                                <img src="img/product-single/tab-desc.jpg" alt="">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="tab-pane fade" id="tab-2" role="tabpanel">
-                                    <div class="specification-table">
-                                        <table>
-                                            <tr>
-                                                <td class="p-catagory">Customer Rating</td>
-                                                <td>
-                                                    <div class="pd-rating">
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star-o"></i>
-                                                        <span>(5)</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Price</td>
-                                                <td>
-                                                    <div class="p-price">$495.00</div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Add To Cart</td>
-                                                <td>
-                                                    <div class="cart-add">+ add to cart</div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Availability</td>
-                                                <td>
-                                                    <div class="p-stock">
-                                                        <?php if ($product['quantity'] <= 0): ?>
-                                                            <span class="text-danger">Out of Stock</span>
-                                                        <?php else: ?>
-                                                            <span class="text-success"><?php echo $product['quantity']; ?> in stock</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Weight</td>
-                                                <td>
-                                                    <div class="p-weight">1,3kg</div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Size</td>
-                                                <td>
-                                                    <div class="p-size">Xxl</div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Color</td>
-                                                <td><span class="cs-color"></span></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="p-catagory">Sku</td>
-                                                <td>
-                                                    <div class="p-code">00012</div>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="tab-pane fade" id="tab-3" role="tabpanel">
-                                    <div class="customer-review-option">
-                                        <h4>2 Comments</h4>
-                                        <div class="comment-option">
-                                            <div class="co-item">
-                                                <div class="avatar-pic">
-                                                    <img src="img/product-single/avatar-1.png" alt="">
-                                                </div>
-                                                <div class="avatar-text">
-                                                    <div class="at-rating">
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star-o"></i>
-                                                    </div>
-                                                    <h5>Brandon Kelley <span>27 Aug 2019</span></h5>
-                                                    <div class="at-reply">Nice !</div>
-                                                </div>
-                                            </div>
-                                            <div class="co-item">
-                                                <div class="avatar-pic">
-                                                    <img src="img/product-single/avatar-2.png" alt="">
-                                                </div>
-                                                <div class="avatar-text">
-                                                    <div class="at-rating">
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star"></i>
-                                                        <i class="fa fa-star-o"></i>
-                                                    </div>
-                                                    <h5>Roy Banks <span>27 Aug 2019</span></h5>
-                                                    <div class="at-reply">Nice !</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="personal-rating">
-                                            <h6>Your Ratind</h6>
-                                            <div class="rating">
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
-                                                <i class="fa fa-star-o"></i>
-                                            </div>
-                                        </div>
-                                        <div class="leave-comment">
-                                            <h4>Leave A Comment</h4>
-                                            <form action="#" class="comment-form">
-                                                <div class="row">
-                                                    <div class="col-lg-6">
-                                                        <input type="text" placeholder="Name">
-                                                    </div>
-                                                    <div class="col-lg-6">
-                                                        <input type="text" placeholder="Email">
-                                                    </div>
-                                                    <div class="col-lg-12">
-                                                        <textarea placeholder="Messages"></textarea>
-                                                        <button type="submit" class="site-btn">Send message</button>
+                                            <div class="tab-pane fade-in active" id="tab-1" role="tabpanel">
+                                                <div class="product-content">
+                                                    <div class="row">
+                                                        <div class="col-12">
+                                                            <?php echo nl2br(htmlspecialchars($product['description'] ?? 'No description available.')); ?>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                            </div>
                         </div>
                     </div>
                 </div>
@@ -473,7 +284,16 @@ if ($result->num_rows > 0) {
                     <?php if ($related['quantity'] <= 0): ?>
                         <div class="out-of-stock-badge">Out of Stock</div>
                     <?php endif; ?>
-                    <img src="admin/product_img/<?php echo $related['imgname']; ?>" alt="<?php echo $related['name']; ?>" style="max-height: 100%; max-width: 100%; object-fit: cover;">
+                    <?php
+                        // resolve related product image (use first from CSV)
+                        $rel_images = [];
+                        if (!empty($related['imgname'])) {
+                            $rel_images = array_filter(array_map('trim', explode(',', $related['imgname'])));
+                        }
+                        $rel_first = !empty($rel_images) ? $rel_images[0] : '';
+                        $rel_img_src = resolve_product_image($rel_first, true);
+                    ?>
+                    <img src="<?php echo $rel_img_src; ?>" alt="<?php echo htmlspecialchars($related['name'], ENT_QUOTES); ?>" style="max-height: 100%; max-width: 100%; object-fit: cover;">
                     <div class="icon">
                         <i class="icon_heart_alt"></i>
                     </div>
@@ -484,13 +304,11 @@ if ($result->num_rows > 0) {
                     </ul>
                 </div>
                 <div class="pi-text flex-grow-1 d-flex flex-column">
-                    <div class="catagory-name">Windbreaker</div>
-                    <a href="#">
+                    <a>
                         <h5><?php echo $related['name']; ?></h5>
                     </a>
                     <div class="product-price mb-2">
-                        &#8369;<?php echo $related['price']; ?>
-                        <span>500</span>
+                        &#8369;<?php echo number_format((float)$related['price'], 2); ?>
                     </div>
                     <form method="post" class="mt-auto">
                         <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
@@ -529,6 +347,21 @@ if ($result->num_rows > 0) {
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
+    <script>
+    // Wire thumbnail clicks to update main image and reinit zoom
+    $(document).ready(function(){
+        $('#thumbs-track .pt').on('click', function(){
+            var full = $(this).attr('data-full');
+            if (full) {
+                $('#main-product-image').attr('src', full);
+                // reinit zoom helper if available
+                if (window.initProductZoom) window.initProductZoom();
+            }
+        });
+        // ensure zoom initialized on page load
+        if (window.initProductZoom) window.initProductZoom();
+    });
+    </script>
 </body>
 
 </html>

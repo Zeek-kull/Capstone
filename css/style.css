@@ -1359,7 +1359,7 @@ ol {
 	padding-top: 26px;
 }
 
-.product-item .pi-text .catagory-name {
+.product-item .pi-text .category-name {
 	font-size: 10px;
 	color: #b2b2b2;
 	font-weight: 700;
@@ -2560,7 +2560,7 @@ ol {
 	padding-bottom: 18px;
 }
 
-.specification-table table tr td.p-catagory {
+.specification-table table tr td.p-category {
 	width: 310px;
 	text-align: left;
 	padding-left: 34px;
@@ -3235,21 +3235,21 @@ ol {
 	cursor: pointer;
 }
 
-.blog-sidebar .blog-catagory {
+.blog-sidebar .blog-category {
 	margin-bottom: 41px;
 }
 
-.blog-sidebar .blog-catagory h4 {
+.blog-sidebar .blog-category h4 {
 	color: #252525;
 	font-weight: 700;
 	margin-bottom: 14px;
 }
 
-.blog-sidebar .blog-catagory ul li {
+.blog-sidebar .blog-category ul li {
 	list-style: none;
 }
 
-.blog-sidebar .blog-catagory ul li a {
+.blog-sidebar .blog-category ul li a {
 	font-size: 16px;
 	color: #636363;
 	line-height: 39px;
@@ -4385,7 +4385,7 @@ ol {
 		padding: 18px 30px;
 		margin-bottom: 10px;
 	}
-	.specification-table table tr td.p-catagory {
+	.specification-table table tr td.p-category {
 		width: 160px;
 	}
 	.blog-details-inner .blog-post .next-blog .nb-pic i {

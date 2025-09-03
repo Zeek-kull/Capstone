@@ -179,16 +179,35 @@ $result = $conn->query($sql);
                                 
                                 <tr data-cart-id="<?php echo $row['c_id']; ?>">
                                     <td class="cart-pic first-row">
-                                        <?php if (!empty($row['imgname'])): ?>
-                                            <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row["name"]; ?>" class="cart-product-image">
-                                        <?php else: ?>
-                                            <img src="img/no-image.png" alt="No Image" class="cart-product-image">
-                                        <?php endif; ?>
+                                        <?php
+                                        // Resolve imgname which may contain multiple filenames separated by commas.
+                                        $cart_img_src = 'img/no-image.png';
+                                        if (!empty($row['imgname'])) {
+                                            $names = array_filter(array_map('trim', explode(',', $row['imgname'])));
+                                            if (count($names) > 0) {
+                                                // Prefer thumbnail locations, then originals (legacy paths and new upload dir)
+                                                $first = $names[0];
+                                                $candidates = [
+                                                    'img/A&M/thumbs/' . $first,
+                                                    'admin/uploaded_products/thumbs/' . $first,
+                                                    'img/A&M/' . $first,
+                                                    'admin/uploaded_products/' . $first,
+                                                ];
+                                                foreach ($candidates as $p) {
+                                                    if (file_exists($p)) {
+                                                        $cart_img_src = $p;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        ?>
+                                        <img src="<?php echo htmlspecialchars($cart_img_src); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" class="cart-product-image">
                                     </td>
                                     <td class="cart-title first-row">
                                         <h5 class="p-name"><?php echo $row["name"]; ?></h5>
                                     </td>
-                                    <td class="p-price first-row">&#8369;<?php echo $row["price"] ?></td>
+                                    <td class="p-price first-row">&#8369;<?php echo number_format((float)$row["price"], 2); ?></td>
                                     
                                     <td>
                                         <div class="quantity-controls">
@@ -245,7 +264,8 @@ $result = $conn->query($sql);
                                 <input type="text" class="form-control" name="number" id="phoneInput" value="<?php echo htmlspecialchars($user_phone); ?>" required readonly>
                             </div>
                             <div class="form-group">
-                                <select name="payment_method" id="payment_method" class="form-control" required>
+                                <label for="payment_method" class="sr-only">Payment Method</label>
+                                <select name="payment_method" id="payment_method" class="form-control" required aria-label="Payment Method">
                                     <option value="" disabled selected>Select Payment Method</option>
                                     <option value="COD">Cash on Delivery (COD)</option>
                                     <option value="PayPal">PayPal</option>

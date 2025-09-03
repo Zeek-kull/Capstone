@@ -66,7 +66,7 @@
                         <div class="advanced-search">
                             <button type="button" class="category-btn">All Categories</button>
                             <div class="input-group">
-                                <input type="search" placeholder="What do you need?" aria-label="Search" name="name">
+                                <input id="header-search-input" type="search" placeholder="What do you need?" aria-label="Search" name="name">
                                 <button type="submit"><i class="ti-search"></i></button>
                             </div>
                         </div>
@@ -109,9 +109,14 @@
         <div class="nav-item">
             <div class="container">
                 <nav class="nav-menu mobile-menu">
+                    <?php
+                        // Determine the current page and tag to mark active nav items
+                        $current_page = basename($_SERVER['SCRIPT_NAME']);
+                        $current_tag = isset($_GET['tags']) ? $_GET['tags'] : '';
+                    ?>
                     <ul>
-                        <li class="active"><a href="./index.php">Home</a></li>
-                        <li><a href="./shop.php">Shop</a></li>
+                        <li<?php echo in_array($current_page, ['index.php','home.php']) ? ' class="active"' : ''; ?>><a href="./index.php">Home</a></li>
+                        <li<?php echo $current_page === 'shop.php' ? ' class="active"' : ''; ?>><a href="./shop.php">Shop</a></li>
                         <?php
                         // Add dynamic tags to navigation. Normalize 'Kid' => 'Kids' and order
                         if ($tags_result && mysqli_num_rows($tags_result) > 0) {
@@ -131,7 +136,8 @@
                             foreach ($preferred as $p) {
                                 foreach ($tags as $t) {
                                     if (!in_array($t['display'], $seenDisplays, true) && strcasecmp($t['display'], $p) === 0) {
-                                        echo '<li><a href="Others.php?tags=' . urlencode($t['orig']) . '">' . htmlspecialchars($t['display']) . '</a></li>';
+                                        $isActive = ($current_page === 'Others.php' && $current_tag === $t['orig']);
+                                        echo '<li' . ($isActive ? ' class="active"' : '') . '><a href="Others.php?tags=' . urlencode($t['orig']) . '">' . htmlspecialchars($t['display']) . '</a></li>';
                                         $seenDisplays[] = $t['display'];
                                     }
                                 }
@@ -151,15 +157,15 @@
                                 foreach ($remaining as $display => $orig) {
                                     // avoid duplicates if display already output
                                     if (in_array($display, $seenDisplays, true)) continue;
-                                    echo '<li><a href="Others.php?tags=' . urlencode($orig) . '">' . htmlspecialchars($display) . '</a></li>';
+                                    $isActive = ($current_page === 'Others.php' && $current_tag === $orig);
+                                    echo '<li' . ($isActive ? ' class="active"' : '') . '><a href="Others.php?tags=' . urlencode($orig) . '">' . htmlspecialchars($display) . '</a></li>';
                                     $seenDisplays[] = $display;
                                 }
                             }
                         }
                         ?>
-                        <li><a href="./blog.php">Blog</a></li>
-                        <li><a href="./contact.php">Contact</a></li>
-                        <li><a href="./faq.php">Faq</a></li>
+                        <li<?php echo $current_page === 'contact.php' ? ' class="active"' : ''; ?>><a href="./contact.php">Contact</a></li>
+                        <li<?php echo $current_page === 'faq.php' ? ' class="active"' : ''; ?>><a href="./faq.php">Faq</a></li>
                     </ul>
                 </nav>
                 <div id="mobile-menu-wrap"></div>
@@ -202,6 +208,15 @@
         if (loginBtn) {
             loginBtn.addEventListener('click', function() {
                 localStorage.setItem('focusEmailOnLogin', '1');
+            });
+        }
+
+        // Focus search when All Categories button is clicked
+        var catBtn = document.querySelector('.category-btn');
+        var searchInput = document.getElementById('header-search-input');
+        if (catBtn && searchInput) {
+            catBtn.addEventListener('click', function() {
+                searchInput.focus();
             });
         }
     });

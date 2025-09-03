@@ -25,7 +25,30 @@ if (mysqli_num_rows($result) > 0) {
             <form method="POST" action="shop.php">
                 <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
                     <div class="pi-pic" style="width: 100%; height: 250px; position: relative;">
-                        <img src="img/A&M/<?php echo $row['imgname']; ?>" alt="<?php echo $row['name']; ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
+                        <?php
+                        // Resolve possible CSV imgname into a usable path (prefer thumbnails)
+                        $product_img = 'img/hero-1.jpg';
+                        if (!empty($row['imgname'])) {
+                            $names = array_filter(array_map('trim', explode(',', $row['imgname'])));
+                            if (count($names) > 0) {
+                                $first = $names[0];
+                                // candidate list with filesystem path (fs) and web path (web)
+                                $candidates = [
+                                    ['fs' => __DIR__ . '/../img/A&M/thumbs/' . $first, 'web' => 'img/A&M/thumbs/' . $first],
+                                    ['fs' => __DIR__ . '/../admin/uploaded_products/thumbs/' . $first, 'web' => 'admin/uploaded_products/thumbs/' . $first],
+                                    ['fs' => __DIR__ . '/../img/A&M/' . $first, 'web' => 'img/A&M/' . $first],
+                                    ['fs' => __DIR__ . '/../admin/uploaded_products/' . $first, 'web' => 'admin/uploaded_products/' . $first],
+                                ];
+                                foreach ($candidates as $c) {
+                                    if (file_exists($c['fs'])) {
+                                        $product_img = $c['web'];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        ?>
+                        <img src="<?php echo htmlspecialchars($product_img); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" <?php echo $isOutOfStock ? 'style="opacity: 0.5;"' : ''; ?>>
                         <?php if ($isOutOfStock): ?>
                             <div class="out-of-stock-badge">OUT OF STOCK</div>
                         <?php endif; ?>
@@ -37,12 +60,12 @@ if (mysqli_num_rows($result) > 0) {
                         </ul>
                     </div>
                     <div class="pi-text">
-                        <div class="catagory-name"></div>
+                        <div class="category-name"></div>
                         <a href="#">
                             <h5><?php echo $row["name"] ?></h5>
                         </a> 
                         <div class="product-price">
-                            &#8369;<?php echo $row["price"] ?>
+                            &#8369;<?php echo number_format((float)$row["price"], 2); ?>
                         </div>
                         <div>
                             <?php if ($isOutOfStock): ?>
@@ -55,7 +78,7 @@ if (mysqli_num_rows($result) > 0) {
                         </div>
                         <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
                         <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
-                        <input type="hidden" name="product_price" value="<?php echo $row['price']; ?>">
+                        <input type="hidden" name="product_price" value="<?php echo htmlspecialchars($row['price']); ?>">
                     </div>
                 </div>
             </form>

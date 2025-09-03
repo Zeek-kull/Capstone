@@ -116,7 +116,7 @@ $stats = $stats_result->fetch_assoc();
         </div>
         <div class="filter-group">
             <label for="statusFilter">Status:</label>
-            <select id="statusFilter">
+            <select id="statusFilter" aria-label="Filter orders by status">
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Confirmed">Confirmed</option>
@@ -128,7 +128,7 @@ $stats = $stats_result->fetch_assoc();
         </div>
         <div class="filter-group">
             <label for="sortBy">Sort by:</label>
-            <select id="sortBy">
+            <select id="sortBy" aria-label="Sort orders">
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="price-high">Price: High to Low</option>
@@ -297,7 +297,7 @@ $stats = $stats_result->fetch_assoc();
                     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="status-form" style="display: contents;">
                         <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
                         
-                        <select name="update_status" class="btn btn-sm btn-outline" required>
+                        <select name="update_status" class="btn btn-sm btn-outline" required aria-label="<?php echo 'Update status for order #' . htmlspecialchars($row['o_id']); ?>">
                             <option value="" disabled selected>Update Status</option>
                             <?php foreach ($valid_next_statuses as $status): ?>
                                 <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>

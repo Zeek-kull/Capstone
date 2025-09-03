@@ -251,6 +251,29 @@
 
   $(".product-pic-zoom").zoom();
 
+  // Helper to reinit zoom after the main product image is swapped.
+  // Some versions of the zoom plugin don't provide a destroy method,
+  // so we clean up event handlers and artifacts then reinitialize.
+  window.initProductZoom = function () {
+    try {
+      $(".product-pic-zoom").each(function () {
+        var $c = $(this);
+        // attempt graceful destroy if plugin supports it
+        try { $c.trigger('zoom.destroy'); } catch (e) {}
+        // remove plugin-related events and artifacts
+        $c.off('.zoom');
+        $c.find('img').off('.zoom');
+        $c.find('.zoomImg').remove();
+        $c.removeData('zoom');
+      });
+      // re-init
+      $(".product-pic-zoom").zoom();
+    } catch (err) {
+      // silent fail — zoom is non-critical
+      console.error('initProductZoom error', err);
+    }
+  };
+
   /*-------------------
 		Quantity change
 	--------------------- */

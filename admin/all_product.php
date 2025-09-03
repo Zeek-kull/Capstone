@@ -19,13 +19,24 @@ else
   $result = $conn -> query ($sql);
 
  if(isset($_POST['update_update_btn'])){
-  $name = $_POST['update_name'];
+  // Normalize updated product name
+  $name_raw = isset($_POST['update_name']) ? trim($_POST['update_name']) : '';
+  $name_clean = preg_replace('/\s+/', ' ', $name_raw);
+  if (function_exists('mb_convert_case')) {
+    $name = mb_convert_case($name_clean, MB_CASE_TITLE, "UTF-8");
+  } else {
+    $name = ucwords(strtolower($name_clean));
+  }
   $category = $_POST['update_category'];
   $tag = $_POST['update_tag'];
+  // Sanitize and enforce description length
+  $maxDesc = 300; // reasonable limit for a shirt description
+  $description_raw = $_POST['update_description'] ?? '';
+  $description = mb_substr(trim($description_raw), 0, $maxDesc);
   $quantity = $_POST['update_quantity'];
   $price = $_POST['update_Price'];
   $update_id = $_POST['update_id'];
-  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , price='$price'  WHERE p_id = '$update_id'");
+  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , description='$description' , price='$price'  WHERE p_id = '$update_id'");
   if($update_quantity_query){
      header('location:all_product.php');
   };
@@ -107,7 +118,7 @@ if($catResult){
     </div>
     <div class="filter-group">
       <label for="categoryFilter">Category:</label>
-  <select id="categoryFilter" class="form-select cp-form-control-sm">
+  <select id="categoryFilter" class="form-select cp-form-control-sm" aria-label="Filter by category">
         <option value="">All Categories</option>
         <?php
         if(!empty($categories)){
@@ -120,7 +131,7 @@ if($catResult){
     </div>
     <div class="filter-group">
       <label for="stockFilter">Stock:</label>
-  <select id="stockFilter" class="form-select cp-form-control-sm">
+  <select id="stockFilter" class="form-select cp-form-control-sm" aria-label="Filter by stock status">
         <option value="">All Stock</option>
         <option value="low">Low Stock (<10)</option>
         <option value="in">In Stock</option>
@@ -137,7 +148,36 @@ if($catResult){
         $stock_status = $row['quantity'] > 0 ? ($row['quantity'] < 10 ? 'low' : 'in') : 'out';
     ?>
   <div class="product-card" data-pid="<?php echo $row['p_id']; ?>" data-category="<?php echo htmlspecialchars($row['category']); ?>" data-stock="<?php echo $stock_status; ?>" data-name="<?php echo htmlspecialchars(strtolower($row['name'])); ?>">
-      <img src="product_img/<?php echo htmlspecialchars($row['imgname']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" class="product-image" style="cursor: pointer;">
+    <?php
+    // resolve image: handle CSV imgname and prefer thumbs/ folders
+    $img_field = $row['imgname'] ?? '';
+    $first_img = '';
+    if ($img_field !== '') {
+      $parts = array_filter(array_map('trim', explode(',', $img_field)));
+      if (!empty($parts)) $first_img = $parts[0];
+    }
+    // Default web path from admin folder (go up to root for shared images)
+    $img_src = '../img/hero-1.jpg';
+    if ($first_img) {
+      // Filesystem checks (absolute paths)
+      $thumbU_fs = __DIR__ . '/uploaded_products/thumbs/' . $first_img;
+      $origU_fs  = __DIR__ . '/uploaded_products/' . $first_img;
+      $thumbA_fs = __DIR__ . '/../img/A&M/thumbs/' . $first_img;
+      $origA_fs  = __DIR__ . '/../img/A&M/' . $first_img;
+
+      if (file_exists($thumbU_fs)) {
+        // Web path relative to admin folder
+        $img_src = 'uploaded_products/thumbs/' . $first_img;
+      } elseif (file_exists($origU_fs)) {
+        $img_src = 'uploaded_products/' . $first_img;
+      } elseif (file_exists($thumbA_fs)) {
+        $img_src = '../img/A&M/thumbs/' . $first_img;
+      } elseif (file_exists($origA_fs)) {
+        $img_src = '../img/A&M/' . $first_img;
+      }
+    }
+    ?>
+    <img src="<?php echo htmlspecialchars($img_src); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" class="product-image" style="cursor: pointer;">
       
       <div class="product-content">
         <div class="product-header">
@@ -167,18 +207,31 @@ if($catResult){
           
           <div class="form-group">
             <label for="name_<?php echo $row['p_id']; ?>">Product Name</label>
-            <input type="text" name="update_name" id="name_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['name']); ?>" class="form-control cp-form-control" required>
+            <input type="text" name="update_name" id="name_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['name']); ?>" class=" cp-form-control" required>
           </div>
 
           <div class="form-group">
-            <label for="category_<?php echo $row['p_id']; ?>">Category</label>
-            <input type="text" name="update_category" id="category_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['category']); ?>" class="form-control cp-form-control" required>
+            <label for="description_<?php echo $row['p_id']; ?>">Description</label>
+            <textarea name="update_description" id="description_<?php echo $row['p_id']; ?>" class="cp-form-control" rows="3"><?php echo htmlspecialchars($row['description']); ?></textarea>
+            <div class="small text-muted mt-1">Remaining: <span class="desc-remaining" data-max="300" id="desc_remaining_<?php echo $row['p_id']; ?>">300</span> characters</div>
+          </div>
+
+          <div class="form-group">
+            <label for="category_select_<?php echo $row['p_id']; ?>">Category</label>
+            <select name="update_category_select" id="category_select_<?php echo $row['p_id']; ?>" class="cp-form-control form-select" aria-label="Select category for product <?php echo htmlspecialchars($row['p_id']); ?>">
+              <?php if(!empty($categories)){ foreach($categories as $cat){ ?>
+                <option value="<?php echo htmlspecialchars($cat); ?>" <?php if($row['category'] == $cat) echo 'selected'; ?>><?php echo htmlspecialchars($cat); ?></option>
+              <?php } } ?>
+              <option value="new">Add new category...</option>
+            </select>
+            <input type="text" id="new_category_<?php echo $row['p_id']; ?>" class="cp-form-control mt-2" placeholder="Enter new category" style="display:none;">
+            <!-- Hidden field that the server expects (update_category) will be kept in sync by JS -->
+            <input type="hidden" name="update_category" id="update_category_hidden_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['category']); ?>">
           </div>
 
           <div class="form-group">
             <label for="tag_<?php echo $row['p_id']; ?>">Tag</label>
-            <select name="update_tag" id="tag_<?php echo $row['p_id']; ?>" class="cp-form-control form-select">
-              <option value="">-- Select Tag --</option>
+            <select name="update_tag" id="tag_<?php echo $row['p_id']; ?>" class="cp-form-control form-select" aria-label="Select tag for product <?php echo htmlspecialchars($row['p_id']); ?>">
               <option value="Men" <?php if($row['tags'] == "Men") echo "selected"; ?>>Men</option>
               <option value="Women" <?php if($row['tags'] == "Women") echo "selected"; ?>>Women</option>
               <option value="Kids" <?php if($row['tags'] == "Kids") echo "selected"; ?>>Kid's</option>
@@ -187,12 +240,12 @@ if($catResult){
 
           <div class="form-group">
             <label for="quantity_<?php echo $row['p_id']; ?>">Quantity</label>
-            <input type="number" name="update_quantity" id="quantity_<?php echo $row['p_id']; ?>" value="<?php echo $row['quantity']; ?>" class="form-control cp-form-control" min="0" required>
+            <input type="number" name="update_quantity" id="quantity_<?php echo $row['p_id']; ?>" value="<?php echo $row['quantity']; ?>" class=" cp-form-control" min="0" required>
           </div>
 
           <div class="form-group">
             <label for="price_<?php echo $row['p_id']; ?>">Price</label>
-            <input type="number" name="update_Price" id="price_<?php echo $row['p_id']; ?>" value="<?php echo $row['price']; ?>" class="form-control cp-form-control" step="0.01" min="0" required>
+            <input type="number" name="update_Price" id="price_<?php echo $row['p_id']; ?>" value="<?php echo $row['price']; ?>" class=" cp-form-control" step="0.01" min="0" required>
           </div>
 
           <div class="product-actions">
@@ -255,6 +308,72 @@ document.addEventListener('DOMContentLoaded', function() {
   stockFilter.addEventListener('change', filterProducts);
 });
 </script>
+<script>
+// Per-form category select handling: show new category input and sync hidden field
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('form.product-form').forEach(function(form){
+    var pid = form.querySelector('input[name="update_id"]').value;
+    var sel = document.getElementById('category_select_' + pid);
+    var newInput = document.getElementById('new_category_' + pid);
+    var hidden = document.getElementById('update_category_hidden_' + pid);
+
+    if(!sel || !hidden) return;
+
+    function updateHidden(){
+      if(sel.value === 'new'){
+        newInput.style.display = 'block';
+        newInput.required = true;
+        hidden.value = newInput.value.trim();
+      } else {
+        newInput.style.display = 'none';
+        newInput.required = false;
+        hidden.value = sel.value;
+      }
+    }
+
+    // when new input changes, update hidden
+    if(newInput){
+      newInput.addEventListener('input', function(){
+        if(sel.value === 'new') hidden.value = newInput.value.trim();
+      });
+    }
+
+    sel.addEventListener('change', updateHidden);
+    // initialize
+    updateHidden();
+
+    // ensure hidden field is updated before form submit (defensive)
+    form.addEventListener('submit', function(){
+      if(sel.value === 'new' && newInput) {
+        hidden.value = newInput.value.trim();
+      } else {
+        hidden.value = sel.value;
+      }
+    });
+  });
+});
+</script>
+<script>
+// Description character counters (max 300)
+document.addEventListener('DOMContentLoaded', function(){
+  const max = 300;
+  document.querySelectorAll('textarea[name="update_description"]').forEach(function(txt){
+    const pid = txt.id.split('_').pop();
+    const counter = document.getElementById('desc_remaining_' + pid);
+    function update(){
+      let val = txt.value || '';
+      if (val.length > max) {
+        txt.value = val.substring(0, max);
+        val = txt.value;
+      }
+      if(counter) counter.textContent = Math.max(0, max - val.length);
+    }
+    txt.addEventListener('input', update);
+    // init
+    update();
+  });
+});
+</script>
     
 <!-- Custom modal for product form (namespaced to avoid Bootstrap conflicts) -->
 <div id="cpProductModal" aria-hidden="true">
@@ -274,6 +393,9 @@ document.addEventListener('DOMContentLoaded', function(){
   let previousActiveElement = null;
   const focusableSelector = 'a[href], area[href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
   let boundKeydown = null;
+  const closeBtn = modal ? modal.querySelector('.cp-modal-close') : null;
+  // Ensure the close button isn't focusable while modal is hidden
+  if (closeBtn) closeBtn.tabIndex = -1;
 
   function openModalWithForm(form, pid){
     // create a placeholder where the form currently is so we can restore it later
@@ -285,7 +407,10 @@ document.addEventListener('DOMContentLoaded', function(){
     modalContainer.innerHTML = '';
     modalContainer.appendChild(form);
     modal.classList.add('show');
-    modal.setAttribute('aria-hidden','false');
+  // expose modal to assistive tech and allow focus
+  modal.setAttribute('aria-hidden','false');
+  if ('inert' in modal) modal.inert = false;
+  if (closeBtn) closeBtn.tabIndex = 0;
     activePlaceholder = placeholder;
     // store previously focused element to restore on close
     previousActiveElement = document.activeElement;
@@ -370,19 +495,23 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 
   // close modal handlers
-  modal.querySelector('.cp-modal-close').addEventListener('click', function(){
-    restoreForm();
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden','true');
-  });
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function(){
+      closeModal();
+    });
+  }
 
-  modal.addEventListener('click', function(e){ if(e.target === modal){ restoreForm(); modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); } });
+  modal.addEventListener('click', function(e){ if(e.target === modal){ closeModal(); } });
 
   // helper to close modal programmatically (used by Escape handler)
   function closeModal(){
-    restoreForm();
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden','true');
+  // restore form and focus back to the previously focused element first
+  restoreForm();
+  // then mark modal inert/hidden and make sure its close button cannot receive focus
+  if ('inert' in modal) modal.inert = true;
+  if (closeBtn) closeBtn.tabIndex = -1;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
   }
 });
 </script>
