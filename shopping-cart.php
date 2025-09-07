@@ -49,7 +49,7 @@ if (isset($_POST['order_btn'])) {
         header("location:shopping-cart.php");
         exit();
     }
-    
+
     $userid = $_POST['user_id'] ?? '';
     $name = $_POST['user_name'] ?? '';
     $number = $_POST['number'] ?? '';
@@ -298,27 +298,46 @@ $result = $conn->query($sql);
     <script>
         // Check if cart has items
         var cartItems = <?php echo mysqli_num_rows($result); ?>;
-        
-        document.getElementById('orderForm').addEventListener('input', function () {
-            var address = document.querySelector('input[name="address"]').value;
 
-            var payment_method = document.querySelector('select[name="payment_method"]').value;
+        var orderForm = document.getElementById('orderForm');
+        var orderButton = document.getElementById('orderButton');
 
-            if (cartItems > 0 && address && payment_method) {
-                document.getElementById('orderButton').disabled = false;
-                document.getElementById('orderButton').style.backgroundColor = '#2ecc71';  // Green
+        function updateOrderButtonStyle() {
+            if (!orderButton) return;
+            if (orderButton.disabled) {
+                orderButton.style.backgroundColor = '#ddd';
+                orderButton.style.borderColor = '#ccc';
+                orderButton.style.color = '#333'
             } else {
-                document.getElementById('orderButton').disabled = true;
-                document.getElementById('orderButton').style.backgroundColor = '#ddd'; // Disabled gray
+                orderButton.style.backgroundColor = '#2ecc71';
+                orderButton.style.borderColor = '';
+                orderButton.style.color = '';
             }
-        });
-        
+        }
+
+        if (orderForm) {
+            orderForm.addEventListener('input', function () {
+                var address = document.querySelector('input[name="address"]').value;
+                var payment_method = document.querySelector('select[name="payment_method"]').value;
+
+                if (cartItems > 0 && address && payment_method) {
+                    orderButton.disabled = false;
+                } else {
+                    orderButton.disabled = true;
+                    
+                }
+                updateOrderButtonStyle();
+            });
+        }
+
         // Initial check on page load
         if (cartItems == 0) {
-            document.getElementById('orderButton').disabled = true;
-            document.getElementById('orderButton').style.backgroundColor = '#ddd';
-            document.getElementById('orderButton').textContent = 'Cart is Empty';
+            if (orderButton) {
+                orderButton.disabled = true;
+                orderButton.textContent = 'Cart is Empty';
+            }
         }
+        updateOrderButtonStyle();
     </script> 
 </body>
 

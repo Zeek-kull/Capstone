@@ -121,9 +121,7 @@ if (isset($_POST['add_to_cart'])) {
                                             &#8369;<?php echo number_format((float)$row["price"], 2); ?>                                           
                                         </div>
                                         <div>
-                                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                                <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
-                                            <?php else: ?>
+                                            <?php if (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1): ?>
                                                 <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
                                             <?php endif; ?>
                                         </div>

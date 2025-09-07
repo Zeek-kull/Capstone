@@ -294,9 +294,6 @@ $main_img = resolve_product_image($images[0], false);
                         $rel_img_src = resolve_product_image($rel_first, true);
                     ?>
                     <img src="<?php echo $rel_img_src; ?>" alt="<?php echo htmlspecialchars($related['name'], ENT_QUOTES); ?>" style="max-height: 100%; max-width: 100%; object-fit: cover;">
-                    <div class="icon">
-                        <i class="icon_heart_alt"></i>
-                    </div>
                     <ul>
                         <li style="width: 75%;">
                             <a href="product.php?id=<?php echo $related['p_id']; ?>" class="product-link">+ Quick View</a>
@@ -304,27 +301,15 @@ $main_img = resolve_product_image($images[0], false);
                     </ul>
                 </div>
                 <div class="pi-text flex-grow-1 d-flex flex-column">
-                    <a>
-                        <h5><?php echo $related['name']; ?></h5>
-                    </a>
-                    <div class="product-price mb-2">
-                        &#8369;<?php echo number_format((float)$related['price'], 2); ?>
+                        <div class="category-name"><?php echo htmlspecialchars($related['category'] ?? ''); ?></div>
+                        <a href="product.php?id=<?php echo $related['p_id']; ?>">
+                            <h5><?php echo htmlspecialchars($related['name']); ?></h5>
+                        </a>
+                        <div class="product-price mb-2">
+                            &#8369;<?php echo number_format((float)$related['price'], 2); ?>
+                        </div>
+                        <!-- Buttons removed from related-product tiles: Add to Cart and Out of Stock button intentionally omitted -->
                     </div>
-                    <form method="post" class="mt-auto">
-                        <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                            <?php if ($related['quantity'] <= 0): ?>
-                                <button type="button" class="site-btn login-btn w-100" disabled>Out of Stock</button>
-                            <?php else: ?>
-                                <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
-                        <?php endif; ?>
-                        <input type="hidden" name="product_id" value="<?php echo $related['p_id']; ?>">
-                        <input type="hidden" name="product_name" value="<?php echo $related['name']; ?>">
-                        <input type="hidden" name="product_price" value="<?php echo $related['price']; ?>">
-                    </form>
-                </div>
             </div>
         </div>
     <?php } ?>

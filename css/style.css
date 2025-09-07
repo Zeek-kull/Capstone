@@ -4519,3 +4519,21 @@ a.or-login:hover {
 }
 
 /* end custom overrides */
+
+/* Cart & User icon hover/click behavior */
+.nav-right .cart-icon a i,
+.nav-right .user-icon a i {
+	transition: color 0.14s ease, transform 0.14s ease;
+	color: #636363; /* default */
+}
+.nav-right .cart-icon a:hover i,
+.nav-right .user-icon a:hover i {
+	color: #000; /* black on hover */
+}
+/* :active for immediate click feedback and .icon-clicked for JS-applied persisted effect */
+.nav-right .cart-icon a:active i,
+.nav-right .user-icon a:active i,
+.nav-right li.icon-clicked a i {
+	color: #e7ab3c; /* accent when clicked */
+	transform: scale(1.05);
+}

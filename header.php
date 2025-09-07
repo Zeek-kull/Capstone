@@ -42,6 +42,7 @@ $tags_result = mysqli_query($conn, $tags_sql);
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="css/out-of-stock.css" type="text/css">
     <!-- Styles moved to css/style.css -->
 </head>
 
@@ -212,6 +213,28 @@ $tags_result = mysqli_query($conn, $tags_sql);
                 searchInput.focus();
             });
         }
+
+        // Small UX: show clicked feedback on cart/user icons (temporary class)
+        function addIconClickFeedback(selector) {
+            var li = document.querySelector(selector);
+            if (!li) return;
+            var anchor = li.querySelector('a');
+            // show feedback on mousedown (desktop) and keyboard activation
+            li.addEventListener('mousedown', function() {
+                li.classList.add('icon-clicked');
+                setTimeout(function() { li.classList.remove('icon-clicked'); }, 800);
+            });
+            if (anchor) {
+                anchor.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        li.classList.add('icon-clicked');
+                        setTimeout(function() { li.classList.remove('icon-clicked'); }, 800);
+                    }
+                });
+            }
+        }
+        addIconClickFeedback('.nav-right .cart-icon');
+        addIconClickFeedback('.nav-right .user-icon');
     });
 </script>
 </body>

@@ -208,10 +208,12 @@
                                         }
                                     }
                                 }
+                                $isOutOfStock = isset($row['quantity']) && $row['quantity'] <= 0;
                         ?>
-                        <div class="product-item">
+                        <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
                             <div class="pi-pic">
                                 <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                                <?php if ($isOutOfStock): ?><div class="out-of-stock-badge">OUT OF STOCK</div><?php endif; ?>
                                 <?php if ($row['sale'] ?? false): ?><div class="sale">Sale</div><?php endif; ?>
                                 <ul>
                                     <li class="quick-view"><a href="product.php?id=<?php echo $row['p_id']; ?>">+ Quick View</a></li>
@@ -308,10 +310,12 @@
                                         }
                                     }
                                 }
+                                $isOutOfStock = isset($row['quantity']) && $row['quantity'] <= 0;
                         ?>
-                        <div class="product-item">
+                        <div class="product-item <?php echo $isOutOfStock ? 'out-of-stock' : ''; ?>">
                             <div class="pi-pic">
                                 <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                                <?php if ($isOutOfStock): ?><div class="out-of-stock-badge">OUT OF STOCK</div><?php endif; ?>
                                 <?php if ($row['sale'] ?? false): ?><div class="sale">Sale</div><?php endif; ?>
                                 <ul>
                                     <li class="quick-view"><a href="product.php?id=<?php echo $row['p_id']; ?>">+ Quick View</a></li>

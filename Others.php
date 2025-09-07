@@ -144,13 +144,7 @@
                                                         &#8369;<?php echo number_format((float)$row["price"], 2); ?>                                            
                                                     </div>
                                                     <div>
-                                                        <?php if ($isOutOfStock): ?>
-                                                            <button type="button" class="site-btn login-btn w-100" disabled style="background-color: #ccc; cursor: not-allowed;">Out of Stock</button>
-                                                        <?php elseif (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                                            <button type="submit" class="site-btn login-btn w-100" name="add_to_cart">Add to Cart</button>
-                                                        <?php else: ?>
-                                                            <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
-                                                        <?php endif; ?>
+                                                        <!-- Buttons removed: Add to Cart and Out of Stock button intentionally omitted on listing tiles -->
                                                     </div>
                                                     <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
                                                     <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($row['name']); ?>">

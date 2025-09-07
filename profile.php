@@ -11,7 +11,7 @@ if (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1) {
 
 include 'lib/connection.php';
 $k = $_SESSION['userid'];
-$sql = "SELECT * FROM orders WHERE user_id='$k' ORDER BY created_at DESC";
+$sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders WHERE user_id='$k' ORDER BY created_at DESC";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -90,9 +90,10 @@ $result = $conn->query($sql);
             <tr>
               <td>
                 <?php 
-                // Format the date with timezone adjustment using 'created_at' column
-                if (!empty($row["created_at"])) {
-                  $date = new DateTime($row["created_at"]);
+                // Prefer formatted alias from SQL to avoid microseconds in UI
+                $created_for_display = $row['created_at_display'] ?? $row['created_at'];
+                if (!empty($created_for_display)) {
+                  $date = new DateTime($created_for_display);
                   $date->setTimezone(new DateTimeZone('Asia/Manila'));
                   echo $date->format("F j, Y, g:i A"); 
                 } else {

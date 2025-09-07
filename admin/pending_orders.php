@@ -14,6 +14,32 @@ if (isset($_SESSION['admin_auth'])) {
 
 include 'lib/connection.php';
 
+// Handle removal via ?remove=<order_id>
+if (isset($_GET['remove'])) {
+    $remove_id = intval($_GET['remove']);
+    // Only allow removal for logged-in admins
+    if (isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] == 1) {
+        mysqli_begin_transaction($conn);
+        try {
+            // Remove related history first
+            $del_hist = mysqli_query($conn, "DELETE FROM order_status_history WHERE order_id = '$remove_id'");
+            // Remove the order
+            $del_order = mysqli_query($conn, "DELETE FROM orders WHERE o_id = '$remove_id'");
+            if ($del_order) {
+                mysqli_commit($conn);
+                $_SESSION['success_message'] = 'Order removed successfully';
+            } else {
+                throw new Exception('Failed to delete order');
+            }
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $_SESSION['error_message'] = 'Failed to remove order';
+        }
+    }
+    header('Location: pending_orders.php');
+    exit();
+}
+
 // Get admin ID for tracking
 $admin_userid = $_SESSION['admin_userid'] ?? 'admin';
 $admin_query = mysqli_query($conn, "SELECT id FROM admin WHERE userid = '$admin_userid'");
@@ -70,9 +96,9 @@ if (isset($_POST['update_update_btn'])) {
 }
 
 // Get all orders with latest status
-$sql = "SELECT o.*, u.email as user_email FROM orders o 
-        LEFT JOIN users u ON o.user_id = u.id 
-        ORDER BY o.created_at DESC";
+$sql = "SELECT o.*, u.email as user_email, DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders o 
+    LEFT JOIN users u ON o.user_id = u.id 
+    ORDER BY o.created_at DESC";
 $result = $conn->query($sql);
 
 // Get order statistics
@@ -211,14 +237,16 @@ $stats = $stats_result->fetch_assoc();
                 }
             }
             ?>
-            <div class="order-card" data-status="<?php echo strtolower($row['status']); ?>" data-price="<?php echo $row['totalprice']; ?>" data-date="<?php echo strtotime($row['created_at']); ?>">
+            <div class="order-card" data-status="<?php echo strtolower($row['status']); ?>" data-price="<?php echo $row['totalprice']; ?>" data-date="<?php echo strtotime($row['created_at_display'] ?? $row['created_at']); ?>">
                 <div class="order-header">
                     <div class="order-info">
                         <div class="order-number">Order #<?php echo $row['o_id']; ?></div>
                         <div class="order-date">
                             <?php 
-                            if (!empty($row["created_at"])) {
-                                $date = new DateTime($row["created_at"]);
+                            // Prefer formatted alias from SQL to avoid microseconds in UI, fall back to raw column
+                            $created_for_display = $row['created_at_display'] ?? $row['created_at'];
+                            if (!empty($created_for_display)) {
+                                $date = new DateTime($created_for_display);
                                 $date->setTimezone(new DateTimeZone('Asia/Manila'));
                                 echo $date->format("F j, Y, g:i A");
                             } else {

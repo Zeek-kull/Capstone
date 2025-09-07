@@ -13,8 +13,7 @@ if (isset($_SESSION['admin_auth'])) {
 }
 include 'lib/connection.php';
 
-// Query to select delivered orders along with the payment method and order date
-$sql = "SELECT * FROM orders WHERE status='Completed' ORDER BY created_at DESC";
+$sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders WHERE status='Completed' ORDER BY created_at DESC";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -60,9 +59,10 @@ $result = $conn->query($sql);
                     <td><?php echo $row["payment_method"]; ?></td>
                     <td>
                         <?php
-                        // Use 'created_at' column for the date
-                        if (!empty($row["created_at"])) {
-                            $date = new DateTime($row["created_at"]);
+                        // Prefer formatted alias from SQL to avoid microseconds in UI
+                        $created_for_display = $row['created_at_display'] ?? $row['created_at'];
+                        if (!empty($created_for_display)) {
+                            $date = new DateTime($created_for_display);
                             $date->setTimezone(new DateTimeZone('Asia/Manila'));
                             echo $date->format("F j, Y, g:i A");
                         } else {
