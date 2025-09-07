@@ -264,11 +264,10 @@ $result = $conn->query($sql);
                                 <input type="text" class="form-control" name="number" id="phoneInput" value="<?php echo htmlspecialchars($user_phone); ?>" required readonly>
                             </div>
                             <div class="form-group">
-                                <label for="payment_method" class="sr-only">Payment Method</label>
+                                <label for="payment_method" class="mb-1">Payment Method</label>
                                 <select name="payment_method" id="payment_method" class="form-control" required aria-label="Payment Method">
                                     <option value="" disabled selected>Select Payment Method</option>
                                     <option value="COD">Cash on Delivery (COD)</option>
-                                    <option value="PayPal">PayPal</option>
                                 </select>
                             </div>
 

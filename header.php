@@ -1,25 +1,25 @@
-<?php 
-  if (session_status() == PHP_SESSION_NONE) {
-      session_start();
-  }
+<?php
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
-  include "lib/connection.php";
+include "lib/connection.php";
 
-  // Get cart count only if user is logged in
-  $total = 0;
-  if (isset($_SESSION['userid'])) {
-      $id = $_SESSION['userid'];
-      $cart_result = $conn->query("SELECT * FROM cart WHERE user_id='$id'");
-      if ($cart_result && mysqli_num_rows($cart_result) > 0) {
-          $total = mysqli_num_rows($cart_result);
-      }
-  }
+// Get cart count only if user is logged in
+$total = 0;
+if (isset($_SESSION['userid'])) {
+    $id = $_SESSION['userid'];
+    $cart_result = $conn->query("SELECT * FROM cart WHERE user_id='" . intval($id) . "'");
+    if ($cart_result && mysqli_num_rows($cart_result) > 0) {
+        $total = mysqli_num_rows($cart_result);
+    }
+}
 
-  // Fetch distinct tags from the product table for dynamic navigation
-  $tags_sql = "SELECT DISTINCT tags FROM product WHERE tags != '' AND tags IS NOT NULL ORDER BY tags";
-  $tags_result = mysqli_query($conn, $tags_sql);
+// Fetch distinct tags from the product table for dynamic navigation
+$tags_sql = "SELECT DISTINCT tags FROM product WHERE tags != '' AND tags IS NOT NULL ORDER BY tags";
+$tags_result = mysqli_query($conn, $tags_sql);
 ?>
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zxx">
 
 <head>
@@ -42,13 +42,12 @@
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <!-- Styles moved to css/style.css -->
 </head>
 
 <body>
-    
-
-   <!-- Header Section Begin -->
-   <?php if (empty($hideHeader)): ?>
+    <!-- Header Section Begin -->
+    <?php if (empty($hideHeader)): ?>
     <header class="header-section">
         <div class="header-top"></div>
         <div class="container">
@@ -61,26 +60,20 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-lg-7   col-md-2">
-                        <form  action="search.php" method="post">
-                        <div class="advanced-search">
-                            <button type="button" class="category-btn">All Categories</button>
-                            <div class="input-group">
-                                <input id="header-search-input" type="search" placeholder="What do you need?" aria-label="Search" name="name">
-                                <button type="submit"><i class="ti-search"></i></button>
+                    <div class="col-lg-7 col-md-2">
+                        <form action="search.php" method="post">
+                            <div class="advanced-search">
+                                <button type="button" class="category-btn">All Categories</button>
+                                <div class="input-group">
+                                    <input id="header-search-input" type="search" placeholder="What do you need?" aria-label="Search" name="name">
+                                    <button type="submit"><i class="ti-search"></i></button>
+                                </div>
                             </div>
-                        </div>
                         </form>
                     </div>
                     <?php if (isset($_SESSION['userid'])): ?>
                     <div class="col-lg-3 text-right col-md-3">
                         <ul class="nav-right">
-                            <li class="heart-icon">
-                                <a href="#">
-                                    <i class="icon_heart_alt"></i>
-                                    <span>1</span>
-                                </a>
-                            </li>
                             <li class="cart-icon">
                                 <a href="shopping-cart.php">
                                     <i class="icon_bag_alt"></i>
@@ -90,7 +83,7 @@
                             <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
                             <li class="user-icon">
                                 <a href="profile.php">
-                                    <i class="fa fa-user" style="text-decoration:none;color:black; "></i> 
+                                    <i class="fa fa-user" style="text-decoration:none;color:black;"></i>
                                 </a>
                             </li>
                             <li><a class="btn btn-outline-success btn-sm ml-2" href="logout.php">Logout</a></li>
@@ -221,6 +214,6 @@
         }
     });
 </script>
-</body>  
+</body>
 
 </html>

@@ -77,13 +77,11 @@ if (isset($_POST['add_to_cart'])) {
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
     <link rel="stylesheet" href="css/out-of-stock.css" type="text/css">
+    <!-- Quick view styles moved to css/style.css -->
 </head>
-
-
 
 <body>
     
-
     <!-- Breadcrumb Section Begin -->
     <div class="breacrumb-section">
         <div class="container">
@@ -217,19 +215,16 @@ if (isset($_POST['add_to_cart'])) {
                                                 <?php if ($isOutOfStock): ?>
                                                     <div class="out-of-stock-badge">OUT OF STOCK</div>
                                                 <?php endif; ?>
-                                                <div class="icon">
-                                                   <i class="icon_heart_alt"></i>
-                                                </div>
                                                  <ul>
                                                     <li style="width:75%;"><a href="product.php?id=<?php echo $row['p_id']; ?>" class="product-link">+ Quick View</a></li>
                                                 </ul>
                                             </div>
                                             <div class="pi-text">
-                                                <div class="category-name"></div>
+                                                <div class="category-name"><?php echo htmlspecialchars($row['category'] ?? ''); ?></div>
                                                 
-                                                <a>
-                                                    <h5><?php echo $row["name"] ?></h5>
-                                                </a> 
+                                                <a href="product.php?id=<?php echo $row['p_id']; ?>">
+                                                    <h5><?php echo htmlspecialchars($row['name']); ?></h5>
+                                                </a>
                                                 <div class="product-price">
                                                     &#8369;<?php echo number_format((float)$row["price"], 2); ?>                                            
                                                 </div>

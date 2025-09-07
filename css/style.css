@@ -192,7 +192,7 @@ ol {
 .site-btn {
 	color: #ffffff;
 	background: #e7ab3c;
-	border: 1px solid #e7ab3c;
+	border: 1px  #e7ab3c;
 	font-size: 14px;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -4453,3 +4453,69 @@ ol {
     background-color: var(--primary-color);
     color: #fff;
 }
+
+/* --------------------------------------------------------------------------
+   Project custom overrides (moved from inline <style> blocks)
+   These keep visual behavior identical but centralize styles for maintainability
+   -------------------------------------------------------------------------- */
+
+/* Header search submit button: black default, accent on hover */
+.advanced-search .input-group button[type="submit"] {
+	color: #fff;
+	cursor: pointer;
+	transition: background 0.18s ease, color 0.18s ease;
+}
+.advanced-search .input-group button[type="submit"]:hover,
+.advanced-search .input-group button[type="submit"]:focus {
+	background: #e7ab3c;
+	color: #222;
+	outline: none;
+}
+
+/* Women / Man banner visuals */
+.women-banner .product-item .quick-view a,
+.man-banner .product-item .quick-view a {
+	color: #222;
+	background: transparent;
+	transition: color 0.2s, background 0.2s;
+	text-decoration: none;
+}
+.women-banner .product-item .quick-view a:hover,
+.man-banner .product-item .quick-view a:hover {
+	color: #222;
+	background: #e7ab3c;
+}
+.women-banner .product-item .pi-pic img,
+.man-banner .product-item .pi-pic img {
+	width: 100%;
+	height: 260px;
+	object-fit: cover;
+	object-position: center;
+	border-radius: 8px;
+	background: #f8f8f8;
+	display: block;
+}
+
+/* Quick View button in shop list */
+.product-item .pi-pic ul li a.product-link {
+	color: #222;
+	transition: background 0.18s ease, color 0.18s ease;
+	text-decoration: none;
+}
+.product-item .pi-pic ul li a.product-link:hover {
+	background: #e7ab3c;
+	color: #222;
+}
+
+/* Register link hover color */
+a.or-login {
+	color: inherit;
+	transition: color 0.18s ease;
+	text-decoration: none;
+}
+a.or-login:hover {
+	color: #e7ab3c;
+	text-decoration: none;
+}
+
+/* end custom overrides */

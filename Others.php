@@ -130,17 +130,14 @@
                                                     <?php if ($isOutOfStock): ?>
                                                         <div class="out-of-stock-badge">OUT OF STOCK</div>
                                                     <?php endif; ?>
-                                                    <div class="icon">
-                                                       <i class="icon_heart_alt"></i>
-                                                    </div>
                                                      <ul>
                                                         <li style="width:75%;"><a href="product.php?id=<?php echo $row['p_id']; ?>" class="product-link">+ Quick View</a></li>
                                                     </ul>
                                                 </div>
                                                 <div class="pi-text">
-                                                    <div class="category-name"></div>
+                                                    <div class="category-name"><?php echo htmlspecialchars($row['category'] ?? ''); ?></div>
                                                 
-                                                    <a href="#">
+                                                    <a href="product.php?id=<?php echo $row['p_id']; ?>">
                                                         <h5><?php echo htmlspecialchars($row["name"]) ?></h5>
                                                     </a> 
                                                     <div class="product-price">

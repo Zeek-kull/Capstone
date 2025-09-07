@@ -60,10 +60,10 @@ if (mysqli_num_rows($result) > 0) {
                         </ul>
                     </div>
                     <div class="pi-text">
-                        <div class="category-name"></div>
-                        <a href="#">
-                            <h5><?php echo $row["name"] ?></h5>
-                        </a> 
+                        <div class="category-name"><?php echo htmlspecialchars($row['category'] ?? ''); ?></div>
+                        <a href="product.php?id=<?php echo $row['p_id']; ?>">
+                            <h5><?php echo htmlspecialchars($row["name"]) ?></h5>
+                        </a>
                         <div class="product-price">
                             &#8369;<?php echo number_format((float)$row["price"], 2); ?>
                         </div>

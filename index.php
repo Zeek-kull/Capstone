@@ -148,6 +148,35 @@
 
 
     <!-- Women Banner Section Begin -->
+    <?php
+    // Helper: resolve a product image filename to an existing web path (prefer thumbnails when asked)
+    function resolve_product_image_index($filename, $preferThumb = true) {
+        $filename = trim($filename);
+        if ($filename === '') return 'img/hero-1.jpg';
+        $candidates = [];
+        if ($preferThumb) {
+            $candidates = [
+                ['fs' => __DIR__ . '/admin/uploaded_products/thumbs/' . $filename, 'web' => 'admin/uploaded_products/thumbs/' . $filename],
+                ['fs' => __DIR__ . '/admin/uploaded_products/' . $filename, 'web' => 'admin/uploaded_products/' . $filename],
+                ['fs' => __DIR__ . '/img/A&M/thumbs/' . $filename, 'web' => 'img/A&M/thumbs/' . $filename],
+                ['fs' => __DIR__ . '/img/A&M/' . $filename, 'web' => 'img/A&M/' . $filename],
+            ];
+        } else {
+            $candidates = [
+                ['fs' => __DIR__ . '/admin/uploaded_products/' . $filename, 'web' => 'admin/uploaded_products/' . $filename],
+                ['fs' => __DIR__ . '/admin/uploaded_products/thumbs/' . $filename, 'web' => 'admin/uploaded_products/thumbs/' . $filename],
+                ['fs' => __DIR__ . '/img/A&M/' . $filename, 'web' => 'img/A&M/' . $filename],
+                ['fs' => __DIR__ . '/img/A&M/thumbs/' . $filename, 'web' => 'img/A&M/thumbs/' . $filename],
+            ];
+        }
+        foreach ($candidates as $c) {
+            if (file_exists($c['fs'])) return $c['web'];
+        }
+        return 'img/hero-1.jpg';
+    }
+    ?>
+    <!-- Banner styles moved to css/style.css -->
+
     <section class="women-banner spad">
         <div class="container-fluid">
             <div class="row">
@@ -161,96 +190,55 @@
                     <div class="filter-control">
                     </div>
                     <div class="product-slider owl-carousel">
+                        <?php
+                        // Fetch products with 'Women' tag
+                        $women_sql = "SELECT * FROM product WHERE tags = 'Women'";
+                        $women_result = $conn->query($women_sql);
+                        if ($women_result && $women_result->num_rows > 0):
+                            while ($row = $women_result->fetch_assoc()):
+                                // Robust image resolver (prefer thumb, then original, then fallback)
+                                $img = 'img/hero-1.jpg';
+                                if (!empty($row['imgname'])) {
+                                    $parts = explode(',', $row['imgname']);
+                                    foreach ($parts as $p) {
+                                        $p = trim($p);
+                                        if ($p !== '') {
+                                            $img = resolve_product_image_index($p, true);
+                                            break;
+                                        }
+                                    }
+                                }
+                        ?>
                         <div class="product-item">
                             <div class="pi-pic">
-                                <img src="img\A&M\WOMEN\Cherry Print Top.jpg" alt="">
-                                <div class="sale">Sale</div>
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
+                                <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                                <?php if ($row['sale'] ?? false): ?><div class="sale">Sale</div><?php endif; ?>
                                 <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                    <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
+                                    <li class="quick-view"><a href="product.php?id=<?php echo $row['p_id']; ?>">+ Quick View</a></li>
                                 </ul>
                             </div>
                             <div class="pi-text">
-                                <div class="category-name">Crop Top</div>
-                                <a href="#">
-                                    <h5>Cherry Print Top</h5>
+                                <div class="category-name"><?php echo htmlspecialchars($row['category']); ?></div>
+                                <a href="product.php?id=<?php echo $row['p_id']; ?>">
+                                    <h5><?php echo htmlspecialchars($row['name']); ?></h5>
                                 </a>
                                 <div class="product-price">
-                                    $14.00
-                                    <span>$35.00</span>
+                                    &#8369;<?php echo number_format((float)$row['price'], 2); ?>
+                                    <?php if (!empty($row['old_price'])): ?><span>&#8369;<?php echo number_format((float)$row['old_price'], 2); ?></span><?php endif; ?>
                                 </div>
                             </div>
                         </div>
+                        <?php endwhile; else: ?>
                         <div class="product-item">
                             <div class="pi-pic">
-                                <img src="img\A&M\WOMEN\Khaki Linen Look Mid Rise Wide Leg Trouser.jpg" alt="">
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
-                                <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                </ul>
+                                <img src="img/hero-1.jpg" alt="No products">
                             </div>
                             <div class="pi-text">
-                                <div class="category-name">Trouser</div>
-                                <a href="#">
-                                    <h5>Khaki Linen Look Mid Rise Wide Leg Trouser</h5>
-                                </a>
-                                <div class="product-price">
-                                    $13.00
-                                </div>
+                                <div class="category-name">No products</div>
+                                <h5>No women's products found.</h5>
                             </div>
                         </div>
-                        <div class="product-item">
-                            <div class="pi-pic">
-                                <img src="img\A&M\WOMEN\Knitted Crop Top.jpg" alt="">
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
-                                <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                </ul>
-                            </div>
-                            <div class="pi-text">
-                                <div class="category-name">Crop Top</div>
-                                <a href="#">
-                                    <h5>Knitted Crop Top</h5>
-                                </a>
-                                <div class="product-price">
-                                    $34.00
-                                </div>
-                            </div>
-                        </div>
-                        <div class="product-item">
-                            <div class="pi-pic">
-                                <img src="img\A&M\WOMEN\Maija Solid Wrap Front Skirt.jpg" alt="">
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
-                                <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                </ul>
-                            </div>
-                            <div class="pi-text">
-                                <div class="category-name">Skirt</div>
-                                <a href="#">
-                                    <h5>Maija Solid Wrap Front Skirt</h5>
-                                </a>
-                                <div class="product-price">
-                                    $34.00
-                                </div>
-                            </div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -303,96 +291,57 @@
                     <div class="filter-control">
                     </div>
                     <div class="product-slider owl-carousel">
+                        <?php
+                        // Fetch products with 'Women' tag to show on man-banner as requested
+                        $man_sql = "SELECT * FROM product WHERE tags = 'Men'";
+                        $man_result = $conn->query($man_sql);
+                        if ($man_result && $man_result->num_rows > 0):
+                            while ($row = $man_result->fetch_assoc()):
+                                $img = 'img/hero-1.jpg';
+                                if (!empty($row['imgname'])) {
+                                    $parts = explode(',', $row['imgname']);
+                                    foreach ($parts as $p) {
+                                        $p = trim($p);
+                                        if ($p !== '') {
+                                            $img = resolve_product_image_index($p, true);
+                                            break;
+                                        }
+                                    }
+                                }
+                        ?>
                         <div class="product-item">
                             <div class="pi-pic">
-                                <img src="img\A&M\BAPE TEE'S CORTEIZ TEE'S BBC TEE'S -COTTON.jpg" alt="">
-                                <div class="sale">Sale</div>
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
+                                <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                                <?php if ($row['sale'] ?? false): ?><div class="sale">Sale</div><?php endif; ?>
                                 <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
+                                    <li class="quick-view"><a href="product.php?id=<?php echo $row['p_id']; ?>">+ Quick View</a></li>
                                 </ul>
                             </div>
                             <div class="pi-text">
-                                <div class="category-name">T-Shirt</div>
-                                <a href="#">
-                                    <h5>BAPE TEE'S CORTEIZ TEE'S BBC TEE'S -COTTON</h5>
+                                <div class="category-name"><?php echo htmlspecialchars($row['category']); ?></div>
+                                <a href="product.php?id=<?php echo $row['p_id']; ?>">
+                                    <h5><?php echo htmlspecialchars($row['name']); ?></h5>
                                 </a>
                                 <div class="product-price">
-                                    $14.00
-                                    <span>$35.00</span>
+                                    &#8369;<?php echo number_format((float)$row['price'], 2); ?>
+                                    <?php if (!empty($row['old_price'])): ?><span>&#8369;<?php echo number_format((float)$row['old_price'], 2); ?></span><?php endif; ?>
                                 </div>
                             </div>
                         </div>
+                        <?php
+                            endwhile;
+                        else:
+                        ?>
                         <div class="product-item">
                             <div class="pi-pic">
-                                <img src="img\A&M\BAPE_Ape_Smoking.jpg" alt="">
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
-                                <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                </ul>
+                                <img src="img/hero-1.jpg" alt="No products">
                             </div>
                             <div class="pi-text">
-                                <div class="category-name">T-Shirt</div>
-                                <a href="#">
-                                    <h5>BAPE_Ape_Smoking</h5>
-                                </a>
-                                <div class="product-price">
-                                    $13.00
-                                </div>
+                                <div class="category-name">No products</div>
+                                <h5>No products found.</h5>
                             </div>
                         </div>
-                        <div class="product-item">
-                            <div class="pi-pic">
-                                <img src="img\A&M\BAPE_Camo_Shorts.jpg" alt="">
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
-                                <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                </ul>
-                            </div>
-                            <div class="pi-text">
-                                <div class="category-name">Short</div>
-                                <a href="#">
-                                    <h5>BAPE Camo Shorts</h5>
-                                </a>
-                                <div class="product-price">
-                                    $34.00
-                                </div>
-                            </div>
-                        </div>
-                        <div class="product-item">
-                            <div class="pi-pic">
-                                <img src="img\A&M\New_York_Yunkees_Sweatshirt.jpg" alt="">
-                                <div class="icon">
-                                    <i class="icon_heart_alt"></i>
-                                </div>
-                                <ul>
-                                    <li class="w-icon active"><a href="#"><i class="icon_bag_alt"></i></a></li>
-                                        <li class="quick-view"><a href="product.php">+ Quick View</a></li>
-                                    <li class="w-icon"><a href="#"><i class="fa fa-random"></i></a></li>
-                                </ul>
-                            </div>
-                            <div class="pi-text">
-                                <div class="category-name">Sweatshirt</div>
-                                <a href="#">
-                                    <h5>New York Yunkees Sweatshirt</h5>
-                                </a>
-                                <div class="product-price">
-                                    $34.00
-                                </div>
-                            </div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="col-lg-3 offset-lg-1">
