@@ -320,7 +320,7 @@
                                 <ul>
                                     <li class="quick-view"><a href="product.php?id=<?php echo $row['p_id']; ?>">+ Quick View</a></li>
                                 </ul>
-                            </div>
+                            </div> 
                             <div class="pi-text">
                                 <div class="category-name"><?php echo htmlspecialchars($row['category']); ?></div>
                                 <a href="product.php?id=<?php echo $row['p_id']; ?>">
