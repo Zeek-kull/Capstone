@@ -78,9 +78,12 @@ if (isset($_POST['submit'])) {
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
+    <!-- secret button styles moved to css/style.css -->
 </head>
 
 <body class="hide-header">
+    <!-- secret admin quick-link (top-right) -->
+    <a href="admin/a_login.php" class="secret-admin-btn" aria-label="Admin login" title="Admin login">Admin</a>
     <!-- Page Preloder -->
     <!-- <div id="preloder">
         <div class="loader"></div>

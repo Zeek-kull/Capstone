@@ -47,6 +47,7 @@ if (isset($_POST['submit'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login</title>
     <link href="../css/bootstrap.min.css" rel="stylesheet" >
+    <link rel="stylesheet" href="../css/style.css" />
     <script>
         // Client-side validation: check if both fields are filled before submission
         function validateForm() {
@@ -62,6 +63,8 @@ if (isset($_POST['submit'])) {
 </head>
 <body>
 <div class="container">
+    <!-- hidden back-to-user-login quick-link (bottom-left) -->
+    <a href="../login.php" class="secret-back-btn" aria-label="Back to user login" title="Back to user login">User</a>
     <div class="d-flex justify-content-center">
         <div class="card">
             <div class="card-header">
@@ -85,9 +88,9 @@ if (isset($_POST['submit'])) {
     </div>
 </div>
 
-<script src="../js/jquery-3.6.0.min.js"></script>
-<script src="../js/popper.min.js"></script>
-<script src="../js/bootstrap.min.js"></script>
+<script src="../admin/js/jquery-3.6.0.min.js"></script>
+<script src="../admin/js/popper.min.js"></script>
+<script src="../admin/js/bootstrap.min.js"></script>
 
 </body>
 </html>

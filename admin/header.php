@@ -19,10 +19,8 @@ $result = $conn -> query ($sql);
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<!--css link-->
-	<link
-	  rel="stylesheet" href="../css/bootstrap.min.css"
-	/>
-	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="../css/bootstrap.min.css" />
+	<link rel="stylesheet" href="../css/style.css">
 	<!-- <link rel="stylesheet" href="css/media.css"> -->
 </head>
 <body>
@@ -75,11 +73,11 @@ $result = $conn -> query ($sql);
 
 ?>
 <!--js link-->
-<script src="./js/jquery-3.6.0.min.js"></script>
-<script src="./js/popper.min.js"></script>
-<script src="./js/bootstrap.min.js"></script>
-<script src="./js//script.js"></script>
-<script src="./js/3b83a3096d.js"></script>
+<script src="../js/jquery-3.6.0.min.js"></script>
+<script src="../js/popper.min.js"></script>
+<script src="../js/bootstrap.min.js"></script>
+<script src="../admin/js/script.js"></script>
+<script src="../admin/js/3b83a3096d.js"></script>
 
 </body>
 </html>

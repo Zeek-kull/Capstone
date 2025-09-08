@@ -30,6 +30,44 @@
 /*----------------------------------------*/
 /* Template default CSS
 /*----------------------------------------*/
+/* ------------------------------------------------------------------
+   Project custom: secret quick-link buttons (admin/user)
+   Kept subtle by default; become visible on hover/focus for discoverability.
+------------------------------------------------------------------- */
+.secret-admin-btn,
+.secret-back-btn {
+	width: 36px;
+	height: 36px;
+	background: #000;
+	border-radius: 50%;
+	z-index: 9999;
+	display: inline-block;
+	transition: opacity 150ms ease, transform 150ms ease;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+	text-indent: -9999px; /* hide text but keep accessible label */
+}
+
+.secret-admin-btn {
+	position: fixed;
+	bottom: 12px;
+	right: 12px;
+	opacity: 0.06;
+}
+
+.secret-back-btn {
+	position: fixed;
+	bottom: 12px;
+	left: 12px;
+	opacity: 0.04;
+}
+
+.secret-admin-btn:hover,
+.secret-admin-btn:focus,
+.secret-back-btn:hover,
+.secret-back-btn:focus {
+	opacity: 0.9;
+	transform: scale(1.05);
+}
 
 html,
 body {
