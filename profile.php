@@ -13,6 +13,17 @@ include 'lib/connection.php';
 $k = $_SESSION['userid'];
 $sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders WHERE user_id='$k' ORDER BY created_at DESC";
 $result = $conn->query($sql);
+// Map DB status values to friendly labels (DB stores 'OFD' for Out for delivery)
+$status_label_map = [
+  'Pending' => 'Order placed',
+  'Processing' => 'Order is being processed',
+  'Shipped' => 'Order shipped',
+  'OFD' => 'Out for delivery',
+  'Arriving' => 'Arriving',
+  'Confirmed' => 'Order confirmed',
+  'Completed' => 'Delivered',
+  'Cancelled' => 'Cancelled'
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,11 +33,21 @@ $result = $conn->query($sql);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Orders</title>
   <link rel="stylesheet" href="css/css.css" type="text/css">
-  <link rel="stylesheet" href="css/pending_orders.css">
 </head>
 <body>
 
 <div class="container pendingbody">
+  <?php
+  // Show user flash messages (if any)
+  if (isset($_SESSION['success_message']) && !empty($_SESSION['success_message'])) {
+    echo '<div class="alert alert-success" role="alert">' . htmlspecialchars($_SESSION['success_message']) . '</div>';
+    unset($_SESSION['success_message']);
+  }
+  if (isset($_SESSION['error_message']) && !empty($_SESSION['error_message'])) {
+    echo '<div class="alert alert-danger" role="alert">' . htmlspecialchars($_SESSION['error_message']) . '</div>';
+    unset($_SESSION['error_message']);
+  }
+  ?>
   <?php
   // Get user info including address from users table
   $user_info = mysqli_query($conn, "SELECT f_name, l_name, street, zone, province, city, barangay, phone FROM users WHERE id='$k'");
@@ -75,9 +96,9 @@ $result = $conn->query($sql);
     <?php
   // Handle shipping address update
   if (isset($_POST['update_address_btn'])) {
-    $update_id = $_POST['order_id'];
-    $new_address = $_POST['new_address'];
-    $update_query = mysqli_query($conn, "UPDATE `orders` SET address = '" . mysqli_real_escape_string($conn, $new_address) . "' WHERE id = '$update_id' AND user_id = '$k'");
+    $update_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+    $new_address = $_POST['new_address'] ?? '';
+    $update_query = mysqli_query($conn, "UPDATE `orders` SET address = '" . mysqli_real_escape_string($conn, $new_address) . "' WHERE o_id = '{$update_id}' AND user_id = '{$k}'");
     if ($update_query) {
       echo "<script>window.location.href='profile.php';</script>";
       exit();
@@ -133,26 +154,25 @@ $result = $conn->query($sql);
               </td>
               <td><?php echo "₱" . number_format($row["totalprice"], 2); ?></td>
               <td><?php echo htmlspecialchars($row["payment_method"]); ?></td>
-              <td><?php echo htmlspecialchars($row["status"]); ?></td>
+        <td><?php echo htmlspecialchars($status_label_map[trim($row["status"]) ] ?? $row["status"]); ?></td>
               <td>
-
                 <?php
-                  // Simple order tracking status
-                  if ($row["status"] == "Pending") {
-                    echo "<span class='badge badge-warning'>Order placed</span>";
-                  } elseif ($row["status"] == "Processing") {
-                    echo "<span class='badge badge-warning'>Order is being processed</span>";
-                  } elseif ($row["status"] == "Shipped") {
-                    echo "<span class='badge badge-info'>Order shipped</span>";
-                  } elseif ($row["status"] == "Confirmed") {
-                    echo "<span class='badge badge-info'>Order confirmed</span>";
-                  } elseif ($row["status"] == "Completed") {
-                    echo "<span class='badge badge-success'>Delivered</span>";
-                  } elseif ($row["status"] == "Cancelled") {
-                    echo "<span class='badge badge-danger'>Cancelled</span>";
-                  } else {
-                    echo htmlspecialchars($row["status"]);
-                  }
+                  // Make the tracking cell clickable and open a small order tracking page
+                  $orderId = $row['id'] ?? $row['o_id'] ?? null;
+                  $trackUrl = 'order_track.php?order_id=' . urlencode($orderId);
+                  echo '<a href="' . htmlspecialchars($trackUrl) . '" class="btn btn-sm btn-outline" title="Track order #' . htmlspecialchars($orderId) . '">';
+
+                  // Reuse the same status-label logic inside the link (added Out for delivery and Arriving)
+          $st = trim($row["status"]);
+          // Use mapping for friendly badge text
+          $badgeText = $status_label_map[$st] ?? $st;
+          $badgeClass = 'badge-info';
+          if ($st === 'Pending' || $st === 'Processing') $badgeClass = 'badge-warning';
+          if ($st === 'Completed') $badgeClass = 'badge-success';
+          if ($st === 'Cancelled') $badgeClass = 'badge-danger';
+          echo "<span class='badge {$badgeClass}'>" . htmlspecialchars($badgeText) . "</span>";
+
+                  echo '</a>';
                 ?>
               </td>
               <td>
@@ -169,6 +189,55 @@ $result = $conn->query($sql);
   </table>
 </div>
     
+  <!-- Modal overlay for order tracking -->
+  <div id="orderTrackOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99999; align-items:center; justify-content:center;">
+    <div id="orderTrackCard" style="background:#fff; max-width:720px; width:95%; border-radius:8px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,0.3); position:relative;">
+      <button id="orderTrackClose" style="position:absolute; right:20px; top:16px; background:transparent; border:none; font-size:18px;">&times;</button>
+      <div id="orderTrackContent">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+  // Open tracking popup and fetch fragment via AJAX
+  document.addEventListener('click', function(e) {
+    var el = e.target.closest('a[href*="order_track.php"]');
+    if (!el) return;
+    e.preventDefault();
+    var href = new URL(el.href, window.location.href);
+    href.searchParams.set('ajax', '1');
+    var overlay = document.getElementById('orderTrackOverlay');
+    var content = document.getElementById('orderTrackContent');
+    overlay.style.display = 'flex';
+    content.innerHTML = 'Loading...';
+    fetch(href.toString(), { credentials: 'same-origin' })
+      .then(function(r){ return r.text(); })
+      .then(function(html){
+        content.innerHTML = html;
+        // attach close handler inside the content
+        var closeBtn = content.querySelector('.ot-close');
+        if (closeBtn) closeBtn.addEventListener('click', function(){ overlay.style.display='none'; });
+      })
+      .catch(function(){ content.innerHTML = 'Failed to load.'; });
+  });
+
+  // Close overlay handlers
+  document.getElementById('orderTrackClose').addEventListener('click', function(){
+    document.getElementById('orderTrackOverlay').style.display = 'none';
+  });
+  document.getElementById('orderTrackOverlay').addEventListener('click', function(e){
+    if (e.target === this) this.style.display = 'none';
+  });
+  // Close overlay when Escape is pressed
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      var overlay = document.getElementById('orderTrackOverlay');
+      if (overlay && overlay.style.display && overlay.style.display !== 'none') {
+        overlay.style.display = 'none';
+      }
+    }
+  });
+  </script>
+
 </body>
 </html>
 

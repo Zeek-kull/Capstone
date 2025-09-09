@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 27, 2025 at 08:58 PM
+-- Generation Time: Sep 09, 2025 at 09:05 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -70,19 +70,10 @@ CREATE TABLE `orders` (
   `payment_method` varchar(50) NOT NULL,
   `totalproduct` varchar(100) NOT NULL,
   `totalprice` decimal(10,2) NOT NULL,
-  `status` enum('Pending','Processing','Shipped','Completed','Cancelled') DEFAULT 'Pending',
+  `status` enum('Pending','Processing','Shipped','OFD','Arriving','Completed','Cancelled') DEFAULT 'Pending',
   `status_updated_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `orders`
---
-
-INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `payment_method`, `totalproduct`, `totalprice`, `status`, `status_updated_at`, `created_at`) VALUES
-(19, 20, 'William Ken', '1329, Zone Zone 6, Cansinala, Apalit, Pampanga', '', 'COD', '4 (1)', 100.00, 'Pending', NULL, '2025-08-24 10:55:22.000000'),
-(20, 20, 'William Ken', '1329, Zone Zone 6, Cansinala, Apalit, Pampanga', '09270417510', 'COD', '4 (2)', 200.00, 'Pending', NULL, '2025-08-24 11:04:23.000000'),
-(21, 20, 'William Ken', '1329 Zone 6 Cansinala, Apalit, Pampanga', '09270417510', 'COD', '4 (1)', 100.00, 'Cancelled', '2025-08-24 17:10:10', '2025-08-24 11:09:24.000000');
 
 -- --------------------------------------------------------
 
@@ -99,13 +90,6 @@ CREATE TABLE `order_status_history` (
   `change_reason` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `order_status_history`
---
-
-INSERT INTO `order_status_history` (`id`, `order_id`, `old_status`, `new_status`, `changed_by`, `change_reason`, `created_at`) VALUES
-(17, 21, 'Pending', 'Cancelled', 1, '', '2025-08-24 17:10:10');
 
 -- --------------------------------------------------------
 
@@ -130,11 +114,10 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`p_id`, `name`, `category`, `description`, `tags`, `quantity`, `price`, `imgname`, `created_at`) VALUES
-(4, 'Shirt', 'Clothing', 'Red na medyo may white', 'Kids', 5, 100.00, 'red_nike.jpg', '2025-08-18 16:14:48'),
-(5, 'CShirt', 'Clothing', 'Red na medyo may white', 'Women', 10, 1000.00, 'NIKE AIR MICHAEL JORDAN 23 FLIGHT BACKPACK.jpg', '2025-08-18 16:15:06'),
-(6, 'AShirt', 'Wata', 'Red na medyo may white', 'Men', 10, 200.00, 'BAPE_Camo_Shorts.jpg', '2025-08-18 16:16:01'),
-(10, 'VShirt', 'Cloth', 'asdfasd', 'Women', 10, 10.00, 'See_Through_Polo.jpg', '2025-08-27 15:41:13'),
-(11, 'asdasd', 'Clothing', 'asd', 'Women', 201, 1212.00, '480648836_599490912990708_956140709740030837_n.jpg', '2025-08-27 16:07:29');
+(12, 'Cshirt', 'Top', 'Red na medyo may white', 'Men', 0, 20.00, '1756898400_480663176_599491009657365_7269848653577053364_n.jpg,1756898400_481008623_599490916324041_3204104644813343015_n.jpg', '2025-09-03 11:20:00'),
+(13, 'Sfdafdas Asdasd', 'Med', 'asdasdasdasd', 'Women', 4, 2000.00, '499818292_667335996206199_8143362886082314207_n_68b845db761ff9.02334905.jpg,499884354_667336052872860_5847642292369312817_n_68b845db766a14.16773688.jpg', '2025-09-03 13:42:51'),
+(14, 'Asdasd', 'Top', 'sfdasasd', 'Women', 15, 5000.00, 'NIKE_AIR_MICHAEL_JORDAN_23_FLIGHT_BACKPACK_68b8468de47b80.28617808.jpg', '2025-09-03 13:45:49'),
+(15, 'Vshirt', 'Med', 'dfgggggggggg', 'Kid\'s', 0, 52.00, 'Loose_Button_Knitted_Striped_Sweater_68b858227f9f13.73897179.jpg,Multiply_Jorts_68b858227ffee7.52997005.jpg,New_York_Yunkees_Sweatshirt_68b85822806e83.63997223.jpg,red_nike_68b85822825f44.41873637.jpg,See_Through_Polo_68b8582282b473.16565181.jpg', '2025-09-03 15:00:50');
 
 -- --------------------------------------------------------
 
@@ -226,25 +209,25 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `order_status_history`
 --
 ALTER TABLE `order_status_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `users`

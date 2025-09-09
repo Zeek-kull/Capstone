@@ -12,8 +12,7 @@ if (isset($_SESSION['admin_auth'])) {
     header("location:a_login.php");
 }
 include 'lib/connection.php';
-
-$sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders WHERE status='Completed' ORDER BY created_at DESC";
+$sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders WHERE LOWER(status) IN ('completed','delivered') ORDER BY created_at DESC";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -30,7 +29,7 @@ $result = $conn->query($sql);
 <body>
 
 <div class="container pendingbody">
-    <h5>All Delivered Orders</h5>
+    <h5>Completed / Delivered Orders</h5>
     <table class="table">
         <thead>
             <tr>

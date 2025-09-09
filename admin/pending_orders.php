@@ -48,44 +48,54 @@ $admin_id = $admin_data['id'] ?? 1;
 
 // Handle status update with process tracking
 if (isset($_POST['update_update_btn'])) {
-    $update_value = $_POST['update_status'];
-    $update_id = $_POST['update_id'];
+    // Sanitize inputs
+    $update_value = isset($_POST['update_status']) ? mysqli_real_escape_string($conn, trim($_POST['update_status'])) : '';
+    $update_id = isset($_POST['update_id']) ? intval($_POST['update_id']) : 0;
     $change_reason = mysqli_real_escape_string($conn, $_POST['change_reason'] ?? '');
+
+    // Get current status (trim to avoid accidental whitespace mismatches)
+    $current_status_query = mysqli_query($conn, "SELECT status FROM orders WHERE o_id = '{$update_id}'");
+    $current_status_row = mysqli_fetch_assoc($current_status_query);
+    $current_status = isset($current_status_row['status']) ? trim($current_status_row['status']) : '';
     
-    // Get current status
-    $current_status_query = mysqli_query($conn, "SELECT status FROM orders WHERE o_id = '$update_id'");
-    $current_status = mysqli_fetch_assoc($current_status_query)['status'];
-    
-    // Validate status transition
+    // Validate status transition (case-insensitive). Keys and allowed values are lowercased.
     $valid_transitions = [
-        'Pending' => ['Confirmed', 'Processing', 'Cancelled'],
-        'Confirmed' => ['Processing', 'Cancelled'],
-        'Processing' => ['Shipped', 'Cancelled'],
-        'Shipped' => ['Completed', 'Cancelled'],
-        'Completed' => [],
-        'Cancelled' => []
+        'pending' => ['processing', 'cancelled'],
+        'processing' => ['shipped', 'cancelled'],
+        'shipped' => ['ofd', 'completed', 'cancelled'],
+        'ofd' => ['arriving', 'completed', 'cancelled'],
+        'arriving' => ['completed', 'cancelled'],
+        'completed' => [],
+        'cancelled' => []
     ];
     
-    if (in_array($update_value, $valid_transitions[$current_status] ?? [])) {
+    $curLower = strtolower($current_status);
+    $updateLower = strtolower($update_value);
+    if (in_array($updateLower, $valid_transitions[$curLower] ?? [])) {
         // Start transaction
         mysqli_begin_transaction($conn);
         
         try {
-            // Update order status
-            $update_query = mysqli_query($conn, "UPDATE orders SET status = '$update_value', status_updated_at = NOW() WHERE o_id = '$update_id'");
-            
+            // Update order status (use escaped values)
+            $update_sql = "UPDATE orders SET status = '{$update_value}', status_updated_at = NOW() WHERE o_id = '{$update_id}'";
+            $update_query = mysqli_query($conn, $update_sql);
+
             // Record in history
-            $history_query = mysqli_query($conn, "INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, change_reason) VALUES ('$update_id', '$current_status', '$update_value', '$admin_id', '$change_reason')");
-            
+            $history_sql = "INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, change_reason) VALUES ('{$update_id}', '" . mysqli_real_escape_string($conn, $current_status) . "', '{$update_value}', '{$admin_id}', '{$change_reason}')";
+            $history_query = mysqli_query($conn, $history_sql);
+
             if ($update_query && $history_query) {
                 mysqli_commit($conn);
                 $_SESSION['success_message'] = "Order status updated successfully from $current_status to $update_value";
             } else {
-                throw new Exception("Database error");
+                // Include DB error for debugging
+                $dbErr = mysqli_error($conn);
+                mysqli_rollback($conn);
+                $_SESSION['error_message'] = "Failed to update order status: {$dbErr}";
             }
         } catch (Exception $e) {
             mysqli_rollback($conn);
-            $_SESSION['error_message'] = "Failed to update order status";
+            $_SESSION['error_message'] = "Failed to update order status: " . $e->getMessage();
         }
     } else {
         $_SESSION['error_message'] = "Invalid status transition from $current_status to $update_value";
@@ -108,12 +118,25 @@ $stats_sql = "SELECT
     SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed_count,
     SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing_count,
     SUM(CASE WHEN status = 'Shipped' THEN 1 ELSE 0 END) as shipped_count,
+    SUM(CASE WHEN status = 'OFD' THEN 1 ELSE 0 END) as out_for_delivery_count,
+    SUM(CASE WHEN status = 'Arriving' THEN 1 ELSE 0 END) as arriving_count,
     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
     SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_count,
     SUM(totalprice) as total_revenue
     FROM orders";
 $stats_result = $conn->query($stats_sql);
 $stats = $stats_result->fetch_assoc();
+
+// Map database status values to friendly labels for display
+$status_label_map = [
+    'Pending' => 'Pending',
+    'Processing' => 'Processing',
+    'Shipped' => 'Shipped',
+    'OFD' => 'Out for delivery',
+    'Arriving' => 'Arriving',
+    'Completed' => 'Delivered',
+    'Cancelled' => 'Cancelled'
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -127,6 +150,17 @@ $stats = $stats_result->fetch_assoc();
 <body>
 
 <div class="pendingbody">
+    <?php
+    // Display flash messages (set earlier during operations)
+    if (isset($_SESSION['success_message']) && !empty($_SESSION['success_message'])) {
+        echo '<div class="alert alert-success" role="alert" id="adminFlashSuccess">' . htmlspecialchars($_SESSION['success_message']) . '</div>';
+        unset($_SESSION['success_message']);
+    }
+    if (isset($_SESSION['error_message']) && !empty($_SESSION['error_message'])) {
+        echo '<div class="alert alert-danger" role="alert" id="adminFlashError">' . htmlspecialchars($_SESSION['error_message']) . '</div>';
+        unset($_SESSION['error_message']);
+    }
+    ?>
     <!-- Page Header -->
     <div class="page-header">
         <div>
@@ -148,6 +182,8 @@ $stats = $stats_result->fetch_assoc();
             <option value="Confirmed">Confirmed</option>
             <option value="Processing">Processing</option>
             <option value="Shipped">Shipped</option>
+            <option value="OFD">Out for delivery</option>
+            <option value="Arriving">Arriving</option>
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
             </select>
@@ -180,6 +216,18 @@ $stats = $stats_result->fetch_assoc();
         <div class="stat-card">
             <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['processing_count']; ?></div>
             <div class="stat-label">Processing</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['shipped_count']; ?></div>
+            <div class="stat-label">Shipped</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['out_for_delivery_count']; ?></div>
+            <div class="stat-label">Out for delivery</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['arriving_count']; ?></div>
+            <div class="stat-label">Arriving</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" style="color: var(--success-color);"><?php echo $stats['completed_count']; ?></div>
@@ -215,7 +263,14 @@ $stats = $stats_result->fetch_assoc();
                     $valid_next_statuses = ['Shipped', 'Cancelled'];
                     break;
                 case 'Shipped':
-                    $valid_next_statuses = ['Completed'];
+                    // DB stores "Out for delivery" as 'OFD'
+                    $valid_next_statuses = ['OFD', 'Cancelled'];
+                    break;
+                case 'OFD':
+                    $valid_next_statuses = ['Arriving', 'Cancelled'];
+                    break;
+                case 'Arriving':
+                    $valid_next_statuses = ['Completed', 'Cancelled'];
                     break;
                 case 'Completed':
                     $valid_next_statuses = [];
@@ -256,14 +311,13 @@ $stats = $stats_result->fetch_assoc();
                         </div>
                     </div>
                     <div class="order-status">
-                        <span class="status-badge status-<?php echo strtolower($row['status']); ?>">
-                            <?php 
-                            $display_status = $row['status'];
-                            if ($display_status == 'Completed') {
-                                $display_status = 'Delivered';
-                            }
-                            echo htmlspecialchars($display_status); 
-                            ?>
+                        <?php
+                        // Render friendly label for status
+                        $display_status = $status_label_map[$row['status']] ?? $status_label_map[strtolower($row['status'])] ?? $row['status'];
+                        $status_class = 'status-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($row['status']));
+                        ?>
+                        <span class="status-badge <?php echo $status_class; ?>">
+                            <?php echo htmlspecialchars($display_status); ?>
                         </span>
                         <?php if ($history_count > 0): ?>
                             <a href="#" onclick="showStatusHistory(<?php echo $row['o_id']; ?>)" class="btn btn-sm btn-outline">
@@ -328,7 +382,8 @@ $stats = $stats_result->fetch_assoc();
                         <select name="update_status" class="btn btn-sm btn-outline" required aria-label="<?php echo 'Update status for order #' . htmlspecialchars($row['o_id']); ?>">
                             <option value="" disabled selected>Update Status</option>
                             <?php foreach ($valid_next_statuses as $status): ?>
-                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
+                                <?php $label = $status_label_map[$status] ?? $status; ?>
+                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($label); ?></option>
                             <?php endforeach; ?>
                         </select>
                         
@@ -369,12 +424,13 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
 
 // Status filter
 document.getElementById('statusFilter').addEventListener('change', function(e) {
-    const statusFilter = e.target.value.toLowerCase();
+    // statusFilter contains DB enum values (e.g. 'OFD') or empty string
+    const statusFilter = (e.target.value || '').toLowerCase();
     const orders = document.querySelectorAll('.order-card');
     
     orders.forEach(order => {
-        const orderStatus = order.getAttribute('data-status');
-        if (!statusFilter || orderStatus === statusFilter) {
+    const orderStatus = order.getAttribute('data-status') || '';
+    if (!statusFilter || orderStatus === statusFilter) {
             order.style.display = '';
         } else {
             order.style.display = 'none';
@@ -411,6 +467,22 @@ function showStatusHistory(orderId) {
     // This would typically open a modal with status history
     alert('Status history for order #' + orderId + ' would be displayed here');
 }
+</script>
+
+<script>
+// Auto-hide flash messages after 6 seconds
+document.addEventListener('DOMContentLoaded', function(){
+    var s = document.getElementById('adminFlashSuccess');
+    var e = document.getElementById('adminFlashError');
+    [s,e].forEach(function(el){
+        if(!el) return;
+        el.tabIndex = -1;
+        el.focus();
+        setTimeout(function(){
+            try{ el.style.transition = 'opacity 400ms'; el.style.opacity = 0; setTimeout(function(){ el.remove(); }, 450); }catch(err){}
+        }, 6000);
+    });
+});
 </script>
 
 </body>

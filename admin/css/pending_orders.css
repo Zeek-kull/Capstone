@@ -285,6 +285,9 @@ body {
   transition: var(--transition);
 }
 
+/* ensure long status labels don't wrap the layout */
+.status-badge { max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .status-badge::before {
   content: '';
   width: 10px;
@@ -322,6 +325,22 @@ body {
 .status-shipped::before {
   background-color: #6366f1;
 }
+
+/* Out for delivery (OFD) */
+.status-ofd {
+  background-color: #fff7ed;
+  color: #92400e;
+  border-color: #f59e0b;
+}
+.status-ofd::before { background-color: #f59e0b; }
+
+/* Arriving */
+.status-arriving {
+  background-color: #ecfeff;
+  color: #065f46;
+  border-color: #06b6d4;
+}
+.status-arriving::before { background-color: #06b6d4; }
 
 .status-completed {
   background-color: #d1fae5;
