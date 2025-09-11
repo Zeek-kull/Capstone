@@ -38,14 +38,10 @@ if ($user_id_for_address) {
 }
 
 if (isset($_POST['order_btn'])) {
-    // Check if cart is empty
-    $user_id = $_SESSION['userid'] ?? '';
-    $cart_check = mysqli_query($conn, "SELECT COUNT(*) as cart_count FROM cart WHERE user_id = '$user_id'");
-    $cart_data = mysqli_fetch_assoc($cart_check);
-    $cart_count = $cart_data['cart_count'] ?? 0;
-    
-    if ($cart_count == 0) {
-        echo "<script>alert('Your cart is empty. Please add items before placing an order.');</script>";
+    // Expect selected_items[] containing cart IDs
+    $selected = $_POST['selected_items'] ?? [];
+    if (!is_array($selected) || count($selected) == 0) {
+        echo "<script>alert('Please select at least one item to checkout.');</script>";
         header("location:shopping-cart.php");
         exit();
     }
@@ -54,46 +50,54 @@ if (isset($_POST['order_btn'])) {
     $name = $_POST['user_name'] ?? '';
     $number = $_POST['number'] ?? '';
     $address = $_POST['address'] ?? '';
-    // $mobnumber removed
     $payment_method = $_POST['payment_method'] ?? ''; // User-selected payment method
     $status = "pending";
     $order_date = date('Y-m-d H:i:s'); // Current date and time
 
-    $cart_query = mysqli_query($conn, "SELECT * FROM `cart` WHERE user_id='$userid'");
+    // Build a safe list of integer cart IDs
+    $ids = array_map('intval', $selected);
+    if (count($ids) == 0) {
+        echo "<script>alert('Invalid selection.');</script>";
+        header("location:shopping-cart.php");
+        exit();
+    }
+
+    $ids_list = implode(',', $ids);
+    // Fetch only selected cart rows (with product details)
+    $cart_query = mysqli_query($conn, "SELECT cart.*, product.p_id, product.name, product.price, product.quantity AS prod_stock FROM cart LEFT JOIN product ON cart.product_id = product.p_id WHERE cart.c_id IN ($ids_list) AND cart.user_id='$userid'");
+
     $price_total = 0;
     $product_name = [];
 
-    // Calculate total price and update stock
     if (mysqli_num_rows($cart_query) > 0) {
         while ($product_item = mysqli_fetch_assoc($cart_query)) {
             $product_name[] = $product_item['product_id'] . ' (' . $product_item['quantity'] . ')';
             $product_price = $product_item['price'] * $product_item['quantity'];
             $price_total += $product_price;
 
-            // Update product stock
-            $sql = "SELECT * FROM product WHERE p_id = '{$product_item['product_id']}'";
-            $result = $conn->query($sql);
-            if (mysqli_num_rows($result) > 0) {
-                while ($row = mysqli_fetch_assoc($result)) {
-                    if ($product_item['quantity'] <= $row['quantity']) {
-                        $update_quantity = $row['quantity'] - $product_item['quantity'];
-                        $update_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$update_quantity' WHERE p_id = '{$row['p_id']}'");
-                    } else {
-                        echo "Out of stock: " . $row['name'] . " Quantity: " . $row['quantity'];
-                    }
-                }
+            // Update product stock if available
+            if ($product_item['quantity'] <= $product_item['prod_stock']) {
+                $update_quantity = $product_item['prod_stock'] - $product_item['quantity'];
+                $update_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$update_quantity' WHERE p_id = '{$product_item['p_id']}'");
+            } else {
+                echo "Out of stock: " . htmlspecialchars($product_item['name']) . " Quantity: " . intval($product_item['prod_stock']);
+                header("location:shopping-cart.php");
+                exit();
             }
         }
 
-        // Insert order if products are available
+        // Insert order
         $total_product = implode(', ', $product_name);
-        // Use only the correct column 'created_at' for the order date
         $detail_query = mysqli_query($conn, "INSERT INTO `orders`(user_id, name, address, phone, payment_method, totalproduct, totalprice, status, created_at) 
             VALUES('$userid','$name','$address','$number','$payment_method','$total_product','$price_total','$status', '$order_date')");
 
-        // Empty cart after successful order
-        $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE user_id='$userid'");
+        // Delete only selected cart rows
+        $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE c_id IN ($ids_list) AND user_id='$userid'");
         header("location:index.php");
+        exit();
+    } else {
+        echo "<script>alert('No selectable items found.');</script>";
+        header("location:shopping-cart.php");
         exit();
     }
 }
@@ -159,9 +163,11 @@ $result = $conn->query($sql);
             <div class="row">
                 <div class="col-lg-12">
                     <div class="cart-table">
+                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="orderForm" class="border p-4 rounded">
                         <table>
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="selectAll" aria-label="Select all items"></th>
                                     <th>Image</th>
                                     <th class="p-name">Product Name</th>
                                     <th>Price</th>
@@ -178,6 +184,9 @@ $result = $conn->query($sql);
                                 ?>
                                 
                                 <tr data-cart-id="<?php echo $row['c_id']; ?>">
+                                    <td class="first-row">
+                                        <input type="checkbox" class="cart-select" name="selected_items[]" value="<?php echo $row['c_id']; ?>" aria-label="Select <?php echo htmlspecialchars($row['name']); ?>" data-price="<?php echo htmlspecialchars($row['price']); ?>">
+                                    </td>
                                     <td class="cart-pic first-row">
                                         <?php
                                         // Resolve imgname which may contain multiple filenames separated by commas.
@@ -211,9 +220,9 @@ $result = $conn->query($sql);
                                     
                                     <td>
                                         <div class="quantity-controls">
-                                            <button class="quantity-btn quantity-minus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="decrease">-</button>
+                                            <button type="button" class="quantity-btn quantity-minus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="decrease">-</button>
                                             <input type="number" class="quantity-input" min="1" value="<?php echo $row['quantity']; ?>" data-cart-id="<?php echo $row['c_id']; ?>">
-                                            <button class="quantity-btn quantity-plus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="increase">+</button>
+                                            <button type="button" class="quantity-btn quantity-plus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="increase">+</button>
                                         </div>
                                     </td>
                                     <td class="total-price first-row">&#8369;<?php echo number_format($row["price"] * $row["quantity"], 2); ?></td>
@@ -228,7 +237,7 @@ $result = $conn->query($sql);
                                 <?php
                                     }
                                 } else {
-                                    echo "<tr><td colspan='4' class='text-center'>No Products in the Cart</td></tr>";
+                                    echo "<tr><td colspan='7' class='text-center'>No Products in the Cart</td></tr>";
                                 }
                                 ?>
                             </tbody>
@@ -245,33 +254,33 @@ $result = $conn->query($sql);
                                 }
                             }
                             ?>
-                            <h4>Total Quantity: <span class="text-primary total-quantity-display"><?php echo $total_quantity; ?></span> | Total Amount: <span class="text-danger total-amount-display">₱<?php echo number_format($total, 2); ?></span></h4>
+                            <h5>Selected: <span class="text-primary selected-quantity">0</span> items | Amount: <span class="text-danger selected-amount">₱0.00</span></h5>
                         </div>
 
-                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="orderForm" class="border p-4 rounded">
-                            <input type="hidden" name="total" value="<?php echo $total ?? 0 ?>">
-                            <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'] ?? '' ?>">
-                            <input type="hidden" name="user_name" value="<?php echo $_SESSION['username'] ?? '' ?>">
+                        <!-- form inputs moved inside the wrapping form above -->
+                        <input type="hidden" name="total" value="<?php echo $total ?? 0 ?>">
+                        <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'] ?? '' ?>">
+                        <input type="hidden" name="user_name" value="<?php echo $_SESSION['username'] ?? '' ?>">
 
-                            <div class="form-group">
-                                <label for="addressInput" class="mb-1">Shipping Address</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="address" id="addressInput"  value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?>>
-                                </div>
+                        <div class="form-group">
+                            <label for="addressInput" class="mb-1">Shipping Address</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="address" id="addressInput"  value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?>>
                             </div>
-                            <div class="form-group">
-                                <label for="phoneInput" class="mb-1">Phone Number</label>
-                                <input type="text" class="form-control" name="number" id="phoneInput" value="<?php echo htmlspecialchars($user_phone); ?>" required readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="payment_method" class="mb-1">Payment Method</label>
-                                <select name="payment_method" id="payment_method" class="form-control" required aria-label="Payment Method">
-                                    <option value="" disabled selected>Select Payment Method</option>
-                                    <option value="COD">Cash on Delivery (COD)</option>
-                                </select>
-                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phoneInput" class="mb-1">Phone Number</label>
+                            <input type="text" class="form-control" name="number" id="phoneInput" value="<?php echo htmlspecialchars($user_phone); ?>" required readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="payment_method" class="mb-1">Payment Method</label>
+                            <select name="payment_method" id="payment_method" class="form-control" required aria-label="Payment Method">
+                                <option value="" disabled selected>Select Payment Method</option>
+                                <option value="COD">Cash on Delivery (COD)</option>
+                            </select>
+                        </div>
 
-                            <button type="submit" name="order_btn" class="site-btn login-btn w-100" id="orderButton" disabled>Place Order</button>
+                        <button type="submit" name="order_btn" class="site-btn login-btn w-100" id="orderButton" disabled>Place Order</button>
                         </form>
                     </div>
                 </div>
@@ -296,8 +305,8 @@ $result = $conn->query($sql);
     <script src="js/cart-ajax-final.js"></script>
 
     <script>
-        // Check if cart has items
-        var cartItems = <?php echo mysqli_num_rows($result); ?>;
+        // Check if cart has items (total rows)
+        var cartTotalRows = <?php echo mysqli_num_rows($result); ?>;
 
         var orderForm = document.getElementById('orderForm');
         var orderButton = document.getElementById('orderButton');
@@ -315,29 +324,100 @@ $result = $conn->query($sql);
             }
         }
 
-        if (orderForm) {
-            orderForm.addEventListener('input', function () {
-                var address = document.querySelector('input[name="address"]').value;
-                var payment_method = document.querySelector('select[name="payment_method"]').value;
+        function canEnableOrder() {
+            var address = document.querySelector('input[name="address"]').value;
+            var payment_method = document.querySelector('select[name="payment_method"]').value;
+            var anyChecked = !!document.querySelector('.cart-select:checked');
+            return anyChecked && address && payment_method;
+        }
 
-                if (cartItems > 0 && address && payment_method) {
-                    orderButton.disabled = false;
-                } else {
-                    orderButton.disabled = true;
-                    
-                }
+        // Compute selected totals and update UI
+        function computeSelectedTotals() {
+            var checked = Array.from(document.querySelectorAll('.cart-select:checked'));
+            var totalQty = 0;
+            var totalAmt = 0;
+            checked.forEach(function(chk) {
+                var cartRow = chk.closest('tr');
+                var qtyInput = cartRow.querySelector('.quantity-input');
+                var qty = qtyInput ? parseInt(qtyInput.value) || 0 : 0;
+                var priceText = cartRow.querySelector('.p-price') ? cartRow.querySelector('.p-price').textContent : '';
+                // priceText may contain currency symbol; better to use data-price attribute on checkbox
+                var price = parseFloat(chk.getAttribute('data-price')) || 0;
+                totalQty += qty;
+                totalAmt += qty * price;
+            });
+            document.querySelector('.selected-quantity').textContent = numberWithCommas(totalQty);
+            document.querySelector('.selected-amount').textContent = '₱' + formatCurrency(totalAmt);
+        }
+
+    // Formatting helpers
+    function numberWithCommas(x) {
+        if (x === null || x === undefined) return '0';
+        var parts = x.toString().split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    }
+
+    function formatCurrency(n) {
+        var num = Number(n) || 0;
+        return numberWithCommas(num.toFixed(2));
+    }
+
+    // expose for other scripts (ajax handlers) to call
+    window.computeSelectedTotals = computeSelectedTotals;
+    window.formatCurrency = formatCurrency;
+    window.numberWithCommas = numberWithCommas;
+
+        // Select all handling and keyboard accessibility
+        var selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function () {
+                var all = document.querySelectorAll('.cart-select');
+                all.forEach(function(c){ c.checked = selectAllCheckbox.checked; });
+                computeSelectedTotals();
+                orderButton.disabled = !canEnableOrder();
                 updateOrderButtonStyle();
+            });
+            // keyboard support for Space/Enter on the checkbox wrapper
+            selectAllCheckbox.addEventListener('keydown', function(e){
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    selectAllCheckbox.checked = !selectAllCheckbox.checked;
+                    var ev = new Event('change');
+                    selectAllCheckbox.dispatchEvent(ev);
+                }
+            });
+        }
+
+
+        // Listen for changes on the form and on checkbox selection
+        if (orderForm) {
+            orderForm.addEventListener('change', function (e) {
+                // if checkboxes, toggles
+                orderButton.disabled = !canEnableOrder();
+                updateOrderButtonStyle();
+                computeSelectedTotals();
+            });
+
+            orderForm.addEventListener('input', function () {
+                orderButton.disabled = !canEnableOrder();
+                updateOrderButtonStyle();
+                computeSelectedTotals();
             });
         }
 
         // Initial check on page load
-        if (cartItems == 0) {
+        if (cartTotalRows == 0) {
             if (orderButton) {
                 orderButton.disabled = true;
                 orderButton.textContent = 'Cart is Empty';
             }
         }
+        // ensure style reflects initial disabled state
+        orderButton.disabled = !canEnableOrder();
         updateOrderButtonStyle();
+    // compute initial selected totals
+    computeSelectedTotals();
     </script> 
 </body>
 

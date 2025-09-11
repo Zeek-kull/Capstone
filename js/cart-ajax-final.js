@@ -32,7 +32,12 @@ $(document).ready(function () {
           $row.find(".quantity-input").val(response.quantity);
 
           // Show success message
-          showNotification("Quantity updated successfully", "success");
+              // If the page defines computeSelectedTotals, update selected totals
+              if (typeof window.computeSelectedTotals === 'function') {
+                try { window.computeSelectedTotals(); } catch (e) { /* ignore */ }
+              }
+              // Trigger change on the order form so page-level handlers update button state
+              if ($('#orderForm').length) { $('#orderForm').trigger('change'); }
         } else {
           showNotification(
             response.message || "Error updating quantity",
@@ -119,7 +124,12 @@ $(document).ready(function () {
               }
 
               // Update cart count for order button
-              updateOrderButtonState();
+                updateOrderButtonState();
+                // Recompute selected totals and update order form handlers
+                if (typeof window.computeSelectedTotals === 'function') {
+                  try { window.computeSelectedTotals(); } catch (e) { }
+                }
+                if ($('#orderForm').length) { $('#orderForm').trigger('change'); }
             });
 
             showNotification("Item removed successfully", "success");

@@ -21,6 +21,22 @@ if (isset($_GET['remove'])) {
     if (isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] == 1) {
         mysqli_begin_transaction($conn);
         try {
+            // Before removing, attempt to restore product stock from the order (if present)
+            $ord_q = mysqli_query($conn, "SELECT totalproduct FROM orders WHERE o_id = '{$remove_id}' LIMIT 1");
+            if ($ord_q && mysqli_num_rows($ord_q) > 0) {
+                $ord = mysqli_fetch_assoc($ord_q);
+                $tp = $ord['totalproduct'] ?? '';
+                $parts = array_filter(array_map('trim', explode(',', $tp)));
+                foreach ($parts as $part) {
+                    if (preg_match('/(\d+)\s*\((\d+)\)/', $part, $m)) {
+                        $pid = intval($m[1]);
+                        $qty = intval($m[2]);
+                        if ($pid > 0 && $qty > 0) {
+                            mysqli_query($conn, "UPDATE product SET quantity = quantity + {$qty} WHERE p_id = '{$pid}'");
+                        }
+                    }
+                }
+            }
             // Remove related history first
             $del_hist = mysqli_query($conn, "DELETE FROM order_status_history WHERE order_id = '$remove_id'");
             // Remove the order
@@ -85,6 +101,29 @@ if (isset($_POST['update_update_btn'])) {
             $history_query = mysqli_query($conn, $history_sql);
 
             if ($update_query && $history_query) {
+                // If cancelling the order, attempt to restore stock
+                $toLower = strtolower($update_value);
+                if ($toLower === 'cancelled' || $toLower === 'cancel') {
+                    // Fetch the order's totalproduct field (format: "productId (qty), productId (qty), ...")
+                    $ord_q = mysqli_query($conn, "SELECT totalproduct FROM orders WHERE o_id = '{$update_id}' LIMIT 1");
+                    if ($ord_q && mysqli_num_rows($ord_q) > 0) {
+                        $ord = mysqli_fetch_assoc($ord_q);
+                        $tp = $ord['totalproduct'] ?? '';
+                        // Parse entries like: 123 (2), 45 (1)
+                        $parts = array_filter(array_map('trim', explode(',', $tp)));
+                        foreach ($parts as $part) {
+                            // try to extract id and qty via regex
+                            if (preg_match('/(\d+)\s*\((\d+)\)/', $part, $m)) {
+                                $pid = intval($m[1]);
+                                $qty = intval($m[2]);
+                                if ($pid > 0 && $qty > 0) {
+                                    // add qty back to product stock
+                                    mysqli_query($conn, "UPDATE product SET quantity = quantity + {$qty} WHERE p_id = '{$pid}'");
+                                }
+                            }
+                        }
+                    }
+                }
                 mysqli_commit($conn);
                 $_SESSION['success_message'] = "Order status updated successfully from $current_status to $update_value";
             } else {
@@ -111,7 +150,6 @@ $sql = "SELECT o.*, u.email as user_email, DATE_FORMAT(o.created_at, '%Y-%m-%d %
     ORDER BY o.created_at DESC";
 $result = $conn->query($sql);
 
-// Get order statistics
 $stats_sql = "SELECT 
     COUNT(*) as total_orders,
     SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
@@ -122,7 +160,8 @@ $stats_sql = "SELECT
     SUM(CASE WHEN status = 'Arriving' THEN 1 ELSE 0 END) as arriving_count,
     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
     SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_count,
-    SUM(totalprice) as total_revenue
+    -- Only count revenue for orders that are marked Completed (delivered)
+    SUM(CASE WHEN status = 'Completed' THEN totalprice ELSE 0 END) as total_revenue
     FROM orders";
 $stats_result = $conn->query($stats_sql);
 $stats = $stats_result->fetch_assoc();
@@ -270,7 +309,7 @@ $status_label_map = [
                     $valid_next_statuses = ['Arriving', 'Cancelled'];
                     break;
                 case 'Arriving':
-                    $valid_next_statuses = ['Completed', 'Cancelled'];
+                    $valid_next_statuses = ['Cancelled'];
                     break;
                 case 'Completed':
                     $valid_next_statuses = [];

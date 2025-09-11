@@ -11,6 +11,64 @@ if (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1) {
 
 include 'lib/connection.php';
 $k = $_SESSION['userid'];
+// Handle user-initiated order action: cancel or mark received
+if (isset($_POST['order_action_btn'])) {
+  $action_order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+  // ensure order belongs to user
+  $o_q = mysqli_query($conn, "SELECT status, totalproduct FROM orders WHERE o_id = '{$action_order_id}' AND user_id = '{$k}' LIMIT 1");
+  if ($o_q && mysqli_num_rows($o_q) > 0) {
+    $o = mysqli_fetch_assoc($o_q);
+    $cur = trim($o['status']);
+    // If current status is Arriving, user action means confirm receipt -> Completed
+  if (strtolower($cur) === 'arriving') {
+      $new = 'Completed';
+      $upd = mysqli_query($conn, "UPDATE orders SET status = '{$new}', status_updated_at = NOW() WHERE o_id = '{$action_order_id}' AND user_id = '{$k}'");
+      if ($upd) {
+        $_SESSION['success_message'] = '';
+  } else {
+        $_SESSION['error_message'] = 'Failed to update order status.';
+      }
+    } else {
+      // Otherwise attempt to cancel the order if not already completed/cancelled
+      if (strtolower($cur) === 'completed' || strtolower($cur) === 'cancelled') {
+        $_SESSION['error_message'] = 'Order cannot be cancelled.';
+      } else {
+        $new = 'Cancelled';
+        mysqli_begin_transaction($conn);
+  try {
+          $upd = mysqli_query($conn, "UPDATE orders SET status = '{$new}', status_updated_at = NOW() WHERE o_id = '{$action_order_id}' AND user_id = '{$k}'");
+          // restore stock based on totalproduct string
+          $tp = $o['totalproduct'] ?? '';
+          $parts = array_filter(array_map('trim', explode(',', $tp)));
+          foreach ($parts as $part) {
+            if (preg_match('/(\d+)\s*\((\d+)\)/', $part, $m)) {
+              $pid = intval($m[1]);
+              $qty = intval($m[2]);
+              if ($pid > 0 && $qty > 0) {
+                mysqli_query($conn, "UPDATE product SET quantity = quantity + {$qty} WHERE p_id = '{$pid}'");
+              }
+            }
+          }
+          mysqli_commit($conn);
+          // remember in session that this order was cancelled by the user
+          if (!isset($_SESSION['user_cancelled_orders']) || !is_array($_SESSION['user_cancelled_orders'])) {
+            $_SESSION['user_cancelled_orders'] = [];
+          }
+          $_SESSION['user_cancelled_orders'][] = $action_order_id;
+          $_SESSION['success_message'] = '';
+        } catch (Exception $e) {
+          mysqli_rollback($conn);
+          $_SESSION['error_message'] = 'Failed to cancel order.';
+        }
+      }
+    }
+  } else {
+    $_SESSION['error_message'] = 'Order not found or permission denied.';
+  }
+  // Redirect to avoid reposts
+  header('Location: profile.php');
+  exit;
+}
 $sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_display FROM orders WHERE user_id='$k' ORDER BY created_at DESC";
 $result = $conn->query($sql);
 // Map DB status values to friendly labels (DB stores 'OFD' for Out for delivery)
@@ -89,7 +147,7 @@ $status_label_map = [
         <th scope="col">Payment Method</th>
         <th scope="col">Status</th>
         <th scope="col">Track</th>
-        <th scope="col">Edit Shipping</th>
+        <th scope="col">Action</th>
       </tr>
     </thead>
     <tbody>
@@ -154,29 +212,69 @@ $status_label_map = [
               </td>
               <td><?php echo "₱" . number_format($row["totalprice"], 2); ?></td>
               <td><?php echo htmlspecialchars($row["payment_method"]); ?></td>
-        <td><?php echo htmlspecialchars($status_label_map[trim($row["status"]) ] ?? $row["status"]); ?></td>
+        <td>
+          <?php
+            $st = trim($row["status"]);
+            $badgeText = $status_label_map[$st] ?? $st;
+            $badgeClass = 'badge-info';
+            if (strcasecmp($st, 'Pending') === 0 || strcasecmp($st, 'Processing') === 0) $badgeClass = 'badge-warning';
+            if (strcasecmp($st, 'Shipped') === 0 || strcasecmp($st, 'OFD') === 0 || strcasecmp($st, 'Out for delivery') === 0) $badgeClass = 'badge-info';
+            if (strcasecmp($st, 'Arriving') === 0) $badgeClass = 'badge-primary';
+            if (strcasecmp($st, 'Completed') === 0) $badgeClass = 'badge-success';
+            if (strcasecmp($st, 'Cancelled') === 0) $badgeClass = 'badge-danger';
+            // If this order was cancelled by the current user in this session, show a clearer label
+            $sessionCancelled = $_SESSION['user_cancelled_orders'] ?? [];
+            $orderIdLookup = (int)($row['o_id'] ?? $row['id'] ?? 0);
+            if (strcasecmp($st, 'Cancelled') === 0) {
+              if (in_array($orderIdLookup, $sessionCancelled, true)) {
+                $badgeText = 'Cancelled by you';
+              } else {
+                // Check order_status_history to see if the latest Cancelled entry was made by an admin
+                $hist_q = mysqli_query($conn, "SELECT changed_by FROM order_status_history WHERE order_id = '{$orderIdLookup}' AND LOWER(new_status) = 'cancelled' ORDER BY created_at DESC LIMIT 1");
+                if ($hist_q && mysqli_num_rows($hist_q) > 0) {
+                  $hist_row = mysqli_fetch_assoc($hist_q);
+                  $changed_by = $hist_row['changed_by'] ?? null;
+                  if (!is_null($changed_by) && $changed_by !== '' && intval($changed_by) > 0) {
+                    // presence of changed_by (admin id) implies admin performed the cancellation
+                    $badgeText = 'Cancelled by Seller';
+                  }
+                }
+              }
+            }
+            echo "<span class='badge {$badgeClass}'>" . htmlspecialchars($badgeText) . "</span>";
+          ?>
+        </td>
               <td>
                 <?php
                   // Make the tracking cell clickable and open a small order tracking page
                   $orderId = $row['id'] ?? $row['o_id'] ?? null;
-                  $trackUrl = 'order_track.php?order_id=' . urlencode($orderId);
-                  echo '<a href="' . htmlspecialchars($trackUrl) . '" class="btn btn-sm btn-outline" title="Track order #' . htmlspecialchars($orderId) . '">';
-
-                  // Reuse the same status-label logic inside the link (added Out for delivery and Arriving)
-          $st = trim($row["status"]);
-          // Use mapping for friendly badge text
-          $badgeText = $status_label_map[$st] ?? $st;
-          $badgeClass = 'badge-info';
-          if ($st === 'Pending' || $st === 'Processing') $badgeClass = 'badge-warning';
-          if ($st === 'Completed') $badgeClass = 'badge-success';
-          if ($st === 'Cancelled') $badgeClass = 'badge-danger';
-          echo "<span class='badge {$badgeClass}'>" . htmlspecialchars($badgeText) . "</span>";
-
-                  echo '</a>';
+                  // Render a Track button; JS will open the tracking overlay when clicked
+                  $btnTitle = 'Track order #' . htmlspecialchars($orderId);
+                  // Use inline style to ensure the button color is applied consistently
+                  $btnStyle = 'background:#e7ab3c;border-color:#e7ab3c;color:#fff';
+                  echo '<button type="button" class="btn btn-sm track-btn" style="' . $btnStyle . '" data-order-id="' . htmlspecialchars($orderId) . '" title="' . $btnTitle . '">Track</button>';
                 ?>
               </td>
               <td>
-                <!-- Edit shipping location is handled above -->
+                <!-- Action: Cancel or Mark Received -->
+                <?php
+                  $curst = trim($row['status']);
+                  if (strtolower($curst) === 'arriving') {
+                    // show Mark as Received
+                    echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'Mark this order as received?\');">';
+                    echo '<input type="hidden" name="order_id" value="' . intval($row['o_id']) . '">';
+                    echo '<button type="submit" name="order_action_btn" class="btn btn-sm btn-success">Mark Received</button>';
+                    echo '</form>';
+                  } else {
+                    // show Cancel button if not arriving/completed/cancelled
+                    if (!in_array(strtolower($curst), ['completed','cancelled'])) {
+                      echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'Are you sure you want to cancel this order?\');">';
+                      echo '<input type="hidden" name="order_id" value="' . intval($row['o_id']) . '">';
+                      echo '<button type="submit" name="order_action_btn" class="btn btn-sm btn-danger">Cancel</button>';
+                      echo '</form>';
+                    }
+                  }
+                ?>
               </td>
             </tr>
             <?php
@@ -200,11 +298,21 @@ $status_label_map = [
   <script>
   // Open tracking popup and fetch fragment via AJAX
   document.addEventListener('click', function(e) {
-    var el = e.target.closest('a[href*="order_track.php"]');
-    if (!el) return;
+    // handle old anchor links and new track buttons
+    var anchor = e.target.closest('a[href*="order_track.php"]');
+    var btn = e.target.closest('.track-btn');
+    if (!anchor && !btn) return;
     e.preventDefault();
-    var href = new URL(el.href, window.location.href);
-    href.searchParams.set('ajax', '1');
+    var orderId = btn ? btn.getAttribute('data-order-id') : null;
+    var href;
+    if (anchor) {
+      href = new URL(anchor.href, window.location.href);
+      href.searchParams.set('ajax', '1');
+    } else {
+      href = new URL('order_track.php', window.location.href);
+      href.searchParams.set('order_id', orderId);
+      href.searchParams.set('ajax', '1');
+    }
     var overlay = document.getElementById('orderTrackOverlay');
     var content = document.getElementById('orderTrackContent');
     overlay.style.display = 'flex';
