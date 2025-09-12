@@ -83,7 +83,7 @@ if (isset($_POST['submit'])) {
 </head>
 
 <body class="hide-header">
-    <!-- secret admin quick-link (top-right) -->
+    <!-- secret admin quick-link (bottom-right) -->
     <a href="admin/a_login.php" class="secret-admin-btn" aria-label="Admin login" title="Admin login">Admin</a>
     <!-- Page Preloder -->
     <!-- <div id="preloder">

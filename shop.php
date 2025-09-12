@@ -171,7 +171,7 @@ if (isset($_POST['add_to_cart'])) {
                         <div class="row" id="productsContainer">
                             <?php
                             if (mysqli_num_rows($result) > 0) {
-                            // Loop through products
+                                // Loop through products
                             while ($row = mysqli_fetch_assoc($result)) {
                                 $isOutOfStock = isset($row['quantity']) && $row['quantity'] <= 0;
                              ?>
