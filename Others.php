@@ -87,7 +87,7 @@
             <div class="container">
                 <div class="row">
                     <!-- Sidebar removed for this view -->
-                    <div class="col-lg-12 order-1 order-lg-2">
+                    <div class="col-lg-9 order-1 order-lg-2">
                             <!-- Filter Dropdown removed for this view -->
 
                         <div class="product-list">

@@ -911,10 +911,14 @@ ol {
 }
 
 .nav-item .nav-menu {
-	display: -webkit-inline-box;
-	display: -ms-inline-flexbox;
-	display: inline-flex;
+	/* Use a full-width flex container so items can be centered across the header */
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
 	position: relative;
+	width: 100%;
+	justify-content: center;
+	align-items: center;
 }
 
 .nav-item .nav-menu li {
@@ -1344,7 +1348,45 @@ ol {
 }
 
 .product-item .pi-pic img {
-	min-width: 100%;
+	width: 100%;
+	height: 100%;
+	object-fit: cover; /* ensure uniform cropping */
+	display: block;
+}
+
+/* Uniform product picture sizing for listing tiles */
+.product-item .pi-pic {
+	width: 100%;
+	height: 260px; /* uniform card image height on desktop */
+	display: block;
+}
+
+/* Slightly shorter on medium screens */
+@media (max-width: 991px) {
+	.product-item .pi-pic {
+		height: 220px;
+	}
+}
+
+/* Smaller on mobile for better fit */
+@media (max-width: 575px) {
+	.product-item .pi-pic {
+		height: 180px;
+	}
+}
+
+/* Keep out-of-stock badge positioned consistently */
+.product-item .pi-pic .out-of-stock-badge {
+	position: absolute;
+	left: 10px;
+	top: 10px;
+	background: rgba(0,0,0,0.75);
+	color: #fff;
+	padding: 6px 8px;
+	font-size: 12px;
+	text-transform: uppercase;
+	border-radius: 3px;
+	z-index: 5;
 }
 
 .product-item .pi-pic .sale {
@@ -4572,4 +4614,36 @@ a.or-login:hover {
 .nav-right li.icon-clicked a i {
 	color: #e7ab3c; /* accent when clicked */
 	transform: scale(1.05);
+}
+
+/* Make navigation text centered horizontally and ensure link text centers inside each nav item */
+/* This rule targets the desktop nav; mobile menu (slicknav) is handled separately by the plugin */
+.nav-item .nav-menu {
+	justify-content: center; /* center the inline-flex container's items */
+}
+
+.nav-item .nav-menu li {
+	text-align: center; /* center the text inside each nav list item */
+	display: inline-block; /* keep items sized to their content */
+	margin: 0 8px; /* small horizontal gap between items */
+	margin-left: 0; /* remove older negative margins that shift items */
+}
+
+/* Make the immediate UL a flex container so items are centered reliably */
+.nav-item .nav-menu > ul {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-left: 0;
+	margin: 0;
+}
+
+.nav-item .nav-menu li a {
+	display: inline-block; /* keep padding but allow centering */
+	text-align: center;
+}
+
+/* Ensure dropdown items remain left-aligned for readability */
+.nav-item .nav-menu li .dropdown li a {
+	text-align: left;
 }
