@@ -78,7 +78,8 @@ if (isset($_POST['submit'])) {
     <link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
-    <!-- secret button styles moved to css/style.css -->
+        <!-- secret button styles moved to css/style.css -->
+
 </head>
 
 <body class="hide-header">
@@ -122,7 +123,7 @@ if (isset($_POST['submit'])) {
                             </div>
                             <div class="group-input">
                                 <label for="password">Password</label>
-                                <input type="password" class="form-control form-control-user" id="password" name="password" placeholder="Enter Password" required>
+                                <input type="password" class="form-control form-control-user" id="password" name="password" placeholder="Password" required>
                             </div>
                             <input class="site-btn login-btn" type="submit" name="submit" value="Login">
                         </form>

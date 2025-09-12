@@ -4,6 +4,9 @@
 <html lang="zxx">
 
 <head>
+
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+
     <meta charset="UTF-8">
     <meta name="description" content="Fashi Template">
     <meta name="keywords" content="Fashi, unica, creative, html">

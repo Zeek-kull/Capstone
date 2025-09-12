@@ -58,6 +58,9 @@ if (isset($_POST['add_to_cart'])) {
 <html lang="zxx">
 
 <head>
+
+    <link rel="icon" type="image/x-icon" href="img/favicon-16x16.png">
+
     <meta charset="UTF-8">
     <meta name="description" content="Fashi Template">
     <meta name="keywords" content="Fashi, unica, creative, html">
