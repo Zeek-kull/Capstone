@@ -70,6 +70,9 @@ if (isset($_POST['u_submit'])) {
             $_POST['phone'] = '';
         }
         $result = $name_error ? $name_error : ($pass_error ? $pass_error : $phone_error);
+        // store into session so flash partial can render consistently
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = $result;
     } else {
         // Hash the password securely using password_hash()
         $pass = password_hash($raw_pass, PASSWORD_DEFAULT);
@@ -105,10 +108,15 @@ if (isset($_POST['u_submit'])) {
                         );
                         // Execute the prepared statement
                         if ($stmt->execute()) {
-                            echo "<script>alert('Registration successful! You will be redirected to login.'); window.location.href='login.php';</script>";
+                            // Use a flash message before redirect so login page can show it
+                            if (session_status() == PHP_SESSION_NONE) session_start();
+                            $_SESSION['success_message'] = 'Registration successful! Please login.';
+                            header('Location: login.php');
                             exit();
                         } else {
                             $result = "Error: " . $stmt->error;
+                            if (session_status() == PHP_SESSION_NONE) session_start();
+                            $_SESSION['error_message'] = $result;
                         }
                         $stmt->close();
                     } else {
@@ -182,13 +190,8 @@ if (isset($_POST['u_submit'])) {
                         <h2>Register</h2>
                         <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
                             <div class="text-center mb-4">
-                                    <?php if ($result) {
-                                        echo "<div class='alert alert-info'>$result</div>";
-                                    } ?>
-                                    <?php if ($email_error) {
-                                        echo "<div class='alert alert-danger'>$email_error</div>";
-                                    } ?>
-                                </div>
+                                <?php include __DIR__ . '/includes/flash.php'; ?>
+                            </div>
                             <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
                                         <label for="fname">First Name</label>
@@ -373,7 +376,11 @@ if (isset($_POST['u_submit'])) {
             }
 
             if (error) {
-                alert(error);
+                if (typeof showFlash === 'function') {
+                    showFlash('danger', error, 7000);
+                } else {
+                    alert(error);
+                }
                 e.preventDefault();
             }
         });

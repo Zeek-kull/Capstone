@@ -6,7 +6,9 @@ include 'lib/connection.php';
 
 // Validate product_id parameter
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    echo "<script>alert('Invalid product ID!'); window.location.href='index.php';</script>";
+    if (session_status() == PHP_SESSION_NONE) session_start();
+    $_SESSION['error_message'] = 'Invalid product ID!';
+    header('Location: index.php');
     exit();
 }
 
@@ -25,7 +27,9 @@ $result = $stmt->get_result();
 if ($result->num_rows > 0) {
     $product = $result->fetch_assoc();
 } else {
-    echo "<script>alert('Product not found!'); window.location.href='index.php';</script>";
+    if (session_status() == PHP_SESSION_NONE) session_start();
+    $_SESSION['error_message'] = 'Product not found!';
+    header('Location: index.php');
     exit();
 }
 
@@ -80,18 +84,19 @@ $main_img = resolve_product_image($images[0], false);
 
       // Check if the product is already in the cart
       $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE product_id = '$product_id' AND user_id = '$user_id'");
-      if (mysqli_num_rows($select_cart) > 0) {
+            if (mysqli_num_rows($select_cart) > 0) {
         // Product exists, update quantity by adding new quantity
         $cart_item = mysqli_fetch_assoc($select_cart);
         $new_quantity = $cart_item['quantity'] + $product_quantity;
         
         // Update the existing cart item
-        $update_query = mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE product_id = '$product_id' AND user_id = '$user_id'");
-        $message[] = 'Product quantity updated in cart';
+                $update_query = mysqli_query($conn, "UPDATE `cart` SET quantity = '$new_quantity' WHERE product_id = '$product_id' AND user_id = '$user_id'");
+                // set flash message
+                $_SESSION['success_message'] = 'Product quantity updated in cart';
       } else {
         // Product doesn't exist, insert new cart item
         $insert_product = mysqli_query($conn, "INSERT INTO `cart`(user_id, product_id, quantity, price) VALUES('$user_id', '$product_id', '$product_quantity', '$product_price')");
-        $message[] = 'Product added to cart successfully';
+                $_SESSION['success_message'] = 'Product added to cart successfully';
       }
       header('Location: product.php?id=' . $product_id);
       exit();
@@ -146,6 +151,8 @@ $main_img = resolve_product_image($images[0], false);
         </div>
     </div>
     <!-- Breadcrumb Section Begin -->
+
+    <?php include __DIR__ . '/includes/flash.php'; ?>
 
     <!-- Product Shop Section Begin -->
     <section class="product-shop spad page-details">

@@ -27,7 +27,7 @@ if (isset($_POST['submit'])) {
         if (!$email) {
             $error_message = "Invalid email format";
         } else {
-            $loginquery = "SELECT id, f_name, pass FROM users WHERE email = ?";
+            $loginquery = "SELECT u_id, f_name, pass FROM users WHERE email = ?";
             $stmt = $conn->prepare($loginquery);
             $stmt->bind_param('s', $email);
             $stmt->execute();
@@ -39,13 +39,15 @@ if (isset($_POST['submit'])) {
                 if (password_verify($password, $stored_hash)) {
                     session_regenerate_id(true);
                     $_SESSION['username'] = $result['f_name'];
-                    $_SESSION['userid'] = $result['id'];
+                    $_SESSION['userid'] = $result['u_id'];
                     $_SESSION['auth'] = 1;
                     $_SESSION['email'] = $email;
                     header("location:index.php");
                     exit;
                 } else {
                     $error_message = "Invalid email or password";
+                    if (session_status() == PHP_SESSION_NONE) session_start();
+                    $_SESSION['error_message'] = $error_message;
                 }
             } else {
                 $error_message = "Invalid email or password";
@@ -135,9 +137,7 @@ if (isset($_POST['submit'])) {
                                                         localStorage.setItem('focusFirstNameOnRegister', '1');
                                                     });
                                                 </script>
-                        <?php if (isset($error_message)): ?>
-                            <div class="alert alert-danger mt-3"><?php echo htmlspecialchars($error_message); ?></div>
-                        <?php endif; ?>
+                                        <?php include __DIR__ . '/includes/flash.php'; ?>
                     </div>
                 </div>
             </div>

@@ -52,9 +52,15 @@ if (isset($_POST['submit']))
     $fileCount = is_array($uploadedFiles['name']) ? count(array_filter($uploadedFiles['name'])) : 0;
 
     if ($fileCount < 1) {
-        $result = "<div class='alert alert-danger'>Please upload at least 1 image.</div>";
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = 'Please upload at least 1 image.';
+        header('Location: all_product.php');
+        exit();
     } elseif ($fileCount > 5) {
-        $result = "<div class='alert alert-danger'>You may upload a maximum of 5 images per product.</div>";
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = 'You may upload a maximum of 5 images per product.';
+        header('Location: all_product.php');
+        exit();
     } else {
         $savedNames = [];
         $errors = [];
@@ -275,10 +281,16 @@ if (isset($_POST['submit']))
             if (!empty($errors)) {
                 $msg .= ' Errors: ' . implode(' ', array_map('htmlspecialchars', $errors));
             }
-            $result = "<div class='alert alert-danger'>" . $msg . "</div>";
+            if (session_status() == PHP_SESSION_NONE) session_start();
+            $_SESSION['error_message'] = $msg;
+            header('Location: all_product.php');
+            exit();
         } else {
             if (!empty($errors)) {
-                $result = "<div class='alert alert-warning'>Uploaded some files but some files were skipped: " . implode(' | ', array_map('htmlspecialchars', $errors)) . "</div>";
+                if (session_status() == PHP_SESSION_NONE) session_start();
+                $_SESSION['warning_message'] = 'Uploaded some files but some files were skipped: ' . implode(' | ', array_map('htmlspecialchars', $errors));
+                header('Location: all_product.php');
+                exit();
             }
             // store as comma-separated filenames
             $filename_str = implode(',', $savedNames);
@@ -287,7 +299,10 @@ if (isset($_POST['submit']))
             $stmt->bind_param("ssssids", $name, $category, $tag, $description, $quantity, $price, $filename_str);
 
             if ($stmt->execute()) {
-                $result = "<div class='alert alert-success'>Data insert success</div>";
+                if (session_status() == PHP_SESSION_NONE) session_start();
+                $_SESSION['success_message'] = 'Data insert success';
+                header('Location: all_product.php');
+                exit();
             } else {
                 die("Error: " . $stmt->error);
             }

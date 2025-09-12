@@ -285,7 +285,11 @@ if (isset($_POST['add_to_cart'])) {
                 },
                 error: function(xhr, status, error) {
                     console.log('AJAX Error:', error);
-                    alert('Error loading products. Please try again.');
+                    if (typeof showFlash === 'function') {
+                        showFlash('danger', 'Error loading products. Please try again.');
+                    } else {
+                        alert('Error loading products. Please try again.');
+                    }
                 }
             });
         });

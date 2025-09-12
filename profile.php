@@ -97,18 +97,11 @@ $status_label_map = [
 <div class="container pendingbody">
   <?php
   // Show user flash messages (if any)
-  if (isset($_SESSION['success_message']) && !empty($_SESSION['success_message'])) {
-    echo '<div class="alert alert-success" role="alert">' . htmlspecialchars($_SESSION['success_message']) . '</div>';
-    unset($_SESSION['success_message']);
-  }
-  if (isset($_SESSION['error_message']) && !empty($_SESSION['error_message'])) {
-    echo '<div class="alert alert-danger" role="alert">' . htmlspecialchars($_SESSION['error_message']) . '</div>';
-    unset($_SESSION['error_message']);
-  }
+  include __DIR__ . '/includes/flash.php';
   ?>
   <?php
   // Get user info including address from users table
-  $user_info = mysqli_query($conn, "SELECT f_name, l_name, street, zone, province, city, barangay, phone FROM users WHERE id='$k'");
+  $user_info = mysqli_query($conn, "SELECT f_name, l_name, street, zone, province, city, barangay, phone FROM users WHERE u_id='$k'");
   $user_row = mysqli_fetch_assoc($user_info);
   $user_name = $user_row['f_name'] ?? ($_SESSION['username'] ?? '');
   $user_lname = $user_row['l_name'] ?? '';
@@ -224,7 +217,7 @@ $status_label_map = [
             if (strcasecmp($st, 'Cancelled') === 0) $badgeClass = 'badge-danger';
             // If this order was cancelled by the current user in this session, show a clearer label
             $sessionCancelled = $_SESSION['user_cancelled_orders'] ?? [];
-            $orderIdLookup = (int)($row['o_id'] ?? $row['id'] ?? 0);
+            $orderIdLookup = (int)($row['o_id'] ?? 0);
             if (strcasecmp($st, 'Cancelled') === 0) {
               if (in_array($orderIdLookup, $sessionCancelled, true)) {
                 $badgeText = 'Cancelled by you';
@@ -247,7 +240,7 @@ $status_label_map = [
               <td>
                 <?php
                   // Make the tracking cell clickable and open a small order tracking page
-                  $orderId = $row['id'] ?? $row['o_id'] ?? null;
+                  $orderId = $row['o_id'] ?? null;
                   // Render a Track button; JS will open the tracking overlay when clicked
                   $btnTitle = 'Track order #' . htmlspecialchars($orderId);
                   // Use inline style to ensure the button color is applied consistently

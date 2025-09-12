@@ -16,7 +16,7 @@ $user_address = '';
 $user_phone = '';
 $user_id_for_address = isset($_SESSION['userid']) ? $_SESSION['userid'] : '';
 if ($user_id_for_address) {
-    $user_info_query = mysqli_query($conn, "SELECT street, zone, barangay, city, province, phone FROM users WHERE id='$user_id_for_address'");
+    $user_info_query = mysqli_query($conn, "SELECT street, zone, barangay, city, province, phone FROM users WHERE u_id='$user_id_for_address'");
     if ($user_info_query && mysqli_num_rows($user_info_query) > 0) {
         $user_data = mysqli_fetch_assoc($user_info_query);
         
@@ -41,7 +41,8 @@ if (isset($_POST['order_btn'])) {
     // Expect selected_items[] containing cart IDs
     $selected = $_POST['selected_items'] ?? [];
     if (!is_array($selected) || count($selected) == 0) {
-        echo "<script>alert('Please select at least one item to checkout.');</script>";
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = 'Please select at least one item to checkout.';
         header("location:shopping-cart.php");
         exit();
     }
@@ -57,7 +58,8 @@ if (isset($_POST['order_btn'])) {
     // Build a safe list of integer cart IDs
     $ids = array_map('intval', $selected);
     if (count($ids) == 0) {
-        echo "<script>alert('Invalid selection.');</script>";
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = 'Invalid selection.';
         header("location:shopping-cart.php");
         exit();
     }
@@ -93,10 +95,13 @@ if (isset($_POST['order_btn'])) {
 
         // Delete only selected cart rows
         $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE c_id IN ($ids_list) AND user_id='$userid'");
+        // Set flash to display on redirect
+        $_SESSION['success_message'] = 'Order placed successfully';
         header("location:index.php");
         exit();
     } else {
-        echo "<script>alert('No selectable items found.');</script>";
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = 'No selectable items found.';
         header("location:shopping-cart.php");
         exit();
     }
@@ -156,6 +161,8 @@ $result = $conn->query($sql);
         </div>
     </div>
     <!-- Breadcrumb Section Begin -->
+
+    <?php include __DIR__ . '/includes/flash.php'; ?>
 
     <!-- Shopping Cart Section Begin -->
     <section class="shopping-cart spad">

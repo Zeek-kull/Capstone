@@ -18,7 +18,10 @@ if (isset($_POST['submit'])) {
 
     // Server-side validation
     if (empty($admin_id) || empty($admin_pass)) {
-        echo "<script>alert('Please enter both username and password.');</script>";
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        $_SESSION['error_message'] = 'Please enter both username and password.';
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit();
     } else {
         // Prepared statement to prevent SQL injection
         $loginquery = "SELECT * FROM admin WHERE userid = ? AND pass = ?";
@@ -29,12 +32,16 @@ if (isset($_POST['submit'])) {
 
         if ($loginres->num_rows > 0) {
             $_SESSION['admin_auth'] = 1;
-            $_SESSION['admin_id'] = $admin_id;
+            // store the admin userid string so other pages can lookup ad_id
+            $_SESSION['admin_userid'] = $admin_id;
             // Do NOT set user session variables here
             header("location:home.php");
             exit();
         } else {
-            echo "<script>alert('Invalid username or password. Please try again.');</script>";
+            if (session_status() == PHP_SESSION_NONE) session_start();
+            $_SESSION['error_message'] = 'Invalid username or password. Please try again.';
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit();
         }
     }
 }
@@ -54,9 +61,13 @@ if (isset($_POST['submit'])) {
             var email = document.forms["loginForm"]["email"].value;
             var password = document.forms["loginForm"]["password"].value;
             if (email == "" || password == "") {
-                alert("Both username and password are required.");
-                return false;
-            }
+                    if (typeof showFlash === 'function') {
+                        showFlash('danger', 'Both username and password are required.', 4000);
+                    } else {
+                        alert("Both username and password are required.");
+                    }
+                    return false;
+                }
             return true;
         }
     </script>
@@ -71,6 +82,7 @@ if (isset($_POST['submit'])) {
                 <h3>Sign In</h3>
             </div>
             <div class="card-body">
+                <?php include __DIR__ . '/../includes/flash.php'; ?>
                 <!-- Form with client-side validation -->
                 <form name="loginForm" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" onsubmit="return validateForm()">
                     <div class="input-group form-group">
