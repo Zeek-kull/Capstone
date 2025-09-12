@@ -69,6 +69,21 @@
 	transform: scale(1.05);
 }
 
+/* Ensure secret quick-link buttons are visible when header is hidden (login/register pages) */
+body.hide-header .secret-admin-btn,
+body.hide-header .secret-back-btn {
+    opacity: 0.95 !important;
+    transform: none !important;
+    pointer-events: auto;
+}
+
+/* Improve accessibility: show an outline when keyboard-focused */
+.secret-admin-btn:focus,
+.secret-back-btn:focus {
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+    opacity: 1;
+}
+
 html,
 body {
 	height: 100%;
@@ -3115,22 +3130,7 @@ ol {
 	top: 0;
 	width: 9px;
 	height: 6px;
-	border: solid #ffffff;
-	border-width: 2px 2px 0px 0px;
-	-webkit-transform: rotate(127deg);
-	-ms-transform: rotate(127deg);
-	transform: rotate(127deg);
-}
-
-.checkout-form .place-order .order-total {
-	border: 2px solid #ebebeb;
-	padding-left: 40px;
-	padding-right: 40px;
-	padding-top: 22px;
-	padding-bottom: 35px;
-}
-
-.checkout-form .place-order .order-total .order-table {
+	border: solid;
 	margin-bottom: 64px;
 }
 

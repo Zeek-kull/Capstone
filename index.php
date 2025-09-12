@@ -60,10 +60,6 @@
 </head>
 
 
-
-
-
-
 <body>
 
     <!-- Hero Section Begin -->
