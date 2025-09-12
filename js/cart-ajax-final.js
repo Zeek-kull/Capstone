@@ -21,36 +21,71 @@ $(document).ready(function () {
       dataType: "json",
       success: function (response) {
         if (response.success) {
-          // Update subtotal for this item
-          $row.find(".total-price").text("₱" + response.subtotal);
+          // Update cart totals (authoritative)
+          if (typeof response.total_amount !== 'undefined') {
+            $(".total-amount-display").text("₱" + response.total_amount);
+          }
+          if (typeof response.total_quantity !== 'undefined') {
+            $(".total-quantity-display").text(response.total_quantity);
+          }
 
-          // Update cart totals
-          $(".total-amount-display").text("₱" + response.total_amount);
-          $(".total-quantity-display").text(response.total_quantity);
+          // If server removed the item because stock is 0
+          if (parseInt(response.quantity) === 0) {
+            // Remove row from table with animation
+            $row.fadeOut(300, function () {
+              $(this).remove();
 
-          // Update quantity input with validated value
-          $row.find(".quantity-input").val(response.quantity);
-
-          // Show success message
-              // If the page defines computeSelectedTotals, update selected totals
+              // Update order button state and totals handlers
+              updateOrderButtonState();
               if (typeof window.computeSelectedTotals === 'function') {
-                try { window.computeSelectedTotals(); } catch (e) { /* ignore */ }
+                try { window.computeSelectedTotals(); } catch (e) { }
               }
-              // Trigger change on the order form so page-level handlers update button state
               if ($('#orderForm').length) { $('#orderForm').trigger('change'); }
+
+              // If cart is empty, reload to show empty cart message
+              var cartItems = $("tbody tr[data-cart-id]").length;
+              if (cartItems === 0) {
+                location.reload();
+              }
+            });
+
+            if (typeof showFlash === 'function') showFlash('danger', response.message || 'Item removed: product is out of stock', 5000);
+
+          } else {
+            // Update quantity input with validated value and update row subtotal
+            $row.find('.quantity-input').val(response.quantity).data('stock', response.stock);
+            if (typeof response.subtotal !== 'undefined') {
+              $row.find('.total-price').text('₱' + response.subtotal);
+            }
+
+            // If server clamped the quantity down (requested larger than stock), show a warning
+            if (newQuantity > parseInt(response.quantity) && typeof response.stock !== 'undefined') {
+              if (typeof showFlash === 'function') showFlash('warning', 'Requested quantity reduced to available stock: ' + response.stock, 3500);
+            }
+
+            // Update computed totals/state
+            if (typeof window.computeSelectedTotals === 'function') {
+              try { window.computeSelectedTotals(); } catch (e) { /* ignore */ }
+            }
+            if ($('#orderForm').length) { $('#orderForm').trigger('change'); }
+          }
+
         } else {
-          showNotification(
-            response.message || "Error updating quantity",
-            "error"
-          );
+          // server signaled failure — show as a toast
+          if (typeof showFlash === 'function') {
+            showFlash('danger', response.message || 'Error updating quantity', 4000);
+          } else {
+            showNotification(response.message || 'Error updating quantity', 'error');
+          }
         }
       },
       error: function () {
-        showNotification("Error connecting to server", "error");
+        if (typeof showFlash === 'function') showFlash('danger', 'Error connecting to server', 4000);
+        else showNotification('Error connecting to server', 'error');
       },
       complete: function () {
         // Re-enable input
-        $row.find(".quantity-input").prop("disabled", false);
+        $row.find('.quantity-input').prop('disabled', false);
       },
     });
   }
@@ -62,10 +97,19 @@ $(document).ready(function () {
     var $quantityInput = $row.find(".quantity-input");
     var currentQuantity = parseInt($quantityInput.val());
     var cartId = $btn.data("cart-id");
-
+    var stock = parseInt($quantityInput.data('stock')) || 0;
     if ($btn.hasClass("quantity-plus")) {
       var newQuantity = currentQuantity + 1;
-      $quantityInput.val(newQuantity);
+      if (stock > 0 && newQuantity > stock) {
+        // clamp and warn
+        newQuantity = stock;
+        $quantityInput.val(newQuantity);
+        if (typeof showFlash === 'function') showFlash('warning', 'Cannot increase beyond available stock (' + stock + ')', 2500);
+        // if already at stock, don't send duplicate update
+        if (currentQuantity >= newQuantity) return;
+      } else {
+        $quantityInput.val(newQuantity);
+      }
       updateQuantity(cartId, newQuantity, $row);
     } else if ($btn.hasClass("quantity-minus")) {
       if (currentQuantity > 1) {
@@ -82,12 +126,24 @@ $(document).ready(function () {
     var $row = $input.closest("tr");
     var value = parseInt($input.val());
     var cartId = $input.data("cart-id");
-
-    if (value < 1) {
-      $input.val(1);
+    var stock = parseInt($input.data('stock')) || 0;
+    if (value < 1 || isNaN(value)) {
       value = 1;
     }
+    if (stock > 0 && value > stock) {
+      value = stock;
+      $input.val(value);
+      if (typeof showFlash === 'function') showFlash('warning', 'Quantity adjusted to available stock: ' + stock, 3000);
+    }
+    updateQuantity(cartId, value, $row);
+  });
 
+  // Listen for custom cartQtyFinal event dispatched from vanilla JS when clamping is applied
+  $(document).on('cartQtyFinal', '.quantity-input', function (e) {
+    var $input = $(this);
+    var $row = $input.closest('tr');
+    var value = parseInt($input.val()) || 1;
+    var cartId = $input.data('cart-id');
     updateQuantity(cartId, value, $row);
   });
 

@@ -17,47 +17,70 @@ if (!isset($_POST['cart_id']) || !isset($_POST['quantity'])) {
 }
 
 $cart_id = intval($_POST['cart_id']);
-$quantity = max(1, intval($_POST['quantity']));
+$requested_qty = intval($_POST['quantity']);
 $user_id = $_SESSION['userid'] ?? '';
 
-// Verify the cart item belongs to the current user
-$verify_query = mysqli_query($conn, "SELECT c_id FROM cart WHERE c_id = '$cart_id' AND user_id = '$user_id'");
-if (mysqli_num_rows($verify_query) == 0) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
+// Verify the cart item belongs to the current user and fetch product stock/price
+$sql = "SELECT c.c_id, c.quantity AS cart_quantity, c.product_id, p.quantity AS prod_stock, p.price
+        FROM cart c
+        JOIN product p ON c.product_id = p.p_id
+        WHERE c.c_id = '$cart_id' AND c.user_id = '$user_id' LIMIT 1";
+$res = mysqli_query($conn, $sql);
+if (!$res || mysqli_num_rows($res) == 0) {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access or item not found']);
     exit();
 }
 
-// Update quantity
-$update_query = mysqli_query($conn, "UPDATE cart SET quantity = '$quantity' WHERE c_id = '$cart_id'");
-if (!$update_query) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
+$row = mysqli_fetch_assoc($res);
+$prod_stock = isset($row['prod_stock']) ? intval($row['prod_stock']) : 0;
+$price = isset($row['price']) ? floatval($row['price']) : 0.0;
+
+// Decide final quantity
+if ($prod_stock <= 0) {
+    // Product out of stock - remove cart item
+    $del = mysqli_query($conn, "DELETE FROM cart WHERE c_id = '$cart_id'");
+    // Recalculate totals after removal
+    $total_query = mysqli_query($conn, "SELECT COALESCE(SUM(c.quantity * p.price),0) as total_amount, COALESCE(SUM(c.quantity),0) as total_quantity
+                                       FROM cart c JOIN product p ON c.product_id = p.p_id WHERE c.user_id = '$user_id'");
+    $totals = mysqli_fetch_assoc($total_query);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Product is out of stock and was removed from your cart',
+        'quantity' => 0,
+        'subtotal' => number_format(0, 2),
+        'total_amount' => number_format($totals['total_amount'], 2),
+        'total_quantity' => intval($totals['total_quantity'])
+    ]);
     exit();
 }
 
-// Get updated cart information
-$cart_info = mysqli_query($conn, "SELECT c.quantity, p.price, p.name 
-                                  FROM cart c 
-                                  JOIN product p ON c.product_id = p.p_id 
-                                  WHERE c.c_id = '$cart_id'");
-$cart_data = mysqli_fetch_assoc($cart_info);
+$final_qty = max(1, $requested_qty);
+if ($final_qty > $prod_stock) $final_qty = $prod_stock;
 
-// Calculate new totals
-$subtotal = $cart_data['price'] * $cart_data['quantity'];
+// Update the cart with the clamped quantity
+$update_sql = "UPDATE cart SET quantity = '$final_qty' WHERE c_id = '$cart_id' AND user_id = '$user_id'";
+if (!mysqli_query($conn, $update_sql)) {
+    echo json_encode(['success' => false, 'message' => 'Database error while updating quantity']);
+    exit();
+}
 
-// Get new cart totals
-$total_query = mysqli_query($conn, "SELECT SUM(c.quantity * p.price) as total_amount, SUM(c.quantity) as total_quantity
-                                   FROM cart c 
-                                   JOIN product p ON c.product_id = p.p_id 
-                                   WHERE c.user_id = '$user_id'");
+// Calculate subtotal for this item
+$subtotal = $price * $final_qty;
+
+// Get new cart totals (authoritative)
+$total_query = mysqli_query($conn, "SELECT COALESCE(SUM(c.quantity * p.price),0) as total_amount, COALESCE(SUM(c.quantity),0) as total_quantity
+                                   FROM cart c JOIN product p ON c.product_id = p.p_id WHERE c.user_id = '$user_id'");
 $totals = mysqli_fetch_assoc($total_query);
 
 echo json_encode([
     'success' => true,
     'message' => 'Quantity updated successfully',
+    'quantity' => intval($final_qty),
     'subtotal' => number_format($subtotal, 2),
     'total_amount' => number_format($totals['total_amount'], 2),
-    'total_quantity' => $totals['total_quantity'],
-    'quantity' => $quantity
+    'total_quantity' => intval($totals['total_quantity']),
+    'stock' => $prod_stock
 ]);
 
 exit();

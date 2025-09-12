@@ -1,128 +1,97 @@
 <?php
-// Flash partial - include this file where you want flash alerts displayed.
-// It reads from $_SESSION['success_message'] and $_SESSION['error_message'] and then clears them.
+// Flash partial (toasts) - include where you want flash alerts displayed.
+// Reads from $_SESSION['success_message'], $_SESSION['error_message'] and clears them.
 if (session_status() == PHP_SESSION_NONE) session_start();
 
-$hasFlash = false;
-if (isset($_SESSION['success_message']) && $_SESSION['success_message'] !== '') {
-    $hasFlash = true;
-    $success = $_SESSION['success_message'];
+$messages = [];
+if (!empty($_SESSION['success_message'])) {
+    $messages[] = ['type' => 'success', 'text' => $_SESSION['success_message']];
     unset($_SESSION['success_message']);
 }
-if (isset($_SESSION['error_message']) && $_SESSION['error_message'] !== '') {
-    $hasFlash = true;
-    $error = $_SESSION['error_message'];
+if (!empty($_SESSION['error_message'])) {
+    $messages[] = ['type' => 'danger', 'text' => $_SESSION['error_message']];
     unset($_SESSION['error_message']);
 }
-
-// Render any server-side flashes
-if ($hasFlash) {
-    ?>
-    <div class="container mt-3 cp-flash-container" role="status" aria-live="polite" aria-atomic="true">
-        <?php if (isset($success)): ?>
-            <div class="alert alert-success alert-dismissible fade show cp-flash" role="alert">
-                <?php echo htmlspecialchars($success); ?>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        <?php endif; ?>
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger alert-dismissible fade show cp-flash" role="alert">
-                <?php echo htmlspecialchars($error); ?>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        <?php endif; ?>
-    </div>
-    <?php
-}
-
-// JS helper: always output so client-side code can create flashes that match server-side ones.
 ?>
+
+<!-- Toast wrapper (fixed position) -->
+<div class="cp-toast-wrapper" aria-live="polite" aria-atomic="true" style="position: fixed; top: 1rem; right: 1rem; z-index: 11000;"></div>
+
 <script>
-// showFlash(type, message, timeoutMs) — type: 'success'|'danger'|'warning'|'info'
+// showFlash(type, message, timeoutMs)
+// type: 'success' | 'danger' | 'warning' | 'info'
 window.showFlash = function(type, message, timeoutMs) {
     try {
         timeoutMs = typeof timeoutMs === 'number' ? timeoutMs : 5000;
-        var container = document.querySelector('.cp-flash-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'container mt-3 cp-flash-container';
-            container.setAttribute('role', 'status');
-            container.setAttribute('aria-live', 'polite');
-            container.setAttribute('aria-atomic', 'true');
-            // insert at top of body for visibility
-            if (document.body.firstChild) {
-                document.body.insertBefore(container, document.body.firstChild);
-            } else {
-                document.body.appendChild(container);
-            }
+        var wrapper = document.querySelector('.cp-toast-wrapper');
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'cp-toast-wrapper';
+            wrapper.setAttribute('aria-live', 'polite');
+            wrapper.setAttribute('aria-atomic', 'true');
+            wrapper.style.position = 'fixed';
+            wrapper.style.top = '1rem';
+            wrapper.style.right = '1rem';
+            wrapper.style.zIndex = 11000;
+            document.body.appendChild(wrapper);
         }
 
-        var alertDiv = document.createElement('div');
-    alertDiv.setAttribute('role', 'alert');
-    // make sure assistive tech knows this message is new
-    alertDiv.setAttribute('aria-atomic', 'true');
-        alertDiv.className = 'alert alert-' + (type || 'info') + ' alert-dismissible fade show cp-flash';
-        alertDiv.innerHTML = document.createTextNode(message) ? '' : '';
-        // safe text node
-        var textNode = document.createTextNode(message);
-        alertDiv.appendChild(textNode);
+        var toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.style.minWidth = '220px';
+        toast.style.marginBottom = '0.5rem';
 
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'close';
-        btn.setAttribute('data-dismiss', 'alert');
-        btn.setAttribute('aria-label', 'Close');
-        btn.innerHTML = '<span aria-hidden="true">&times;</span>';
-        btn.addEventListener('click', function(){
-            try { alertDiv.parentNode && alertDiv.parentNode.removeChild(alertDiv); } catch(e){}
-        });
-        alertDiv.appendChild(btn);
+        var header = document.createElement('div');
+        header.className = 'toast-header';
+        var strong = document.createElement('strong');
+        strong.className = 'me-auto';
+        strong.textContent = (type === 'danger' ? 'Error' : (type === 'success' ? 'Success' : 'Notice'));
+        header.appendChild(strong);
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.setAttribute('aria-label', 'Close');
+        closeBtn.addEventListener('click', function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} });
+        header.appendChild(closeBtn);
 
-        container.appendChild(alertDiv);
+        var body = document.createElement('div');
+        body.className = 'toast-body';
+        body.textContent = message;
 
-        // ensure we get the CSS transition
-        if (!alertDiv.classList.contains('fade')) alertDiv.classList.add('fade');
-        if (!alertDiv.classList.contains('show')) alertDiv.classList.add('show');
+        toast.appendChild(header);
+        toast.appendChild(body);
+        wrapper.appendChild(toast);
 
-        // schedule hide
-        setTimeout(function(){
-            alertDiv.classList.remove('show');
-            var removed = false;
-            var removeFn = function(){
-                if (removed) return; removed = true;
-                try { alertDiv.parentNode && alertDiv.parentNode.removeChild(alertDiv); } catch(e){}
-            };
-            alertDiv.addEventListener('transitionend', removeFn);
-            setTimeout(removeFn, 700);
-        }, timeoutMs);
-    } catch(e) { /* silent */ }
+        if (window.bootstrap && typeof bootstrap.Toast === 'function') {
+            try {
+                var bsToast = new bootstrap.Toast(toast, { delay: timeoutMs });
+                bsToast.show();
+                toast.addEventListener('hidden.bs.toast', function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} });
+            } catch(e) {
+                setTimeout(function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} }, timeoutMs + 300);
+            }
+        } else {
+            toast.style.transition = 'opacity 0.25s ease';
+            toast.style.opacity = '1';
+            setTimeout(function(){
+                toast.style.opacity = '0';
+                setTimeout(function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} }, 300);
+            }, timeoutMs);
+        }
+    } catch(e) {
+        try { alert(message); } catch(e){}
+    }
 };
 
-// Auto-hide any existing server-rendered flashes (only if present)
 (function(){
     try {
-        var flashes = document.querySelectorAll('.cp-flash');
-        if (!flashes || !flashes.length) return;
-        flashes.forEach(function(f){
-            if (!f.classList.contains('fade')) f.classList.add('fade');
-            if (!f.classList.contains('show')) f.classList.add('show');
-            setTimeout(function(){
-                f.classList.remove('show');
-                var removed = false;
-                var removeFn = function(){
-                    if (removed) return; removed = true;
-                    try { f.parentNode && f.parentNode.removeChild(f); } catch(e){}
-                };
-                f.addEventListener('transitionend', removeFn);
-                setTimeout(removeFn, 700);
-            }, 5000);
+        var msgs = <?php echo json_encode($messages, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
+        msgs.forEach(function(m){
+            if (window.showFlash) showFlash(m.type === 'danger' ? 'danger' : (m.type || 'info'), m.text, 5000);
         });
     } catch(e){}
 })();
 </script>
-<?php
-?>

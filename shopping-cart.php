@@ -107,12 +107,11 @@ if (isset($_POST['order_btn'])) {
     }
 }
 
-// Get user's cart with product images
 $id = $_SESSION['userid'] ?? '';
-$sql = "SELECT cart.*, product.imgname, product.name, product.price 
-        FROM cart 
-        LEFT JOIN product ON cart.product_id = product.p_id 
-        WHERE cart.user_id='$id'";
+$sql = "SELECT cart.*, product.imgname, product.name, product.price, product.quantity AS prod_stock 
+    FROM cart 
+    LEFT JOIN product ON cart.product_id = product.p_id 
+    WHERE cart.user_id='$id'";
 $result = $conn->query($sql);
 
 // No traditional form handlers needed as we use AJAX
@@ -228,8 +227,23 @@ $result = $conn->query($sql);
                                     <td>
                                         <div class="quantity-controls">
                                             <button type="button" class="quantity-btn quantity-minus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="decrease">-</button>
-                                            <input type="number" class="quantity-input" min="1" value="<?php echo $row['quantity']; ?>" data-cart-id="<?php echo $row['c_id']; ?>">
+                                            <?php
+                                            $cartQty = (int)$row['quantity'];
+                                            $stock = isset($row['prod_stock']) ? (int)$row['prod_stock'] : 0;
+                                            if ($stock > 0 && $cartQty > $stock) {
+                                                // clamp displayed quantity to available stock for UI, but keep original value for server handling
+                                                $displayQty = $stock;
+                                                $overStock = true;
+                                            } else {
+                                                $displayQty = $cartQty > 0 ? $cartQty : 1;
+                                                $overStock = false;
+                                            }
+                                            ?>
+                                            <input type="number" class="quantity-input" min="1" max="<?php echo $stock > 0 ? $stock : 99999; ?>" value="<?php echo $displayQty; ?>" data-cart-id="<?php echo $row['c_id']; ?>" data-actual-qty="<?php echo $cartQty; ?>" data-stock="<?php echo $stock; ?>">
                                             <button type="button" class="quantity-btn quantity-plus" data-cart-id="<?php echo $row['c_id']; ?>" data-action="increase">+</button>
+                                            <?php if ($overStock): ?>
+                                                <div class="small text-danger mt-1">Only <?php echo $stock; ?> in stock — quantity was reduced for checkout.</div>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="total-price first-row">&#8369;<?php echo number_format($row["price"] * $row["quantity"], 2); ?></td>
@@ -282,7 +296,6 @@ $result = $conn->query($sql);
                         <div class="form-group">
                             <label for="payment_method" class="mb-1">Payment Method</label>
                             <select name="payment_method" id="payment_method" class="form-control" required aria-label="Payment Method">
-                                <option value="" disabled selected>Select Payment Method</option>
                                 <option value="COD">Cash on Delivery (COD)</option>
                             </select>
                         </div>
@@ -374,6 +387,53 @@ $result = $conn->query($sql);
     window.computeSelectedTotals = computeSelectedTotals;
     window.formatCurrency = formatCurrency;
     window.numberWithCommas = numberWithCommas;
+
+    // Quantity controls: enforce stock limits and update totals
+    function enforceQuantityInput(input) {
+        var stock = parseInt(input.getAttribute('data-stock')) || 0;
+        var val = parseInt(input.value) || 0;
+        if (val < 1) {
+            input.value = 1;
+            val = 1;
+        }
+        if (stock > 0 && val > stock) {
+            // clamp to stock
+            input.value = stock;
+            if (typeof showFlash === 'function') {
+                showFlash('warning', 'Quantity adjusted to available stock: ' + stock, 3000);
+            }
+            val = stock;
+        }
+        // Update compute totals
+        computeSelectedTotals();
+        orderButton.disabled = !canEnableOrder();
+        updateOrderButtonStyle();
+        // Dispatch a custom event so AJAX handlers can update server-side cart with final quantity
+        try {
+            var ev = new Event('cartQtyFinal');
+            input.dispatchEvent(ev);
+        } catch(e){}
+        // Optionally, send AJAX update to server to update cart quantity (handled by cart-ajax-final.js normally)
+    }
+
+    // Note: plus/minus buttons are handled by delegated jQuery handlers in js/cart-ajax-final.js.
+    // We keep input enforcement (below) so clamping occurs on manual change before the delegated handlers run.
+
+    // Hook up manual input enforcement
+    document.querySelectorAll('.quantity-input').forEach(function(inp){
+        inp.addEventListener('change', function(){ enforceQuantityInput(inp); });
+        inp.addEventListener('input', function(){
+            // allow typing but prevent extremely large numbers by checking and clamping on input
+            var stock = parseInt(inp.getAttribute('data-stock')) || 0;
+            var val = parseInt(inp.value) || 0;
+            if (stock > 0 && val > stock) {
+                // don't immediately clobber while typing, but show small hint if it becomes too large
+                inp.classList.add('border-danger');
+            } else {
+                inp.classList.remove('border-danger');
+            }
+        });
+    });
 
         // Select all handling and keyboard accessibility
         var selectAllCheckbox = document.getElementById('selectAll');
