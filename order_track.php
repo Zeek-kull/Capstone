@@ -61,24 +61,26 @@ if (empty($events)) {
     $events[] = ['time' => $created, 'status' => $order['status'], 'note' => '', 'location' => ''];
 }
 
-// Steps definition (expanded canonical flow)
-// Added one more step 'Arriving' after 'Out for delivery'
-$steps = ['Packing', 'Out for delivery', 'Arriving', 'Delivered'];
+// Steps definition aligned to DB enum: Packing -> Shipped -> Completed
+$steps = ['Packing', 'Shipped', 'Delivered'];
 $status_to_index = [
     // 'pending' and 'placed' do not map to a visible step (no active step shown)
     'pending' => -1,
     'placed' => -1,
+    'packing' => 0,
     'processing' => 0,
     'packed' => 0,
+    // Map shipped and common legacy variants to step 1
     'shipped' => 1,
     'in transit' => 1,
-    'out for delivery' => 2,
-    'outfordelivery' => 2,
-    'ofd' => 2,
-    'arriving' => 3,
-    'arrive' => 3,
-    'completed' => 4,
-    'delivered' => 4
+    'out for delivery' => 1,
+    'outfordelivery' => 1,
+    'ofd' => 1,
+    'arriving' => 1,
+    'arrive' => 1,
+    // Completed/delivered map to final step
+    'completed' => 2,
+    'delivered' => 2
 ];
 
 $curStatus = strtolower(trim($order['status'] ?? ''));
@@ -94,20 +96,21 @@ $isIssue = (strpos($curStatus, 'cancel') !== false) || (strpos($curStatus, 'fail
 
 // Friendly labels for known status codes (DB may store 'OFD')
 $status_label_map = [
-    'pending' => 'Processing',
+    'pending' => 'Pending',
     'placed' => 'Placed',
     'processing' => 'Packing',
+    'packing' => 'Order being pack',
     'packed' => 'Packed',
-    'shipped' => 'In transit',
-    'in transit' => 'In transit',
-    'out for delivery' => 'Out for delivery',
-    'outfordelivery' => 'Out for delivery',
-    'ofd' => 'Out for delivery',
-    'arriving' => 'Arriving',
-    'arrive' => 'Arriving',
+    'shipped' => 'Handed to courier',
+    'in transit' => 'Shipped',
+    'out for delivery' => 'Shipped',
+    'outfordelivery' => 'Shipped',
+    'ofd' => 'Shipped',
+    'arriving' => 'Shipped',
+    'arrive' => 'Shipped',
     'completed' => 'Delivered',
     'delivered' => 'Delivered',
-    'confirmed' => 'Confirmed',
+    'confirmed' => 'Packing',
     'cancelled' => 'Cancelled'
 ];
 
@@ -162,23 +165,62 @@ $badge_variant = $isIssue ? 'issue' : (($currentIndex >= $lastIndex) ? '' : 'mov
  $status_text = htmlspecialchars($status_label_map[strtolower(trim($order['status'] ?? ''))] ?? $order['status'] ?? '');
  $pct_f = round($pct);
 
+// If the order is cancelled, try to fetch the latest cancellation reason
+$cancel_reason_html = '';
+if (strpos($curStatus, 'cancel') !== false) {
+    // First check order_status_history for an admin cancellation (changed_by > 0)
+    $hist_cancel_q = $conn->query("SELECT change_reason, changed_by, created_at FROM order_status_history WHERE order_id = '$order_id' AND LOWER(new_status) = 'cancelled' ORDER BY created_at DESC LIMIT 1");
+    if ($hist_cancel_q && $hist_cancel_q->num_rows > 0) {
+        $hc = $hist_cancel_q->fetch_assoc();
+        $changed_by = intval($hc['changed_by'] ?? 0);
+        $hc_reason = trim($hc['change_reason'] ?? '');
+        if ($changed_by > 0 && $hc_reason !== '') {
+            // Admin-provided cancel reason takes precedence
+            $cancel_reason_html = htmlspecialchars($hc_reason);
+        }
+    }
+    // If no admin cancel reason found, fall back to user-provided cancellation reason
+    if (empty($cancel_reason_html)) {
+        $cr_q = $conn->query("SELECT reason, created_at FROM user_order_cancellations WHERE order_id = '$order_id' ORDER BY created_at DESC LIMIT 1");
+        if ($cr_q && $cr_q->num_rows > 0) {
+            $cr = $cr_q->fetch_assoc();
+            $cancel_reason_html = htmlspecialchars(trim($cr['reason'] ?? ''));
+        }
+    }
+}
+
+// Build a small fragment to display the cancel reason beneath the status badge
+$cancel_html_fragment = '';
+if (!empty($cancel_reason_html)) {
+    $cancel_html_fragment = "<div class=\"cancel-reason\" style=\"margin-top:6px;color:#c0392b;font-weight:600;\">Reason: {$cancel_reason_html}</div>";
+}
+
+// Show tracking controls only when order has shipped (step index >= 1)
+$show_tracking = ($currentIndex >= 1);
+$tracking_block = '';
+if ($show_tracking) {
+    // show copy button inline next to the tracking number
+    $tracking_block = "<div class=\"kv-row\"><div class=\"kv-label\">Tracking no.</div><div class=\"kv-value\">{$tracking_no} <button type=\"button\" class=\"btn btn-sm btn-outline-secondary copy-track\" data-track=\"{$tracking_no}\" style=\"margin-left:8px;\">Copy</button></div></div>";
+    // open jnt button placed below Destination in its own row
+    $open_jnt_row = "<div class=\"kv-row\"><div class=\"kv-label\"></div><div class=\"kv-value\"><button type=\"button\" class=\"btn btn-sm btn-primary open-jnt\" data-track=\"{$tracking_no}\">Open JNT</button></div></div>";
+} else {
+    $open_jnt_row = '';
+}
+
  $card = <<<HTML
 <link rel="stylesheet" href="css/order_track.css">
 <div class="ot-track-wrap">
   <div class="ot-panel">
-    <div class="ot-header">
-      <div>
-                <div class="status-badge" data-variant="{$badge_variant}">{$status_text}</div>
-            </div>
+                <div class="ot-header">
             <div>
-                <div class="kv-row"><div class="kv-label">Tracking no.</div><div class="kv-value">{$tracking_no}
-                    <div style="margin-top:6px;">
-                        <button type="button" class="btn btn-sm btn-outline-secondary copy-track" data-track="{$tracking_no}">Copy</button>
-                        <button type="button" class="btn btn-sm btn-primary open-jnt" data-track="{$tracking_no}" style="margin-left:6px;">Open JNT</button>
-                    </div>
-                </div></div>
+                                <div class="status-badge" data-variant="{$badge_variant}">{$status_text}</div>
+                                {$cancel_html_fragment}
+                        </div>
+            <div>
+                    {$tracking_block}
                 <div class="kv-row"><div class="kv-label">Recipient</div><div class="kv-value">{$recipient}</div></div>
                 <div class="kv-row"><div class="kv-label">Destination</div><div class="kv-value">{$destination}</div></div>
+                    {$open_jnt_row}
             </div>
         </div>
 
