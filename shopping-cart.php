@@ -93,12 +93,12 @@ if (isset($_POST['order_btn'])) {
         $detail_query = mysqli_query($conn, "INSERT INTO `orders`(user_id, name, address, phone, payment_method, totalproduct, totalprice, status, created_at) 
             VALUES('$userid','$name','$address','$number','$payment_method','$total_product','$price_total','$status', '$order_date')");
 
-        // Delete only selected cart rows
-        $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE c_id IN ($ids_list) AND user_id='$userid'");
-        // Set flash to display on redirect
-        $_SESSION['success_message'] = 'Order placed successfully';
-        header("location:index.php");
-        exit();
+    // Delete only selected cart rows
+    $cart_query1 = mysqli_query($conn, "DELETE FROM `cart` WHERE c_id IN ($ids_list) AND user_id='$userid'");
+    // Set flash to display on redirect and stay on cart page so user can see confirmation
+    $_SESSION['success_message'] = 'Order placed successfully';
+    header("location:shopping-cart.php");
+    exit();
     } else {
         if (session_status() == PHP_SESSION_NONE) session_start();
         $_SESSION['error_message'] = 'No selectable items found.';

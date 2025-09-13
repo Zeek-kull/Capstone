@@ -54,16 +54,29 @@ window.showFlash = function(type, message, timeoutMs) {
         strong.textContent = (type === 'danger' ? 'Error' : (type === 'success' ? 'Success' : (type === 'warning' ? 'Warning' : 'Notice')));
         header.appendChild(strong);
 
-        // var closeBtn = document.createElement('button');
-        // closeBtn.type = 'button';
-        // // use white close icon for dark headers
-        // closeBtn.className = 'btn-close';
-        // if (headerBgClass.indexOf('text-white') !== -1) {
-        //     closeBtn.className += ' btn-close-white';
-        // }
-        // closeBtn.setAttribute('aria-label', 'Close');
-        // closeBtn.addEventListener('click', function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} });
-        // header.appendChild(closeBtn);
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        // use white close icon for dark headers
+        closeBtn.className = 'btn-close';
+        if (headerBgClass.indexOf('text-white') !== -1) {
+            closeBtn.className += ' btn-close-white';
+        }
+    closeBtn.setAttribute('aria-label', 'Close');
+    // hide visible close button; click-to-dismiss is handled by clicking the toast itself
+    closeBtn.style.display = 'none';
+    closeBtn.setAttribute('aria-hidden', 'true');
+        // click on the close button should not bubble to the toast click handler
+        closeBtn.addEventListener('click', function(e){
+            e.stopPropagation();
+            try {
+                if (bsToast) {
+                    bsToast.hide();
+                } else {
+                    toast.parentNode && toast.parentNode.removeChild(toast);
+                }
+            } catch(e){}
+        });
+        header.appendChild(closeBtn);
 
         var body = document.createElement('div');
         body.className = 'toast-body';
@@ -73,9 +86,21 @@ window.showFlash = function(type, message, timeoutMs) {
         toast.appendChild(body);
         wrapper.appendChild(toast);
 
+    // allow click anywhere on the toast to dismiss immediately (close button hidden)
+        var bsToast = null;
+        toast.addEventListener('click', function(){
+            try {
+                if (bsToast) {
+                    bsToast.hide();
+                } else {
+                    toast.parentNode && toast.parentNode.removeChild(toast);
+                }
+            } catch(e){}
+        });
+
         if (window.bootstrap && typeof bootstrap.Toast === 'function') {
             try {
-                var bsToast = new bootstrap.Toast(toast, { delay: timeoutMs });
+                bsToast = new bootstrap.Toast(toast, { delay: timeoutMs });
                 bsToast.show();
                 toast.addEventListener('hidden.bs.toast', function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} });
             } catch(e) {
