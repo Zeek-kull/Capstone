@@ -24,7 +24,7 @@ if (isset($_POST['order_action_btn'])) {
       $new = 'Completed';
       $upd = mysqli_query($conn, "UPDATE orders SET status = '{$new}', status_updated_at = NOW() WHERE o_id = '{$action_order_id}' AND user_id = '{$k}'");
       if ($upd) {
-        $_SESSION['success_message'] = '';
+        $_SESSION['success_message'] = 'Order marked as received. Thank you!';
   } else {
         $_SESSION['error_message'] = 'Failed to update order status.';
       }
@@ -55,7 +55,7 @@ if (isset($_POST['order_action_btn'])) {
             $_SESSION['user_cancelled_orders'] = [];
           }
           $_SESSION['user_cancelled_orders'][] = $action_order_id;
-          $_SESSION['success_message'] = '';
+          $_SESSION['success_message'] = 'Order cancelled successfully. Stock has been restored.';
         } catch (Exception $e) {
           mysqli_rollback($conn);
           $_SESSION['error_message'] = 'Failed to cancel order.';
@@ -151,8 +151,9 @@ $status_label_map = [
     $new_address = $_POST['new_address'] ?? '';
     $update_query = mysqli_query($conn, "UPDATE `orders` SET address = '" . mysqli_real_escape_string($conn, $new_address) . "' WHERE o_id = '{$update_id}' AND user_id = '{$k}'");
     if ($update_query) {
-      echo "<script>window.location.href='profile.php';</script>";
-      exit();
+  $_SESSION['success_message'] = 'Shipping address updated.';
+  header('Location: profile.php');
+  exit();
     }
   }
 
