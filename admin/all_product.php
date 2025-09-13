@@ -38,14 +38,28 @@ else
   $update_id = $_POST['update_id'];
   $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , description='$description' , price='$price'  WHERE p_id = '$update_id'");
   if($update_quantity_query){
-     header('location:all_product.php');
-  };
+    // set flash message and redirect
+    if (session_status() == PHP_SESSION_NONE) session_start();
+    $_SESSION['success_message'] = 'Product updated successfully.';
+    header('location:all_product.php');
+    exit();
+  } else {
+    if (session_status() == PHP_SESSION_NONE) session_start();
+    $_SESSION['error_message'] = 'Failed to update product.';
+  }
 };
 
  if(isset($_GET['remove'])){
   $remove_id = $_GET['remove'];
-  mysqli_query($conn, "DELETE FROM `product` WHERE p_id = '$remove_id'");
+  $del = mysqli_query($conn, "DELETE FROM `product` WHERE p_id = '$remove_id'");
+  if (session_status() == PHP_SESSION_NONE) session_start();
+  if($del){
+    $_SESSION['success_message'] = 'Product deleted successfully.';
+  } else {
+    $_SESSION['error_message'] = 'Failed to delete product.';
+  }
   header('location:all_product.php');
+  exit();
 };
 
 // Get product stats
@@ -87,6 +101,7 @@ if($catResult){
 <body>
 
 <div class="products-body">
+  <?php include __DIR__ . '/../includes/flash.php'; ?>
   <!-- Page Header -->
   <div class="page-header">
     <div>

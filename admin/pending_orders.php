@@ -60,7 +60,7 @@ if (isset($_GET['remove'])) {
 $admin_userid = $_SESSION['admin_userid'] ?? 'admin';
 $admin_query = mysqli_query($conn, "SELECT ad_id FROM admin WHERE userid = '$admin_userid'");
 $admin_data = mysqli_fetch_assoc($admin_query);
-$admin_id = $admin_data['ad_id'] ?? 1;
+$admin_id = $admin_data['id'] ?? 1;
 
 // Handle status update with process tracking
 if (isset($_POST['update_update_btn'])) {
@@ -167,7 +167,7 @@ $stats_result = $conn->query($stats_sql);
 $stats = $stats_result->fetch_assoc();
 
 // Map database status values to friendly labels for display
- $status_label_map = [
+$status_label_map = [
     'Pending' => 'Pending',
     'Processing' => 'Processing',
     'Shipped' => 'Shipped',
@@ -177,13 +177,28 @@ $stats = $stats_result->fetch_assoc();
     'Cancelled' => 'Cancelled'
 ];
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management</title>
+    <link rel="stylesheet" href="css/pending_orders.css">
 </head>
 <body>
 
 <div class="pendingbody">
     <?php
-    // include flash partial for admin messages
-    include __DIR__ . '/../includes/flash.php';
+    // Display flash messages (set earlier during operations)
+    if (isset($_SESSION['success_message']) && !empty($_SESSION['success_message'])) {
+        echo '<div class="alert alert-success" role="alert" id="adminFlashSuccess">' . htmlspecialchars($_SESSION['success_message']) . '</div>';
+        unset($_SESSION['success_message']);
+    }
+    if (isset($_SESSION['error_message']) && !empty($_SESSION['error_message'])) {
+        echo '<div class="alert alert-danger" role="alert" id="adminFlashError">' . htmlspecialchars($_SESSION['error_message']) . '</div>';
+        unset($_SESSION['error_message']);
+    }
     ?>
     <!-- Page Header -->
     <div class="page-header">
@@ -489,11 +504,7 @@ document.getElementById('sortBy').addEventListener('change', function(e) {
 // Show status history
 function showStatusHistory(orderId) {
     // This would typically open a modal with status history
-    if (typeof showFlash === 'function') {
-        showFlash('info', 'Status history for order #' + orderId + ' would be displayed here');
-    } else {
-        console.log('Status history for order #' + orderId + ' would be displayed here');
-    }
+    alert('Status history for order #' + orderId + ' would be displayed here');
 }
 </script>
 

@@ -48,7 +48,7 @@ else
             while($row = mysqli_fetch_assoc($result)) {
               ?>
     <tr>
-      <td><?php echo $row["id"] ?></td>
+      <td><?php echo $row["u_id"] ?></td>
       <td><?php echo $row["f_name"] ?></td>
       <td><?php echo $row["l_name"] ?></td>
       <td><?php echo $row["email"] ?></td>

@@ -76,7 +76,7 @@ $result = $conn -> query ($sql);
 <script src="./js/jquery-3.6.0.min.js"></script>
 <script src="./js/popper.min.js"></script>
 <script src="./js/bootstrap.min.js"></script>
-<script src="./js//script.js"></script>
+<script src="./js/script.js"></script>
 <script src="./js/3b83a3096d.js"></script>
 
 </body>

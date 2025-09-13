@@ -1,21 +1,15 @@
 <?php
+session_start();
 
-SESSION_START();
-
-if(isset($_SESSION['admin_auth']))
-{
-    if($_SESSION['admin_auth']!=1)
-    {
-        header("location:a_login.php");
-    }
-}
-else
-{
-    header("location:a_login.php");
+// Auth check
+if (!isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] != 1) {
+    header('Location: a_login.php');
+    exit();
 }
 
 include 'header.php';
 include 'lib/connection.php';
+
 $result = null;
 
 // Fetch existing categories for dropdown
@@ -23,47 +17,49 @@ $categories = [];
 $catRes = mysqli_query($conn, "SELECT DISTINCT category FROM product ORDER BY category");
 if ($catRes) {
     while ($crow = mysqli_fetch_assoc($catRes)) {
-        if (!empty($crow['category'])) $categories[] = $crow['category'];
+        if (!empty($crow['category'])) {
+            $categories[] = $crow['category'];
+        }
     }
 }
 
-if (isset($_POST['submit'])) 
-{
+if (isset($_POST['submit'])) {
     // Normalize product name: trim, collapse multiple spaces, Title Case (UTF-8 aware)
     $name_raw = isset($_POST['name']) ? trim($_POST['name']) : '';
     $name_clean = preg_replace('/\s+/', ' ', $name_raw);
     if (function_exists('mb_convert_case')) {
-        $name = mb_convert_case($name_clean, MB_CASE_TITLE, "UTF-8");
+        $name = mb_convert_case($name_clean, MB_CASE_TITLE, 'UTF-8');
     } else {
         $name = ucwords(strtolower($name_clean));
     }
+
     // category may come from select or new_category input
     if (!empty($_POST['category_select']) && $_POST['category_select'] !== 'new') {
         $category = $_POST['category_select'];
     } else {
         $category = trim($_POST['new_category'] ?? '');
     }
-    $tag = $_POST['tags'];
-    $description = $_POST['description'];
-    $quantity = $_POST['quantity'];
-    $price = $_POST['price'];
+
+    $tag = $_POST['tags'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+    $price = isset($_POST['price']) ? (float)$_POST['price'] : 0.0;
+
     // Handle multiple files: require at least 1 image and allow up to 5
-    $uploadedFiles = $_FILES['uploadfile'];
-    $fileCount = is_array($uploadedFiles['name']) ? count(array_filter($uploadedFiles['name'])) : 0;
+    $uploadedFiles = $_FILES['uploadfile'] ?? null;
+    $fileCount = 0;
+    if ($uploadedFiles && is_array($uploadedFiles['name'])) {
+        $fileCount = count(array_filter($uploadedFiles['name']));
+    }
 
     if ($fileCount < 1) {
-        if (session_status() == PHP_SESSION_NONE) session_start();
-        $_SESSION['error_message'] = 'Please upload at least 1 image.';
-        header('Location: all_product.php');
-        exit();
+        $result = "<div class='alert alert-danger'>Please upload at least 1 image.</div>";
     } elseif ($fileCount > 5) {
-        if (session_status() == PHP_SESSION_NONE) session_start();
-        $_SESSION['error_message'] = 'You may upload a maximum of 5 images per product.';
-        header('Location: all_product.php');
-        exit();
+        $result = "<div class='alert alert-danger'>You may upload a maximum of 5 images per product.</div>";
     } else {
         $savedNames = [];
         $errors = [];
+
         // Ensure upload directory exists
         $uploadDir = __DIR__ . '/uploaded_products/';
         if (!is_dir($uploadDir)) {
@@ -71,8 +67,8 @@ if (isset($_POST['submit']))
         }
 
         // Validation rules
-        $allowedExt = ['jpg','jpeg','png','gif','webp'];
-        $allowedMime = ['image/jpeg','image/png','image/gif','image/webp'];
+        $allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $maxSize = 5 * 1024 * 1024; // 5 MB
 
         // use finfo for MIME sniffing
@@ -198,7 +194,6 @@ if (isset($_POST['submit']))
                         mkdir($thumbsDir, 0755, true);
                     }
                     $thumbPath = $thumbsDir . $unique;
-                    // create thumbnail safely
                     $imgInfo = @getimagesize($dest);
                     if ($imgInfo !== false) {
                         $width = $imgInfo[0];
@@ -243,7 +238,6 @@ if (isset($_POST['submit']))
                                 imagefilledrectangle($thumbImg, 0, 0, $new_w, $new_h, $transparent);
                             }
                             imagecopyresampled($thumbImg, $srcImg, 0, 0, 0, 0, $new_w, $new_h, $width, $height);
-                            // save thumbnail depending on mime
                             $savedThumb = false;
                             switch ($mime) {
                                 case 'image/jpeg':
@@ -264,7 +258,6 @@ if (isset($_POST['submit']))
                             if ($savedThumb) {
                                 @chmod($thumbPath, 0644);
                             }
-                            // free resources
                             imagedestroy($srcImg);
                             imagedestroy($thumbImg);
                         }
@@ -274,6 +267,7 @@ if (isset($_POST['submit']))
                 $errors[] = "Failed to move uploaded file '{$origName}'.";
             }
         }
+
         finfo_close($finfo);
 
         if (count($savedNames) === 0) {
@@ -281,26 +275,24 @@ if (isset($_POST['submit']))
             if (!empty($errors)) {
                 $msg .= ' Errors: ' . implode(' ', array_map('htmlspecialchars', $errors));
             }
-            if (session_status() == PHP_SESSION_NONE) session_start();
-            $_SESSION['error_message'] = $msg;
-            header('Location: all_product.php');
-            exit();
+            $result = "<div class='alert alert-danger'>" . $msg . "</div>";
         } else {
             if (!empty($errors)) {
-                if (session_status() == PHP_SESSION_NONE) session_start();
-                $_SESSION['warning_message'] = 'Uploaded some files but some files were skipped: ' . implode(' | ', array_map('htmlspecialchars', $errors));
-                header('Location: all_product.php');
-                exit();
+                $result = "<div class='alert alert-warning'>Uploaded some files but some files were skipped: " . implode(' | ', array_map('htmlspecialchars', $errors)) . "</div>";
             }
+
             // store as comma-separated filenames
             $filename_str = implode(',', $savedNames);
 
             $stmt = $conn->prepare("INSERT INTO product(name, category, tags, description, quantity, price, imgname) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt === false) {
+                die('Prepare failed: ' . $conn->error);
+            }
             $stmt->bind_param("ssssids", $name, $category, $tag, $description, $quantity, $price, $filename_str);
 
             if ($stmt->execute()) {
-                if (session_status() == PHP_SESSION_NONE) session_start();
-                $_SESSION['success_message'] = 'Data insert success';
+                // prefer session flash + redirect to avoid resubmit
+                $_SESSION['success_message'] = 'Product inserted successfully.';
                 header('Location: all_product.php');
                 exit();
             } else {
@@ -308,129 +300,125 @@ if (isset($_POST['submit']))
             }
         }
     }
-} 
+}
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script>
-        function previewImage(event) {
-            const files = event.target.files;
-            const container = document.getElementById('imagePreviewContainer');
-            const msg = document.getElementById('imageUploadMessage');
-            container.innerHTML = '';
-            msg.innerText = '';
-
-            // enforce max files client-side
-            if (files.length > 5) {
-                msg.innerText = 'You selected ' + files.length + ' files. Maximum allowed is 5. Please select up to 5 images.';
-                // clear the file input so user must re-select
-                try {
-                    event.target.value = '';
-                } catch (e) {
-                    // fallback for older browsers
-                    event.target.type = 'text';
-                    event.target.type = 'file';
-                }
-                return;
-            }
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.style.maxWidth = '120px';
-                    img.style.maxHeight = '120px';
-                    img.style.border = '1px solid #ddd';
-                    img.style.borderRadius = '4px';
-                    img.style.padding = '5px';
-                    container.appendChild(img);
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-    </script>
-</head>
-<body>
-    <div class="container mt-5">
-      <?php echo $result;?>
-        <h4 class="mb-4">Add Product</h4>
-        <div class="card p-4 shadow-sm">
-            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="exampleInputName" class="form-label">Product Name</label>
-                    <input type="text" name="name" class="form-control" id="exampleInputName" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="category_select" class="form-label">Category</label>
-                    <select name="category_select" id="category_select" class="form-control" required>
-                        <option value="">-- Select category --</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
-                        <?php endforeach; ?>
-                        <option value="new">Add new category...</option>
-                    </select>
-                    <input type="text" name="new_category" id="new_category" class="form-control mt-2" placeholder="Enter new category" style="display:none;">
-                </div>
+                <meta charset="UTF-8">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Add Product</title>
+                <link rel="stylesheet" href="css/style.css">
                 <script>
-                    document.addEventListener('DOMContentLoaded', function(){
-                        var sel = document.getElementById('category_select');
-                        var newCat = document.getElementById('new_category');
-                        sel.addEventListener('change', function(){
-                            if (this.value === 'new') {
-                                newCat.style.display = 'block';
-                                newCat.required = true;
-                            } else {
-                                newCat.style.display = 'none';
-                                newCat.required = false;
+                    function previewImage(event) {
+                        const files = event.target.files;
+                        const container = document.getElementById('imagePreviewContainer');
+                        const msg = document.getElementById('imageUploadMessage');
+                        container.innerHTML = '';
+                        msg.innerText = '';
+
+                        // enforce max files client-side
+                        if (files.length > 5) {
+                            msg.innerText = 'You selected ' + files.length + ' files. Maximum allowed is 5. Please select up to 5 images.';
+                            // clear the file input so user must re-select
+                            try {
+                                event.target.value = '';
+                            } catch (e) {
+                                // fallback for older browsers
+                                event.target.type = 'text';
+                                event.target.type = 'file';
                             }
-                        });
-                    });
+                            return;
+                        }
+
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.style.maxWidth = '120px';
+                                img.style.maxHeight = '120px';
+                                img.style.border = '1px solid #ddd';
+                                img.style.borderRadius = '4px';
+                                img.style.padding = '5px';
+                                container.appendChild(img);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }
                 </script>
+            </head>
+            <body>
+                <div class="container mt-5">
+                    <?php echo $result; ?>
+                    <h4 class="mb-4">Add Product</h4>
+                    <div class="card p-4 shadow-sm">
+                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="exampleInputName" class="form-label">Product Name</label>
+                                <input type="text" name="name" class="form-control" id="exampleInputName" required>
+                            </div>
 
-                <div class="mb-3">
-                    <label for="exampleInputTag" class="form-label">Tag</label>
-                    <select name="tags" class="form-control" id="exampleInputTag" required>
-                        <option value="Men">Men</option>
-                        <option value="Women">Women</option>
-                        <option value="Kid's">Kid's</option>
-                    </select>
+                            <div class="mb-3">
+                                <label for="category_select" class="form-label">Category</label>
+                                <select name="category_select" id="category_select" class="form-control" required>
+                                    <option value="">-- Select category --</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+                                    <?php endforeach; ?>
+                                    <option value="new">Add new category...</option>
+                                </select>
+                                <input type="text" name="new_category" id="new_category" class="form-control mt-2" placeholder="Enter new category" style="display:none;">
+                            </div>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    var sel = document.getElementById('category_select');
+                                    var newCat = document.getElementById('new_category');
+                                    sel.addEventListener('change', function() {
+                                        if (this.value === 'new') {
+                                            newCat.style.display = 'block';
+                                            newCat.required = true;
+                                        } else {
+                                            newCat.style.display = 'none';
+                                            newCat.required = false;
+                                        }
+                                    });
+                                });
+                            </script>
+
+                            <div class="mb-3">
+                                <label for="exampleInputTag" class="form-label">Tag</label>
+                                <select name="tags" class="form-control" id="exampleInputTag" required>
+                                    <option value="Men">Men</option>
+                                    <option value="Women">Women</option>
+                                    <option value="Kid's">Kid's</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="exampleInputDescription" class="form-label">Description</label>
+                                <input type="text" name="description" class="form-control" id="exampleInputDescription" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="exampleInputQuantity" class="form-label">Quantity</label>
+                                <input type="number" name="quantity" class="form-control" id="exampleInputQuantity" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="exampleInputPrice" class="form-label">Price</label>
+                                <input type="number" name="price" class="form-control" id="exampleInputPrice" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="uploadfile" class="form-label">Images (min 1, max 5)</label>
+                                <input type="file" name="uploadfile[]" id="uploadfile" class="form-control-file" onchange="previewImage(event)" multiple required>
+                                <div class="mt-2" id="imageUploadMessage" style="color: #b00; font-weight: 600;"></div>
+                                <div class="mt-2" id="imagePreviewContainer" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                            </div>
+
+                            <button type="submit" name="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
                 </div>
-
-                <div class="mb-3">
-                    <label for="exampleInputDescription" class="form-label">Description</label>
-                    <input type="text" name="description" class="form-control" id="exampleInputDescription" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="exampleInputQuantity" class="form-label">Quantity</label>
-                    <input type="number" name="quantity" class="form-control" id="exampleInputQuantity" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="exampleInputPrice" class="form-label">Price</label>
-                    <input type="number" name="price" class="form-control" id="exampleInputPrice" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="uploadfile" class="form-label">Images (min 1, max 5)</label>
-                    <input type="file" name="uploadfile[]" id="uploadfile" class="form-control-file" onchange="previewImage(event)" multiple required>
-                    <div class="mt-2" id="imageUploadMessage" style="color: #b00; font-weight: 600;"></div>
-                    <div class="mt-2" id="imagePreviewContainer" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
-                </div>
-
-                <button type="submit" name="submit" class="btn btn-primary">Submit</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+            </body>
+            </html>

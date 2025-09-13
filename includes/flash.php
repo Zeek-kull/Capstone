@@ -22,7 +22,7 @@ if (!empty($_SESSION['error_message'])) {
 // type: 'success' | 'danger' | 'warning' | 'info'
 window.showFlash = function(type, message, timeoutMs) {
     try {
-        timeoutMs = typeof timeoutMs === 'number' ? timeoutMs : 5000;
+        timeoutMs = typeof timeoutMs === 'number' ? timeoutMs : 3000;
         var wrapper = document.querySelector('.cp-toast-wrapper');
         if (!wrapper) {
             wrapper = document.createElement('div');
@@ -46,16 +46,24 @@ window.showFlash = function(type, message, timeoutMs) {
 
         var header = document.createElement('div');
         header.className = 'toast-header';
+        // apply header color based on type
+        var headerBgClass = (type === 'danger' ? 'bg-danger text-white' : (type === 'success' ? 'bg-success text-white' : (type === 'warning' ? 'bg-warning text-dark' : 'bg-info text-dark')));
+        header.className += ' ' + headerBgClass;
         var strong = document.createElement('strong');
         strong.className = 'me-auto';
-        strong.textContent = (type === 'danger' ? 'Error' : (type === 'success' ? 'Success' : 'Notice'));
+        strong.textContent = (type === 'danger' ? 'Error' : (type === 'success' ? 'Success' : (type === 'warning' ? 'Warning' : 'Notice')));
         header.appendChild(strong);
-        var closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'btn-close';
-        closeBtn.setAttribute('aria-label', 'Close');
-        closeBtn.addEventListener('click', function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} });
-        header.appendChild(closeBtn);
+
+        // var closeBtn = document.createElement('button');
+        // closeBtn.type = 'button';
+        // // use white close icon for dark headers
+        // closeBtn.className = 'btn-close';
+        // if (headerBgClass.indexOf('text-white') !== -1) {
+        //     closeBtn.className += ' btn-close-white';
+        // }
+        // closeBtn.setAttribute('aria-label', 'Close');
+        // closeBtn.addEventListener('click', function(){ try { toast.parentNode && toast.parentNode.removeChild(toast); } catch(e){} });
+        // header.appendChild(closeBtn);
 
         var body = document.createElement('div');
         body.className = 'toast-body';
@@ -90,7 +98,7 @@ window.showFlash = function(type, message, timeoutMs) {
     try {
         var msgs = <?php echo json_encode($messages, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
         msgs.forEach(function(m){
-            if (window.showFlash) showFlash(m.type === 'danger' ? 'danger' : (m.type || 'info'), m.text, 5000);
+            if (window.showFlash) showFlash(m.type === 'danger' ? 'danger' : (m.type || 'info'), m.text, 3000);
         });
     } catch(e){}
 })();
