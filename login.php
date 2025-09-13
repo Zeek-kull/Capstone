@@ -27,7 +27,7 @@ if (isset($_POST['submit'])) {
         if (!$email) {
             $error_message = "Invalid email format";
         } else {
-            $loginquery = "SELECT u_id, f_name, pass FROM users WHERE email = ?";
+            $loginquery = "SELECT id, f_name, pass FROM users WHERE email = ?";
             $stmt = $conn->prepare($loginquery);
             $stmt->bind_param('s', $email);
             $stmt->execute();
@@ -39,7 +39,7 @@ if (isset($_POST['submit'])) {
                 if (password_verify($password, $stored_hash)) {
                     session_regenerate_id(true);
                     $_SESSION['username'] = $result['f_name'];
-                    $_SESSION['userid'] = $result['u_id'];
+                    $_SESSION['userid'] = $result['id'];
                     $_SESSION['auth'] = 1;
                     $_SESSION['email'] = $email;
                     header("location:index.php");
