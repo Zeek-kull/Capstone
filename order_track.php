@@ -63,7 +63,7 @@ if (empty($events)) {
 
 // Steps definition (expanded canonical flow)
 // Added one more step 'Arriving' after 'Out for delivery'
-$steps = ['Packed', 'In transit', 'Out for delivery', 'Arriving', 'Delivered'];
+$steps = ['Packing', 'Out for delivery', 'Arriving', 'Delivered'];
 $status_to_index = [
     // 'pending' and 'placed' do not map to a visible step (no active step shown)
     'pending' => -1,
@@ -94,9 +94,9 @@ $isIssue = (strpos($curStatus, 'cancel') !== false) || (strpos($curStatus, 'fail
 
 // Friendly labels for known status codes (DB may store 'OFD')
 $status_label_map = [
-    'pending' => 'Placed',
+    'pending' => 'Processing',
     'placed' => 'Placed',
-    'processing' => 'Processing',
+    'processing' => 'Packing',
     'packed' => 'Packed',
     'shipped' => 'In transit',
     'in transit' => 'In transit',
@@ -168,12 +168,15 @@ $badge_variant = $isIssue ? 'issue' : (($currentIndex >= $lastIndex) ? '' : 'mov
   <div class="ot-panel">
     <div class="ot-header">
       <div>
-        <div style="font-weight:700;margin-bottom:6px">Order Tracking - #{$order_id}</div>
                 <div class="status-badge" data-variant="{$badge_variant}">{$status_text}</div>
             </div>
             <div>
-                <div class="kv-row"><div class="kv-label">Tracking no.</div><div class="kv-value">{$tracking_no}</div></div>
-                <div class="kv-row"><div class="kv-label">Courier</div><div class="kv-value">{$courier}</div></div>
+                <div class="kv-row"><div class="kv-label">Tracking no.</div><div class="kv-value">{$tracking_no}
+                    <div style="margin-top:6px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary copy-track" data-track="{$tracking_no}">Copy</button>
+                        <button type="button" class="btn btn-sm btn-primary open-jnt" data-track="{$tracking_no}" style="margin-left:6px;">Open JNT</button>
+                    </div>
+                </div></div>
                 <div class="kv-row"><div class="kv-label">Recipient</div><div class="kv-value">{$recipient}</div></div>
                 <div class="kv-row"><div class="kv-label">Destination</div><div class="kv-value">{$destination}</div></div>
             </div>

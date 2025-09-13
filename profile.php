@@ -20,7 +20,7 @@ if (isset($_POST['order_action_btn'])) {
     $o = mysqli_fetch_assoc($o_q);
     $cur = trim($o['status']);
     // If current status is Arriving, user action means confirm receipt -> Completed
-  if (strtolower($cur) === 'arriving') {
+      if (strtolower($cur) === 'arriving') {
       $new = 'Completed';
       $upd = mysqli_query($conn, "UPDATE orders SET status = '{$new}', status_updated_at = NOW() WHERE o_id = '{$action_order_id}' AND user_id = '{$k}'");
       if ($upd) {
@@ -30,6 +30,17 @@ if (isset($_POST['order_action_btn'])) {
       }
     } else {
       // Otherwise attempt to cancel the order if not already completed/cancelled
+      // Allow cancellation only if current status is Processing
+      if (strtolower($cur) === 'processing') {
+        // proceed with cancellation
+      
+      } else {
+        $_SESSION['error_message'] = 'Order can only be cancelled while it is Processing.';
+        // redirect early
+        header('Location: profile.php');
+        exit;
+      }
+      // Now perform cancellation
       if (strtolower($cur) === 'completed' || strtolower($cur) === 'cancelled') {
         $_SESSION['error_message'] = 'Order cannot be cancelled.';
       } else {
@@ -73,8 +84,8 @@ $sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_dis
 $result = $conn->query($sql);
 // Map DB status values to friendly labels (DB stores 'OFD' for Out for delivery)
 $status_label_map = [
-  'Pending' => 'Order placed',
-  'Processing' => 'Order is being processed',
+  'Pending' => 'Processing order',
+  'Processing' => 'Order is being packed by seller',
   'Shipped' => 'Order shipped',
   'OFD' => 'Out for delivery',
   'Arriving' => 'Arriving',
@@ -260,8 +271,8 @@ $status_label_map = [
                     echo '<button type="submit" name="order_action_btn" class="btn btn-sm btn-success">Mark Received</button>';
                     echo '</form>';
                   } else {
-                    // show Cancel button if not arriving/completed/cancelled
-                    if (!in_array(strtolower($curst), ['completed','cancelled'])) {
+                    // show Cancel button only when status is Processing
+                    if (strcasecmp($curst, 'Processing') === 0) {
                       echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'Are you sure you want to cancel this order?\');">';
                       echo '<input type="hidden" name="order_id" value="' . intval($row['o_id']) . '">';
                       echo '<button type="submit" name="order_action_btn" class="btn btn-sm btn-danger">Cancel</button>';
@@ -318,6 +329,40 @@ $status_label_map = [
         // attach close handler inside the content
         var closeBtn = content.querySelector('.ot-close');
         if (closeBtn) closeBtn.addEventListener('click', function(){ overlay.style.display='none'; });
+        // attach copy/open-jnt handlers
+        var copyBtn = content.querySelector('.copy-track');
+        if (copyBtn) {
+          // Use Font Awesome copy icon if available, otherwise fallback to emoji
+          var iconHTML = '';
+          if (typeof window.FontAwesome !== 'undefined' || document.querySelector('.fa')) {
+            // common FA class
+            iconHTML = '<i class="fa fa-copy" aria-hidden="true"></i>';
+          } else {
+            // inline SVG clipboard icon (small, self-contained)
+            iconHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+          }
+          // replace button inner content with icon while preserving accessible label
+          copyBtn.innerHTML = iconHTML;
+          copyBtn.setAttribute('title', 'Copy tracking number');
+          copyBtn.setAttribute('aria-label', 'Copy tracking number');
+          copyBtn.addEventListener('click', function(){
+            var t = copyBtn.getAttribute('data-track') || '';
+            navigator.clipboard && navigator.clipboard.writeText(t).then(function(){
+              if (typeof showFlash === 'function') showFlash('success', 'Tracking number copied to clipboard', 2000);
+            }, function(){
+              alert('Copy failed. Please select and copy the tracking number manually: ' + t);
+            });
+          });
+        }
+        var jntBtn = content.querySelector('.open-jnt');
+        if (jntBtn) {
+          jntBtn.addEventListener('click', function(){
+            var t = jntBtn.getAttribute('data-track') || '';
+            // JNT tracking URL - open in new tab
+            var url = 'https://www.jtexpress.ph/track-and-trace';
+            window.open(url, '_blank');
+          });
+        }
       })
       .catch(function(){ content.innerHTML = 'Failed to load.'; });
   });
