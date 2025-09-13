@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 12, 2025 at 08:11 PM
+-- Generation Time: Sep 13, 2025 at 05:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -70,10 +70,17 @@ CREATE TABLE `orders` (
   `payment_method` varchar(50) NOT NULL,
   `totalproduct` varchar(100) NOT NULL,
   `totalprice` decimal(10,2) NOT NULL,
-  `status` enum('Pending','Processing','Shipped','OFD','Arriving','Completed','Cancelled') DEFAULT 'Pending',
+  `status` enum('Pending','Processing','Shipped','Completed','Cancelled') DEFAULT 'Pending',
   `status_updated_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `orders`
+--
+
+INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `payment_method`, `totalproduct`, `totalprice`, `status`, `status_updated_at`, `created_at`) VALUES
+(49, 22, 'William Ken', '1329 Zone 6 Cansinala, Apalit, Pampanga', '09270417510', 'COD', '12 (1)', 20.00, 'Shipped', '2025-09-13 14:59:49', '2025-09-13 08:25:02.000000');
 
 -- --------------------------------------------------------
 
@@ -90,6 +97,19 @@ CREATE TABLE `order_status_history` (
   `change_reason` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `order_status_history`
+--
+
+INSERT INTO `order_status_history` (`os_id`, `order_id`, `old_status`, `new_status`, `changed_by`, `change_reason`, `created_at`) VALUES
+(70, 49, 'Pending', 'Processing', 1, '', '2025-09-13 14:46:31'),
+(71, 49, 'Pending', 'Processing', 1, '', '2025-09-13 14:49:27'),
+(72, 49, 'Processing', 'Shipped', 1, '', '2025-09-13 14:50:29'),
+(73, 49, 'Shipped', 'OFD', 1, '', '2025-09-13 14:52:09'),
+(74, 49, 'OFD', 'Arriving', 1, '', '2025-09-13 14:52:18'),
+(75, 49, 'Pending', 'Processing', 1, '', '2025-09-13 14:53:59'),
+(76, 49, 'Processing', 'Shipped', 1, '', '2025-09-13 14:59:49');
 
 -- --------------------------------------------------------
 
@@ -114,10 +134,13 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`p_id`, `name`, `category`, `description`, `tags`, `quantity`, `price`, `imgname`, `created_at`) VALUES
-(12, 'Cshirt', 'Top', 'Red na medyo may white', 'Men', 5, 20.00, '1756898400_480663176_599491009657365_7269848653577053364_n.jpg,1756898400_481008623_599490916324041_3204104644813343015_n.jpg', '2025-09-03 11:20:00'),
-(13, 'Sfdafdas Asdasd', 'Med', 'asdasdasdasd', 'Women', 5, 2000.00, '499818292_667335996206199_8143362886082314207_n_68b845db761ff9.02334905.jpg,499884354_667336052872860_5847642292369312817_n_68b845db766a14.16773688.jpg', '2025-09-03 13:42:51'),
-(14, 'Asdasd', 'Top', 'sfdasasd', 'Women', 15, 5000.00, 'NIKE_AIR_MICHAEL_JORDAN_23_FLIGHT_BACKPACK_68b8468de47b80.28617808.jpg', '2025-09-03 13:45:49'),
-(15, 'Vshirt', 'Med', 'dfgggggggggg', 'Men', 6, 52.00, 'Loose_Button_Knitted_Striped_Sweater_68b858227f9f13.73897179.jpg,Multiply_Jorts_68b858227ffee7.52997005.jpg,New_York_Yunkees_Sweatshirt_68b85822806e83.63997223.jpg,red_nike_68b85822825f44.41873637.jpg,See_Through_Polo_68b8582282b473.16565181.jpg', '2025-09-03 15:00:50');
+(12, 'Cshirt', 'Top', 'Red na medyo may white', 'Men', 7, 20.00, '1756898400_480663176_599491009657365_7269848653577053364_n.jpg,1756898400_481008623_599490916324041_3204104644813343015_n.jpg', '2025-09-03 11:20:00'),
+(13, 'Sfdafdas Asdasd', 'Med', 'asdasdasdasd', 'Women', 12, 2000.00, '499818292_667335996206199_8143362886082314207_n_68b845db761ff9.02334905.jpg,499884354_667336052872860_5847642292369312817_n_68b845db766a14.16773688.jpg', '2025-09-03 13:42:51'),
+(14, 'Asdasd', 'Top', 'sfdasasd', 'Women', 30, 5000.00, 'NIKE_AIR_MICHAEL_JORDAN_23_FLIGHT_BACKPACK_68b8468de47b80.28617808.jpg', '2025-09-03 13:45:49'),
+(15, 'Vshirt', 'Med', 'dfgggggggggg', 'Men', 6, 52.00, 'Loose_Button_Knitted_Striped_Sweater_68b858227f9f13.73897179.jpg,Multiply_Jorts_68b858227ffee7.52997005.jpg,New_York_Yunkees_Sweatshirt_68b85822806e83.63997223.jpg,red_nike_68b85822825f44.41873637.jpg,See_Through_Polo_68b8582282b473.16565181.jpg', '2025-09-03 15:00:50'),
+(17, 'Sshirt', 'Top', 'asdasd', 'Men', 112, 121212.00, '480479682_595799866693146_6868564942896595282_n_68c562c58cfb74.73442514.jpg', '2025-09-13 12:25:41'),
+(18, 'Nshirt', 'Top', 'asdasd', 'Men', 1212, 121212.00, '486531257_624800093793123_78971011524860523_n_68c563409fa7a9.33069079.jpg', '2025-09-13 12:27:44'),
+(19, 'Lshirt', 'Top', 'asdasd', 'Men', 12, 123123.00, '499818292_667335996206199_8143362886082314207_n_68c568f93c5409.03635206.jpg', '2025-09-13 12:52:09');
 
 -- --------------------------------------------------------
 
@@ -209,25 +232,25 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `c_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `o_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `order_status_history`
 --
 ALTER TABLE `order_status_history`
-  MODIFY `os_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `os_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `p_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `users`
