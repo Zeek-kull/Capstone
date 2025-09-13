@@ -67,7 +67,16 @@ if (isset($_POST['update_update_btn'])) {
     // Sanitize inputs
     $update_value = isset($_POST['update_status']) ? mysqli_real_escape_string($conn, trim($_POST['update_status'])) : '';
     $update_id = isset($_POST['update_id']) ? intval($_POST['update_id']) : 0;
-    $change_reason = mysqli_real_escape_string($conn, $_POST['change_reason'] ?? '');
+    $change_reason = isset($_POST['change_reason']) ? trim($_POST['change_reason']) : '';
+
+    // Server-side: require a reason when cancelling an order
+    if (strtolower($update_value) === 'cancelled' || strtolower($update_value) === 'cancel') {
+        if ($change_reason === '') {
+            $_SESSION['error_message'] = "Cancellation reason is required when cancelling an order.";
+            header('location:pending_orders.php');
+            exit();
+        }
+    }
 
     // Get current status (trim to avoid accidental whitespace mismatches)
     $current_status_query = mysqli_query($conn, "SELECT status FROM orders WHERE o_id = '{$update_id}'");
@@ -75,12 +84,13 @@ if (isset($_POST['update_update_btn'])) {
     $current_status = isset($current_status_row['status']) ? trim($current_status_row['status']) : '';
     
     // Validate status transition (case-insensitive). Keys and allowed values are lowercased.
+    // Keep transitions limited to the enum defined in the DB: Pending, Packing, Shipped, Completed, Cancelled
+    // Support legacy 'processing' values for backwards compatibility when present
     $valid_transitions = [
-        'pending' => ['processing', 'cancelled'],
+        'pending' => ['packing', 'processing', 'cancelled'],
         'processing' => ['shipped', 'cancelled'],
-        'shipped' => ['ofd', 'completed', 'cancelled'],
-        'ofd' => ['arriving', 'completed', 'cancelled'],
-        'arriving' => ['completed', 'cancelled'],
+        'packing' => ['shipped', 'cancelled'],
+        'shipped' => ['cancelled'],
         'completed' => [],
         'cancelled' => []
     ];
@@ -123,6 +133,18 @@ if (isset($_POST['update_update_btn'])) {
                             }
                         }
                     }
+                    // Also insert a cancellation reason row so users can see it in their tracking popup
+                    // Determine the order's user_id
+                    $order_user_q = mysqli_query($conn, "SELECT user_id FROM orders WHERE o_id = '{$update_id}' LIMIT 1");
+                    if ($order_user_q && mysqli_num_rows($order_user_q) > 0) {
+                        $order_user = mysqli_fetch_assoc($order_user_q);
+                        $order_user_id = intval($order_user['user_id'] ?? 0);
+                        $reason_esc = mysqli_real_escape_string($conn, $change_reason);
+                        // Insert into user_order_cancellations for display in user UI
+                        if ($order_user_id > 0) {
+                            mysqli_query($conn, "INSERT INTO user_order_cancellations (order_id, user_id, reason) VALUES ('{$update_id}', '{$order_user_id}', '{$reason_esc}')");
+                        }
+                    }
                 }
                 mysqli_commit($conn);
                 $_SESSION['success_message'] = "Order status updated successfully from $current_status to $update_value";
@@ -153,11 +175,8 @@ $result = $conn->query($sql);
 $stats_sql = "SELECT 
     COUNT(*) as total_orders,
     SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
-    SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed_count,
-    SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing_count,
+    SUM(CASE WHEN status = 'Packing' THEN 1 ELSE 0 END) as processing_count,
     SUM(CASE WHEN status = 'Shipped' THEN 1 ELSE 0 END) as shipped_count,
-    SUM(CASE WHEN status = 'OFD' THEN 1 ELSE 0 END) as out_for_delivery_count,
-    SUM(CASE WHEN status = 'Arriving' THEN 1 ELSE 0 END) as arriving_count,
     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
     SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled_count,
     -- Only count revenue for orders that are marked Completed (delivered)
@@ -169,10 +188,11 @@ $stats = $stats_result->fetch_assoc();
 // Map database status values to friendly labels for display
 $status_label_map = [
     'Pending' => 'Pending',
-    'Processing' => 'Processing',
-    'Shipped' => 'Shipped',
-    'OFD' => 'Out for delivery',
-    'Arriving' => 'Arriving',
+    // Primary DB label is Packing; show friendly 'Packing' but accept 'Processing' rows as well
+    'Packing' => 'Packing',
+    'Processing' => 'Packing',
+    'Shipped' => 'Shipped', 
+    // Completed in DB represents delivered orders
     'Completed' => 'Delivered',
     'Cancelled' => 'Cancelled'
 ];
@@ -218,11 +238,8 @@ $status_label_map = [
             <select id="statusFilter" aria-label="Filter orders by status">
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Processing">Processing</option>
+            <option value="Packing">Packing</option>
             <option value="Shipped">Shipped</option>
-            <option value="OFD">Out for delivery</option>
-            <option value="Arriving">Arriving</option>
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
             </select>
@@ -249,24 +266,12 @@ $status_label_map = [
             <div class="stat-label">Pending</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['confirmed_count']; ?></div>
-            <div class="stat-label">Confirmed</div>
-        </div>
-        <div class="stat-card">
             <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['processing_count']; ?></div>
-            <div class="stat-label">Processing</div>
+            <div class="stat-label">Packing</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['shipped_count']; ?></div>
             <div class="stat-label">Shipped</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['out_for_delivery_count']; ?></div>
-            <div class="stat-label">Out for delivery</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color: var(--info-color);"><?php echo $stats['arriving_count']; ?></div>
-            <div class="stat-label">Arriving</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" style="color: var(--success-color);"><?php echo $stats['completed_count']; ?></div>
@@ -296,19 +301,15 @@ $status_label_map = [
             $valid_next_statuses = [];
             switch($current_status) {
                 case 'Pending':
-                    $valid_next_statuses = ['Processing', 'Cancelled'];
+                    $valid_next_statuses = ['Packing', 'Cancelled'];
                     break;
                 case 'Processing':
+                case 'Packing':
                     $valid_next_statuses = ['Shipped', 'Cancelled'];
                     break;
                 case 'Shipped':
-                    // DB stores "Out for delivery" as 'OFD'
-                    $valid_next_statuses = ['OFD', 'Cancelled'];
-                    break;
-                case 'OFD':
-                    $valid_next_statuses = ['Arriving', 'Cancelled'];
-                    break;
-                case 'Arriving':
+                    // Do not allow admin to mark orders as Completed/Delivered via this UI
+                    // Only allow cancellation from Shipped here (other completion flows handled elsewhere)
                     $valid_next_statuses = ['Cancelled'];
                     break;
                 case 'Completed':
@@ -426,7 +427,7 @@ $status_label_map = [
                             <?php endforeach; ?>
                         </select>
                         
-                        <input type="text" name="change_reason" class="btn btn-sm btn-outline" placeholder="Reason (optional)" style="flex: 1;">
+                        <input type="text" name="change_reason" id="change_reason_<?php echo $row['o_id']; ?>" class="btn btn-sm btn-outline change-reason-input" placeholder="Reason (required when cancelling)" style="flex: 1;">
                         
                         <button type="submit" name="update_update_btn" class="btn btn-sm btn-primary">
                             Update
@@ -520,6 +521,47 @@ document.addEventListener('DOMContentLoaded', function(){
         setTimeout(function(){
             try{ el.style.transition = 'opacity 400ms'; el.style.opacity = 0; setTimeout(function(){ el.remove(); }, 450); }catch(err){}
         }, 6000);
+    });
+});
+</script>
+
+<script>
+// Client-side: require reason when admin attempts to set status to Cancelled
+document.addEventListener('DOMContentLoaded', function(){
+    // Attach change listener to all select elements in order-action forms
+    document.querySelectorAll('.status-form select[name="update_status"]').forEach(function(sel){
+        sel.addEventListener('change', function(e){
+            var form = sel.closest('form');
+            var reasonInput = form.querySelector('.change-reason-input');
+            if(!reasonInput) return;
+            var val = (sel.value || '').toLowerCase();
+            if(val === 'cancelled' || val === 'cancel'){
+                reasonInput.required = true;
+                reasonInput.placeholder = 'Reason (required)';
+                reasonInput.style.border = '1px solid #e74c3c';
+            } else {
+                reasonInput.required = false;
+                reasonInput.placeholder = 'Reason (optional)';
+                reasonInput.style.border = '';
+            }
+        });
+    });
+
+    // Prevent submit if required reason missing
+    document.querySelectorAll('.status-form').forEach(function(f){
+        f.addEventListener('submit', function(e){
+            var sel = f.querySelector('select[name="update_status"]');
+            var reason = f.querySelector('.change-reason-input');
+            if(sel && reason){
+                var val = (sel.value || '').toLowerCase();
+                if((val === 'cancelled' || val === 'cancel') && reason.value.trim() === ''){
+                    e.preventDefault();
+                    alert('Please provide a reason for cancelling the order.');
+                    reason.focus();
+                    return false;
+                }
+            }
+        });
     });
 });
 </script>

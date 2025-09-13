@@ -19,23 +19,40 @@ if (isset($_POST['order_action_btn'])) {
   if ($o_q && mysqli_num_rows($o_q) > 0) {
     $o = mysqli_fetch_assoc($o_q);
     $cur = trim($o['status']);
-    // If current status is Arriving, user action means confirm receipt -> Completed
-      if (strtolower($cur) === 'arriving') {
+    // If current status is Shipped (or legacy Arriving/OFD), user action means confirm receipt -> Completed
+    $lc = strtolower($cur);
+    if ($lc === 'shipped' || $lc === 'arriving' || $lc === 'ofd' || strpos($lc, 'out for') !== false) {
       $new = 'Completed';
       $upd = mysqli_query($conn, "UPDATE orders SET status = '{$new}', status_updated_at = NOW() WHERE o_id = '{$action_order_id}' AND user_id = '{$k}'");
       if ($upd) {
         $_SESSION['success_message'] = 'Order marked as received. Thank you!';
-  } else {
+      } else {
         $_SESSION['error_message'] = 'Failed to update order status.';
       }
     } else {
       // Otherwise attempt to cancel the order if not already completed/cancelled
-      // Allow cancellation only if current status is Processing
-      if (strtolower($cur) === 'processing') {
-        // proceed with cancellation
-      
+      // Allow cancellation only if current status is Pending or Packing (or legacy Processing)
+      $lcCur = strtolower($cur);
+      if ($lcCur === 'pending' || $lcCur === 'packing' || $lcCur === 'processing') {
+        // collect and validate cancel reason (optional -- required on UI)
+        $cancel_reason_raw = $_POST['cancel_reason'] ?? '';
+        $cancel_reason_other = trim($_POST['cancel_reason_other'] ?? '');
+        $reason_options = [
+          'changed_mind' => 'Changed my mind',
+          'found_cheaper' => 'Found a better price',
+          'wrong_item' => 'Wrong item ordered',
+          'other' => 'Other'
+        ];
+        $cancel_reason_text = 'Unspecified';
+        if (!empty($cancel_reason_raw) && array_key_exists($cancel_reason_raw, $reason_options)) {
+          if ($cancel_reason_raw === 'other' && $cancel_reason_other !== '') {
+            $cancel_reason_text = $cancel_reason_other;
+          } else {
+            $cancel_reason_text = $reason_options[$cancel_reason_raw];
+          }
+        }
       } else {
-        $_SESSION['error_message'] = 'Order can only be cancelled while it is Processing.';
+        $_SESSION['error_message'] = 'Order can only be cancelled while it is Pending or Packing.';
         // redirect early
         header('Location: profile.php');
         exit;
@@ -67,6 +84,19 @@ if (isset($_POST['order_action_btn'])) {
           }
           $_SESSION['user_cancelled_orders'][] = $action_order_id;
           $_SESSION['success_message'] = 'Order cancelled successfully. Stock has been restored.';
+          // Save cancellation reason to user_order_cancellations
+          $reason_esc = mysqli_real_escape_string($conn, mb_substr($cancel_reason_text, 0, 2000));
+          $ins = mysqli_query($conn, "INSERT INTO user_order_cancellations (order_id, user_id, reason) VALUES ('{$action_order_id}', '{$k}', '{$reason_esc}')");
+          if (!$ins) {
+            throw new Exception('Failed to save cancellation reason.');
+          }
+          mysqli_commit($conn);
+          // remember in session that this order was cancelled by the user
+          if (!isset($_SESSION['user_cancelled_orders']) || !is_array($_SESSION['user_cancelled_orders'])) {
+            $_SESSION['user_cancelled_orders'] = [];
+          }
+          $_SESSION['user_cancelled_orders'][] = $action_order_id;
+          $_SESSION['success_message'] = 'Order cancelled successfully. Stock has been restored.';
         } catch (Exception $e) {
           mysqli_rollback($conn);
           $_SESSION['error_message'] = 'Failed to cancel order.';
@@ -84,12 +114,14 @@ $sql = "SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_dis
 $result = $conn->query($sql);
 // Map DB status values to friendly labels (DB stores 'OFD' for Out for delivery)
 $status_label_map = [
-  'Pending' => 'Processing order',
-  'Processing' => 'Order is being packed by seller',
-  'Shipped' => 'Order shipped',
+  // Keep labels simple and aligned with DB enum values
+  'Pending' => 'Order being processed',
+  'Packing' => 'Order being pack by seller',
+  // Backwards compatibility: accept old 'Processing' label if present in data
+  'Processing' => 'Order being pack by seller',
+  'Shipped' => 'Order is handed to courier',
   'OFD' => 'Out for delivery',
   'Arriving' => 'Arriving',
-  'Confirmed' => 'Order confirmed',
   'Completed' => 'Delivered',
   'Cancelled' => 'Cancelled'
 ];
@@ -222,7 +254,7 @@ $status_label_map = [
             $st = trim($row["status"]);
             $badgeText = $status_label_map[$st] ?? $st;
             $badgeClass = 'badge-info';
-            if (strcasecmp($st, 'Pending') === 0 || strcasecmp($st, 'Processing') === 0) $badgeClass = 'badge-warning';
+            if (strcasecmp($st, 'Pending') === 0 || strcasecmp($st, 'Packing') === 0 || strcasecmp($st, 'Processing') === 0) $badgeClass = 'badge-warning';
             if (strcasecmp($st, 'Shipped') === 0 || strcasecmp($st, 'OFD') === 0 || strcasecmp($st, 'Out for delivery') === 0) $badgeClass = 'badge-info';
             if (strcasecmp($st, 'Arriving') === 0) $badgeClass = 'badge-primary';
             if (strcasecmp($st, 'Completed') === 0) $badgeClass = 'badge-success';
@@ -231,16 +263,25 @@ $status_label_map = [
             $sessionCancelled = $_SESSION['user_cancelled_orders'] ?? [];
             $orderIdLookup = (int)($row['o_id'] ?? 0);
             if (strcasecmp($st, 'Cancelled') === 0) {
-              if (in_array($orderIdLookup, $sessionCancelled, true)) {
-                $badgeText = 'Cancelled by you';
+              // Prefer persistent DB record: check if user submitted a cancellation reason
+              $uoc_q = mysqli_query($conn, "SELECT user_id FROM user_order_cancellations WHERE order_id = '{$orderIdLookup}' ORDER BY created_at DESC LIMIT 1");
+              if ($uoc_q && mysqli_num_rows($uoc_q) > 0) {
+                $uoc_row = mysqli_fetch_assoc($uoc_q);
+                $uoc_user = intval($uoc_row['user_id'] ?? 0);
+                if ($uoc_user === intval(
+                    $k
+                )) {
+                  $badgeText = 'Cancelled by you';
+                } else {
+                  $badgeText = 'Cancelled by Seller';
+                }
               } else {
-                // Check order_status_history to see if the latest Cancelled entry was made by an admin
+                // Fall back to order_status_history detection (admin changed_by present)
                 $hist_q = mysqli_query($conn, "SELECT changed_by FROM order_status_history WHERE order_id = '{$orderIdLookup}' AND LOWER(new_status) = 'cancelled' ORDER BY created_at DESC LIMIT 1");
                 if ($hist_q && mysqli_num_rows($hist_q) > 0) {
                   $hist_row = mysqli_fetch_assoc($hist_q);
                   $changed_by = $hist_row['changed_by'] ?? null;
                   if (!is_null($changed_by) && $changed_by !== '' && intval($changed_by) > 0) {
-                    // presence of changed_by (admin id) implies admin performed the cancellation
                     $badgeText = 'Cancelled by Seller';
                   }
                 }
@@ -264,19 +305,18 @@ $status_label_map = [
                 <!-- Action: Cancel or Mark Received -->
                 <?php
                   $curst = trim($row['status']);
-                  if (strtolower($curst) === 'arriving') {
-                    // show Mark as Received
+                  $lcst = strtolower($curst);
+                  // Show Mark Received when order is Shipped (also accept legacy OFD/Arriving)
+                  if ($lcst === 'shipped' || $lcst === 'arriving' || $lcst === 'ofd' || strpos($lcst, 'out for') !== false) {
                     echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'Mark this order as received?\');">';
                     echo '<input type="hidden" name="order_id" value="' . intval($row['o_id']) . '">';
                     echo '<button type="submit" name="order_action_btn" class="btn btn-sm btn-success">Mark Received</button>';
                     echo '</form>';
                   } else {
-                    // show Cancel button only when status is Processing
-                    if (strcasecmp($curst, 'Processing') === 0) {
-                      echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'Are you sure you want to cancel this order?\');">';
-                      echo '<input type="hidden" name="order_id" value="' . intval($row['o_id']) . '">';
-                      echo '<button type="submit" name="order_action_btn" class="btn btn-sm btn-danger">Cancel</button>';
-                      echo '</form>';
+                    // show Cancel button only when status is Pending or Packing (accept legacy Processing)
+                    if (strcasecmp($curst, 'Pending') === 0 || strcasecmp($curst, 'Packing') === 0 || strcasecmp($curst, 'Processing') === 0) {
+                      // Cancel opens a popup fragment to collect reason
+                      echo '<button type="button" class="btn btn-sm cancel-btn" data-order-id="' . intval($row['o_id']) . '" style="background:#d9534f;border-color:#d9534f;color:#fff">Cancel</button>';
                     }
                   }
                 ?>
@@ -363,7 +403,31 @@ $status_label_map = [
             window.open(url, '_blank');
           });
         }
+        // attach cancel fragment handlers if present
+        var cancelBtnFrag = content.querySelector('.btn-danger');
+        if (cancelBtnFrag) {
+          // when cancel form posts, overlay will close on redirect; no extra wiring needed
+        }
       })
+      .catch(function(){ content.innerHTML = 'Failed to load.'; });
+  });
+
+  // Open cancel fragment in the same overlay when Cancel button clicked
+  document.addEventListener('click', function(e){
+    var cb = e.target.closest('.cancel-btn');
+    if (!cb) return;
+    e.preventDefault();
+    var orderId = cb.getAttribute('data-order-id');
+    var href = new URL('cancel_order.php', window.location.href);
+    href.searchParams.set('ajax', '1');
+    href.searchParams.set('order_id', orderId);
+    var overlay = document.getElementById('orderTrackOverlay');
+    var content = document.getElementById('orderTrackContent');
+    overlay.style.display = 'flex';
+    content.innerHTML = 'Loading...';
+    fetch(href.toString(), { credentials: 'same-origin' })
+      .then(function(r){ return r.text(); })
+      .then(function(html){ content.innerHTML = html; var closeBtn = content.querySelector('.ot-close'); if (closeBtn) closeBtn.addEventListener('click', function(){ overlay.style.display='none'; }); })
       .catch(function(){ content.innerHTML = 'Failed to load.'; });
   });
 
@@ -381,6 +445,24 @@ $status_label_map = [
       if (overlay && overlay.style.display && overlay.style.display !== 'none') {
         overlay.style.display = 'none';
       }
+    }
+  });
+  // Toggle 'Other' reason input visibility in cancel forms
+  document.addEventListener('change', function(e){
+    var el = e.target;
+    if (!el || el.name !== 'cancel_reason') return;
+    var form = el.closest('form');
+    if (!form) return;
+    // support either class name depending on fragment: .cancel-reason-other (old) or .other-input (new)
+    var otherInput = form.querySelector('.cancel-reason-other') || form.querySelector('.other-input');
+    if (!otherInput) return;
+    if (el.value === 'other') {
+      otherInput.style.display = 'inline-block';
+      otherInput.setAttribute('required', 'required');
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.removeAttribute('required');
+      otherInput.value = '';
     }
   });
   </script>

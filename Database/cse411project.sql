@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 13, 2025 at 05:01 PM
+-- Generation Time: Sep 13, 2025 at 07:07 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -70,7 +70,7 @@ CREATE TABLE `orders` (
   `payment_method` varchar(50) NOT NULL,
   `totalproduct` varchar(100) NOT NULL,
   `totalprice` decimal(10,2) NOT NULL,
-  `status` enum('Pending','Processing','Shipped','Completed','Cancelled') DEFAULT 'Pending',
+  `status` enum('Pending','Packing','Shipped','Completed','Cancelled') DEFAULT 'Pending',
   `status_updated_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -80,7 +80,7 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`o_id`, `user_id`, `name`, `address`, `phone`, `payment_method`, `totalproduct`, `totalprice`, `status`, `status_updated_at`, `created_at`) VALUES
-(49, 22, 'William Ken', '1329 Zone 6 Cansinala, Apalit, Pampanga', '09270417510', 'COD', '12 (1)', 20.00, 'Shipped', '2025-09-13 14:59:49', '2025-09-13 08:25:02.000000');
+(49, 22, 'William Ken', '1329 Zone 6 Cansinala, Apalit, Pampanga', '09270417510', 'COD', '12 (1)', 20.00, 'Cancelled', '2025-09-13 17:06:22', '2025-09-13 08:25:02.000000');
 
 -- --------------------------------------------------------
 
@@ -97,19 +97,6 @@ CREATE TABLE `order_status_history` (
   `change_reason` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `order_status_history`
---
-
-INSERT INTO `order_status_history` (`os_id`, `order_id`, `old_status`, `new_status`, `changed_by`, `change_reason`, `created_at`) VALUES
-(70, 49, 'Pending', 'Processing', 1, '', '2025-09-13 14:46:31'),
-(71, 49, 'Pending', 'Processing', 1, '', '2025-09-13 14:49:27'),
-(72, 49, 'Processing', 'Shipped', 1, '', '2025-09-13 14:50:29'),
-(73, 49, 'Shipped', 'OFD', 1, '', '2025-09-13 14:52:09'),
-(74, 49, 'OFD', 'Arriving', 1, '', '2025-09-13 14:52:18'),
-(75, 49, 'Pending', 'Processing', 1, '', '2025-09-13 14:53:59'),
-(76, 49, 'Processing', 'Shipped', 1, '', '2025-09-13 14:59:49');
 
 -- --------------------------------------------------------
 
@@ -134,7 +121,7 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`p_id`, `name`, `category`, `description`, `tags`, `quantity`, `price`, `imgname`, `created_at`) VALUES
-(12, 'Cshirt', 'Top', 'Red na medyo may white', 'Men', 7, 20.00, '1756898400_480663176_599491009657365_7269848653577053364_n.jpg,1756898400_481008623_599490916324041_3204104644813343015_n.jpg', '2025-09-03 11:20:00'),
+(12, 'Cshirt', 'Top', 'Red na medyo may white', 'Men', 10, 20.00, '1756898400_480663176_599491009657365_7269848653577053364_n.jpg,1756898400_481008623_599490916324041_3204104644813343015_n.jpg', '2025-09-03 11:20:00'),
 (13, 'Sfdafdas Asdasd', 'Med', 'asdasdasdasd', 'Women', 12, 2000.00, '499818292_667335996206199_8143362886082314207_n_68b845db761ff9.02334905.jpg,499884354_667336052872860_5847642292369312817_n_68b845db766a14.16773688.jpg', '2025-09-03 13:42:51'),
 (14, 'Asdasd', 'Top', 'sfdasasd', 'Women', 30, 5000.00, 'NIKE_AIR_MICHAEL_JORDAN_23_FLIGHT_BACKPACK_68b8468de47b80.28617808.jpg', '2025-09-03 13:45:49'),
 (15, 'Vshirt', 'Med', 'dfgggggggggg', 'Men', 6, 52.00, 'Loose_Button_Knitted_Striped_Sweater_68b858227f9f13.73897179.jpg,Multiply_Jorts_68b858227ffee7.52997005.jpg,New_York_Yunkees_Sweatshirt_68b85822806e83.63997223.jpg,red_nike_68b85822825f44.41873637.jpg,See_Through_Polo_68b8582282b473.16565181.jpg', '2025-09-03 15:00:50'),
@@ -170,6 +157,28 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`u_id`, `f_name`, `l_name`, `email`, `phone`, `pass`, `zone`, `street`, `barangay`, `city`, `province`, `region`, `created_at`) VALUES
 (22, 'William Ken', 'Emperado', 'wemperado004@gmail.com', '09270417510', '$2y$10$wIUgn7/YseokjWxCnQQoB.8zIqwplOmSmkUf7NAZfyiNP1.ldVg3y', 'Zone 6', '1329', 'Cansinala', 'Apalit', 'Pampanga', 'Region III (Central Luzon)', '2025-09-12 17:43:51');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_order_cancellations`
+--
+
+CREATE TABLE `user_order_cancellations` (
+  `uc_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `reason` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_order_cancellations`
+--
+
+INSERT INTO `user_order_cancellations` (`uc_id`, `order_id`, `user_id`, `reason`, `created_at`) VALUES
+(2, 49, 22, 'Other', '2025-09-13 17:01:44'),
+(3, 49, 22, 'Opio', '2025-09-13 17:06:22');
 
 --
 -- Indexes for dumped tables
@@ -219,6 +228,14 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indexes for table `user_order_cancellations`
+--
+ALTER TABLE `user_order_cancellations`
+  ADD PRIMARY KEY (`uc_id`),
+  ADD KEY `idx_uoc_order` (`order_id`),
+  ADD KEY `idx_uoc_user` (`user_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -244,7 +261,7 @@ ALTER TABLE `orders`
 -- AUTO_INCREMENT for table `order_status_history`
 --
 ALTER TABLE `order_status_history`
-  MODIFY `os_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `os_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
 
 --
 -- AUTO_INCREMENT for table `product`
@@ -257,6 +274,12 @@ ALTER TABLE `product`
 --
 ALTER TABLE `users`
   MODIFY `u_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+
+--
+-- AUTO_INCREMENT for table `user_order_cancellations`
+--
+ALTER TABLE `user_order_cancellations`
+  MODIFY `uc_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
@@ -281,6 +304,13 @@ ALTER TABLE `orders`
 ALTER TABLE `order_status_history`
   ADD CONSTRAINT `order_status_history_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`o_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `order_status_history_ibfk_2` FOREIGN KEY (`changed_by`) REFERENCES `admin` (`ad_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `user_order_cancellations`
+--
+ALTER TABLE `user_order_cancellations`
+  ADD CONSTRAINT `fk_uoc_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`o_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_uoc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`u_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
