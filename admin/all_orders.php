@@ -36,7 +36,7 @@ else
   $quantity = $_POST['update_quantity'];
   $price = $_POST['update_Price'];
   $update_id = $_POST['update_id'];
-  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , description='$description' , price='$price'  WHERE p_id = '$update_id'");
+  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , description='$description' , price='$price' , lens_id='$lens_id' , group_id='$group_id'  WHERE p_id = '$update_id'");
   if($update_quantity_query){
      header('location:all_product.php');
   };
@@ -246,6 +246,16 @@ if($catResult){
           <div class="form-group">
             <label for="price_<?php echo $row['p_id']; ?>">Price</label>
             <input type="number" name="update_Price" id="price_<?php echo $row['p_id']; ?>" value="<?php echo $row['price']; ?>" class=" cp-form-control" step="0.01" min="0" required>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Lens ID</span>
+            <span class="detail-value"><?php echo htmlspecialchars($row['lens_id']); ?></span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Group ID</span>
+            <span class="detail-value"><?php echo htmlspecialchars($row['group_id']); ?></span>
           </div>
 
           <div class="product-actions">

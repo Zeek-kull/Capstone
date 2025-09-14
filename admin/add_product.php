@@ -284,11 +284,11 @@ if (isset($_POST['submit'])) {
             // store as comma-separated filenames
             $filename_str = implode(',', $savedNames);
 
-            $stmt = $conn->prepare("INSERT INTO product(name, category, tags, description, quantity, price, imgname) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO product(name, category, tags, description, quantity, price, imgname, lens_id, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if ($stmt === false) {
                 die('Prepare failed: ' . $conn->error);
             }
-            $stmt->bind_param("ssssids", $name, $category, $tag, $description, $quantity, $price, $filename_str);
+            $stmt->bind_param("ssssidsss", $name, $category, $tag, $description, $quantity, $price, $filename_str, $lens_id, $group_id);
 
             if ($stmt->execute()) {
                 // prefer session flash + redirect to avoid resubmit
@@ -414,6 +414,17 @@ if (isset($_POST['submit'])) {
                                 <input type="file" name="uploadfile[]" id="uploadfile" class="form-control-file" onchange="previewImage(event)" multiple required>
                                 <div class="mt-2" id="imageUploadMessage" style="color: #b00; font-weight: 600;"></div>
                                 <div class="mt-2" id="imagePreviewContainer" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                            </div>
+
+
+                            <div class="mb-3">
+                                <label for="exampleInputName" class="form-label">Lens ID</label>
+                                <input type="text" name="lens_id" class="form-control" id="exampleInputName" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="exampleInputName" class="form-label">Group ID</label>
+                                <input type="text" name="group_id" class="form-control" id="exampleInputName" required>
                             </div>
 
                             <button type="submit" name="submit" class="btn btn-primary">Submit</button>
