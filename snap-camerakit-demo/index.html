@@ -29,13 +29,16 @@
   <body style="background-color: whitesmoke;">
     <div style="text-align:center;">
       <canvas id="live"></canvas>
-      <a href="../product.php" class="site-btn login-btn" aria-label="product" title="product">HOME</a> 
+      <center>
+<a href="../product.php" class="site-btn login-btn" aria-label="product" title="product">HOME</a> 
+      </center>
+      
 
     </div>
     <?php include '../footer.php'; ?>   
 
-    <script type="module" src="http://localhost:5173/@vite/client"></script>
-<script type="module" src="http://localhost:5173/src/ar.js"></script>
+
+  <!-- Remove Vite dev server includes, use only local static assets -->
 
     <script src="../js/jquery-3.6.0.min.js"></script>
     <script src="../js/bootstrap.min.js"></script>
