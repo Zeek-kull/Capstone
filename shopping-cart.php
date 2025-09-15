@@ -311,12 +311,17 @@ $result = $conn->query($sql);
                         <input type="hidden" name="user_id" value="<?php echo $_SESSION['userid'] ?? '' ?>">
                         <input type="hidden" name="user_name" value="<?php echo $_SESSION['username'] ?? '' ?>">
 
-                        <div class="form-group">
-                            <label for="addressInput" class="mb-1">Shipping Address</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" name="address" id="addressInput"  value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?>>
-                            </div>
-                        </div>
+                                                <div class="form-group">
+                                                        <label for="addressInput" class="mb-1">Shipping Address</label>
+                                                        <div class="input-group">
+                                                                <input type="text" class="form-control" name="address" id="addressInput"  value="<?php echo htmlspecialchars($user_address); ?>" required <?php echo empty($user_address) ? '' : 'readonly'; ?> aria-label="Shipping address">
+                                                                                                <?php if (!empty($user_address)): ?>
+                                                                                                    <div class="input-group-append">
+                                                                                                        <button type="button" class="btn btn-outline-secondary edit-address-btn" id="editAddressBtn" data-url="edit_shipping_address.php" title="Edit shipping address">Edit</button>
+                                                                                                    </div>
+                                                                                                <?php endif; ?>
+                                                        </div>
+                                                </div>
                         <div class="form-group">
                             <label for="phoneInput" class="mb-1">Phone Number</label>
                             <input type="text" class="form-control" name="number" id="phoneInput" value="<?php echo htmlspecialchars($user_phone); ?>" required readonly>
@@ -339,6 +344,14 @@ $result = $conn->query($sql);
 
     <?php include 'footer.php'; ?>
 
+    <!-- Modal overlay for editing shipping address (AJAX) -->
+    <div id="addressEditOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99999; align-items:center; justify-content:center;">
+        <div id="addressEditCard" style="background:#fff; max-width:720px; width:95%; border-radius:8px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,0.3); position:relative;">
+            <button id="addressEditClose" style="position:absolute; right:20px; top:16px; background:transparent; border:none; font-size:18px;">&times;</button>
+            <div id="addressEditContent">Loading...</div>
+        </div>
+    </div>
+
     <!-- Js Plugins -->
     <script src="js/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -353,6 +366,68 @@ $result = $conn->query($sql);
     <script src="js/cart-ajax-final.js"></script>
 
     <script>
+        // Open address edit modal and load fragment via AJAX
+        document.addEventListener('click', function(e){
+            var btn = e.target.closest('.edit-address-btn');
+            if (!btn) return;
+            e.preventDefault();
+            var url = btn.getAttribute('data-url') || 'edit_shipping_address.php';
+            var overlay = document.getElementById('addressEditOverlay');
+            var content = document.getElementById('addressEditContent');
+            overlay.style.display = 'flex';
+            content.innerHTML = 'Loading...';
+            // Request AJAX fragment
+            try {
+                var href = new URL(url, window.location.href);
+                href.searchParams.set('ajax', '1');
+                fetch(href.toString(), { credentials: 'same-origin' }).then(function(r){ return r.text(); }).then(function(html){
+                    content.innerHTML = html;
+                    // Execute any inline scripts in the loaded fragment so initialization runs
+                    try {
+                        var inlineScripts = content.querySelectorAll('script');
+                        inlineScripts.forEach(function(oldScript){
+                            var newScript = document.createElement('script');
+                            if (oldScript.src) {
+                                newScript.src = oldScript.src;
+                                newScript.async = false;
+                            }
+                            if (oldScript.textContent) newScript.text = oldScript.textContent;
+                            document.body.appendChild(newScript);
+                            // remove script node after execution to keep DOM clean
+                            document.body.removeChild(newScript);
+                        });
+                    } catch(e){}
+                    // Fallback: if #region exists but has only the placeholder, populate it using page-level jQuery
+                    try {
+                        var $ = window.jQuery;
+                        if ($ && $('#region').length && $('#region option').length <= 1) {
+                            $.getJSON('ph-json/region.json', function(regions){
+                                var $region = $('#region');
+                                $region.empty().append('<option selected="true" disabled>Choose Region</option>');
+                                $.each(regions, function(i, r){ $region.append($('<option>').val(r.region_code).text(r.region_name)); });
+                                // try to preselect by hidden input values if present in fragment
+                                var regionText = $('#region-text').val();
+                                if (regionText) {
+                                    var match = $region.find('option').filter(function(){ return $(this).text().trim() === regionText.trim(); }).first();
+                                    if (match.length) { $region.val(match.val()).trigger('change'); }
+                                }
+                            });
+                        }
+                    } catch(e){}
+                    // attach close handlers inside loaded fragment if present
+                    var closeBtn = content.querySelector('.ot-close') || content.querySelector('#addressEditCloseInternal');
+                    if (closeBtn) closeBtn.addEventListener('click', function(){ overlay.style.display='none'; });
+                }).catch(function(){ content.innerHTML = 'Failed to load edit form.'; });
+            } catch(err) {
+                content.innerHTML = 'Failed to load edit form.';
+            }
+        });
+
+        // Close handlers
+        document.getElementById('addressEditClose').addEventListener('click', function(){ document.getElementById('addressEditOverlay').style.display = 'none'; });
+        document.getElementById('addressEditOverlay').addEventListener('click', function(e){ if (e.target === this) this.style.display = 'none'; });
+        document.addEventListener('keydown', function(e){ if (e.key === 'Escape' || e.key === 'Esc') { var o = document.getElementById('addressEditOverlay'); if (o && o.style.display && o.style.display !== 'none') o.style.display = 'none'; } });
+
         // Check if cart has items (total rows)
         var cartTotalRows = <?php echo mysqli_num_rows($result); ?>;
 
