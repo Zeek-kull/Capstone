@@ -263,27 +263,39 @@ $status_label_map = [
             $sessionCancelled = $_SESSION['user_cancelled_orders'] ?? [];
             $orderIdLookup = (int)($row['o_id'] ?? 0);
             if (strcasecmp($st, 'Cancelled') === 0) {
-              // Prefer persistent DB record: check if user submitted a cancellation reason
-              $uoc_q = mysqli_query($conn, "SELECT user_id FROM user_order_cancellations WHERE order_id = '{$orderIdLookup}' ORDER BY created_at DESC LIMIT 1");
-              if ($uoc_q && mysqli_num_rows($uoc_q) > 0) {
-                $uoc_row = mysqli_fetch_assoc($uoc_q);
-                $uoc_user = intval($uoc_row['user_id'] ?? 0);
-                if ($uoc_user === intval(
-                    $k
-                )) {
-                  $badgeText = 'Cancelled by you';
-                } else {
+              // First check order_status_history: if an admin changed the status to Cancelled, the
+              // history record's changed_by should reference an admin id (>0). Prefer this as the
+              // authoritative indicator that the seller/admin cancelled the order.
+              $hist_q = mysqli_query($conn, "SELECT changed_by FROM order_status_history WHERE order_id = '{$orderIdLookup}' AND LOWER(new_status) = 'cancelled' ORDER BY created_at DESC LIMIT 1");
+              $markedByAdmin = false;
+              if ($hist_q && mysqli_num_rows($hist_q) > 0) {
+                $hist_row = mysqli_fetch_assoc($hist_q);
+                $changed_by = $hist_row['changed_by'] ?? null;
+                if (!is_null($changed_by) && $changed_by !== '' && intval($changed_by) > 0) {
+                  $markedByAdmin = true;
                   $badgeText = 'Cancelled by Seller';
                 }
-              } else {
-                // Fall back to order_status_history detection (admin changed_by present)
-                $hist_q = mysqli_query($conn, "SELECT changed_by FROM order_status_history WHERE order_id = '{$orderIdLookup}' AND LOWER(new_status) = 'cancelled' ORDER BY created_at DESC LIMIT 1");
-                if ($hist_q && mysqli_num_rows($hist_q) > 0) {
-                  $hist_row = mysqli_fetch_assoc($hist_q);
-                  $changed_by = $hist_row['changed_by'] ?? null;
-                  if (!is_null($changed_by) && $changed_by !== '' && intval($changed_by) > 0) {
+              }
+
+              if (!$markedByAdmin) {
+                // If there is no admin history entry, fall back to user_order_cancellations to
+                // see whether the cancellation was initiated by the user (they submitted a cancel
+                // reason). Note: admin code also inserts into user_order_cancellations for display
+                // but the presence of an admin entry in order_status_history takes precedence.
+                $uoc_q = mysqli_query($conn, "SELECT user_id FROM user_order_cancellations WHERE order_id = '{$orderIdLookup}' ORDER BY created_at DESC LIMIT 1");
+                if ($uoc_q && mysqli_num_rows($uoc_q) > 0) {
+                  $uoc_row = mysqli_fetch_assoc($uoc_q);
+                  $uoc_user = intval($uoc_row['user_id'] ?? 0);
+                  if ($uoc_user === intval($k)) {
+                    $badgeText = 'Cancelled by you';
+                  } else {
+                    // If the cancellation row exists but the user_id is different, treat it as
+                    // cancelled by the seller (defensive fallback).
                     $badgeText = 'Cancelled by Seller';
                   }
+                } else {
+                  // No history and no cancellation reason saved: leave the generic label
+                  $badgeText = $status_label_map[$st] ?? $st;
                 }
               }
             }

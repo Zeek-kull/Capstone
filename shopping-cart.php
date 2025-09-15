@@ -10,6 +10,34 @@ if (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1) {
     exit();
 }
 
+// Ensure we have a shipping fee available. Some environments may not have a `settings` table yet.
+// We'll attempt to create a minimal `settings` table if it's missing, then read the 'shipping_fee' key.
+$shipping_fee = 0.00;
+try {
+    $chk = mysqli_query($conn, "SHOW TABLES LIKE 'settings'");
+    if ($chk && mysqli_num_rows($chk) > 0) {
+        $sres = mysqli_query($conn, "SELECT s_value FROM settings WHERE s_key = 'shipping_fee' LIMIT 1");
+        if ($sres && mysqli_num_rows($sres) > 0) {
+            $srow = mysqli_fetch_assoc($sres);
+            $shipping_fee = floatval($srow['s_value']);
+        }
+    } else {
+        // create a small settings table and insert a default shipping_fee = 0.00
+        $create = "CREATE TABLE IF NOT EXISTS `settings` (
+            `s_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            `s_key` VARCHAR(128) NOT NULL UNIQUE,
+            `s_value` TEXT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+        @mysqli_query($conn, $create);
+        @mysqli_query($conn, "INSERT IGNORE INTO settings (s_key, s_value) VALUES ('shipping_fee', '0.00')");
+        $shipping_fee = 0.00;
+    }
+} catch (Exception $e) {
+    // fallback to zero on any error
+    $shipping_fee = 0.00;
+}
+
 // Order handling
 // Get user's address and phone from users table
 $user_address = '';
