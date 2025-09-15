@@ -29,9 +29,6 @@ else
   }
   $category = $_POST['update_category'];
   $tag = $_POST['update_tag'];
-  // Read lens and group id if provided in update form
-  $update_lensid = isset($_POST['update_lensid']) ? trim($_POST['update_lensid']) : null;
-  $update_groupid = isset($_POST['update_groupid']) ? trim($_POST['update_groupid']) : null;
   // Sanitize and enforce description length
   $maxDesc = 300; // reasonable limit for a shirt description
   $description_raw = $_POST['update_description'] ?? '';
@@ -39,45 +36,38 @@ else
   $quantity = $_POST['update_quantity'];
   $price = $_POST['update_Price'];
   $update_id = $_POST['update_id'];
-  // Build update SQL dynamically to include lens/group only when provided
-  $setClauses = [];
-  $setClauses[] = "quantity = '$quantity'";
-  $setClauses[] = "name = '" . mysqli_real_escape_string($conn, $name) . "'";
-  $setClauses[] = "category = '" . mysqli_real_escape_string($conn, $category) . "'";
-  $setClauses[] = "tags = '" . mysqli_real_escape_string($conn, $tag) . "'";
-  $setClauses[] = "description = '" . mysqli_real_escape_string($conn, $description) . "'";
-  $setClauses[] = "price = '$price'";
-  if ($update_lensid !== null && $update_lensid !== '') {
-    $setClauses[] = "lens_id = '" . mysqli_real_escape_string($conn, $update_lensid) . "'";
-  }
-  if ($update_groupid !== null && $update_groupid !== '') {
-    $setClauses[] = "group_id = '" . mysqli_real_escape_string($conn, $update_groupid) . "'";
-  }
-  $setSql = implode(', ', $setClauses);
-  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET $setSql WHERE p_id = '$update_id'");
+  // Read lens and group id if provided in update form
+  $lens_id = isset($_POST['update_lensid']) ? trim($_POST['update_lensid']) : '';
+  $group_id = isset($_POST['update_groupid']) ? trim($_POST['update_groupid']) : '';
+  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , description='$description' , price='$price' , lens_id='$lens_id' , group_id='$group_id'  WHERE p_id = '$update_id'");
   if($update_quantity_query){
-    // set flash message and redirect
-    if (session_status() == PHP_SESSION_NONE) session_start();
-    $_SESSION['success_message'] = 'Product updated successfully.';
+    // Update .env VITE_LENS_ID if lens_id is set
+    if (!empty($lens_id)) {
+      $envPath = dirname(__DIR__) . '/snap-camerakit-demo/.env';
+      if (file_exists($envPath)) {
+        $envLines = file($envPath, FILE_IGNORE_NEW_LINES);
+        $found = false;
+        foreach ($envLines as $i => $line) {
+          if (strpos($line, 'VITE_LENS_ID=') === 0) {
+            $envLines[$i] = 'VITE_LENS_ID=' . $lens_id;
+            $found = true;
+            break;
+          }
+        }
+        if (!$found) {
+          $envLines[] = 'VITE_LENS_ID=' . $lens_id;
+        }
+        file_put_contents($envPath, implode("\r\n", $envLines) . "\r\n");
+      }
+    }
     header('location:all_product.php');
-    exit();
-  } else {
-    if (session_status() == PHP_SESSION_NONE) session_start();
-    $_SESSION['error_message'] = 'Failed to update product.';
-  }
+  };
 };
 
  if(isset($_GET['remove'])){
   $remove_id = $_GET['remove'];
-  $del = mysqli_query($conn, "DELETE FROM `product` WHERE p_id = '$remove_id'");
-  if (session_status() == PHP_SESSION_NONE) session_start();
-  if($del){
-    $_SESSION['success_message'] = 'Product deleted successfully.';
-  } else {
-    $_SESSION['error_message'] = 'Failed to delete product.';
-  }
+  mysqli_query($conn, "DELETE FROM `product` WHERE p_id = '$remove_id'");
   header('location:all_product.php');
-  exit();
 };
 
 // Get product stats
@@ -119,7 +109,6 @@ if($catResult){
 <body>
 
 <div class="products-body">
-  <?php include __DIR__ . '/../includes/flash.php'; ?>
   <!-- Page Header -->
   <div class="page-header">
     <div>
@@ -277,18 +266,18 @@ if($catResult){
           </div>
 
           <div class="form-group">
-            <label for="lensid_<?php echo $row['p_id']; ?>">Lens ID</label>
-            <input type="text" name="update_lensid" id="lensid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['lens_id']); ?>" class=" cp-form-control">
-          </div>
-
-          <div class="form-group">
-            <label for="groupid_<?php echo $row['p_id']; ?>">Group ID</label>
-            <input type="text" name="update_groupid" id="groupid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['group_id']); ?>" class=" cp-form-control">
-          </div>
-
-          <div class="form-group">
             <label for="price_<?php echo $row['p_id']; ?>">Price</label>
             <input type="number" name="update_Price" id="price_<?php echo $row['p_id']; ?>" value="<?php echo $row['price']; ?>" class=" cp-form-control" step="0.01" min="0" required>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Lens ID</span>
+            <span class="detail-value"><?php echo htmlspecialchars($row['lens_id']); ?></span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Group ID</span>
+            <span class="detail-value"><?php echo htmlspecialchars($row['group_id']); ?></span>
           </div>
 
           <div class="product-actions">

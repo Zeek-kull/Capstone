@@ -294,6 +294,23 @@ if (isset($_POST['submit'])) {
             $stmt->bind_param("ssssidsss", $name, $category, $tag, $description, $quantity, $price, $filename_str, $lensid, $groupid);
 
             if ($stmt->execute()) {
+                // Update .env VITE_LENS_ID with the new lensid
+                $envPath = dirname(__DIR__) . '/snap-camerakit-demo/.env';
+                if (file_exists($envPath) && !empty($lensid)) {
+                    $envLines = file($envPath, FILE_IGNORE_NEW_LINES);
+                    $found = false;
+                    foreach ($envLines as $i => $line) {
+                        if (strpos($line, 'VITE_LENS_ID=') === 0) {
+                            $envLines[$i] = 'VITE_LENS_ID=' . $lensid;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $envLines[] = 'VITE_LENS_ID=' . $lensid;
+                    }
+                    file_put_contents($envPath, implode("\r\n", $envLines) . "\r\n");
+                }
                 // prefer session flash + redirect to avoid resubmit
                 $_SESSION['success_message'] = 'Product inserted successfully.';
                 header('Location: all_product.php');
