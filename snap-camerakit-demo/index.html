@@ -24,12 +24,17 @@
     <link rel="stylesheet" href="../css/style.css" type="text/css">
     <link rel="stylesheet" href="../css/out-of-stock.css" type="text/css">
   </head>
-  <body>
+  <body style="background-color: black;">
     <div style="text-align:center;">
       <canvas id="live"></canvas>
       <a href="../product.php" class="site-btn login-btn" aria-label="product" title="product">AR</a> 
 
     </div>
+    <?php include '../footer.php'; ?>   
+
+    <script type="module" src="http://localhost:5173/@vite/client"></script>
+<script type="module" src="http://localhost:5173/src/ar.js"></script>
+
     <script src="../js/jquery-3.6.0.min.js"></script>
     <script src="../js/bootstrap.min.js"></script>
     <script src="../js/jquery-ui.min.js"></script>

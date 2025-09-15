@@ -29,6 +29,9 @@ else
   }
   $category = $_POST['update_category'];
   $tag = $_POST['update_tag'];
+  // Read lens and group id if provided in update form
+  $update_lensid = isset($_POST['update_lensid']) ? trim($_POST['update_lensid']) : null;
+  $update_groupid = isset($_POST['update_groupid']) ? trim($_POST['update_groupid']) : null;
   // Sanitize and enforce description length
   $maxDesc = 300; // reasonable limit for a shirt description
   $description_raw = $_POST['update_description'] ?? '';
@@ -36,7 +39,22 @@ else
   $quantity = $_POST['update_quantity'];
   $price = $_POST['update_Price'];
   $update_id = $_POST['update_id'];
-  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET quantity = '$quantity' , name='$name' , category='$category' , tags='$tag' , description='$description' , price='$price'  WHERE p_id = '$update_id'");
+  // Build update SQL dynamically to include lens/group only when provided
+  $setClauses = [];
+  $setClauses[] = "quantity = '$quantity'";
+  $setClauses[] = "name = '" . mysqli_real_escape_string($conn, $name) . "'";
+  $setClauses[] = "category = '" . mysqli_real_escape_string($conn, $category) . "'";
+  $setClauses[] = "tags = '" . mysqli_real_escape_string($conn, $tag) . "'";
+  $setClauses[] = "description = '" . mysqli_real_escape_string($conn, $description) . "'";
+  $setClauses[] = "price = '$price'";
+  if ($update_lensid !== null && $update_lensid !== '') {
+    $setClauses[] = "lens_id = '" . mysqli_real_escape_string($conn, $update_lensid) . "'";
+  }
+  if ($update_groupid !== null && $update_groupid !== '') {
+    $setClauses[] = "group_id = '" . mysqli_real_escape_string($conn, $update_groupid) . "'";
+  }
+  $setSql = implode(', ', $setClauses);
+  $update_quantity_query = mysqli_query($conn, "UPDATE `product` SET $setSql WHERE p_id = '$update_id'");
   if($update_quantity_query){
     // set flash message and redirect
     if (session_status() == PHP_SESSION_NONE) session_start();
@@ -256,6 +274,16 @@ if($catResult){
           <div class="form-group">
             <label for="quantity_<?php echo $row['p_id']; ?>">Quantity</label>
             <input type="number" name="update_quantity" id="quantity_<?php echo $row['p_id']; ?>" value="<?php echo $row['quantity']; ?>" class=" cp-form-control" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="lensid_<?php echo $row['p_id']; ?>">Lens ID</label>
+            <input type="text" name="update_lensid" id="lensid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['lens_id']); ?>" class=" cp-form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="groupid_<?php echo $row['p_id']; ?>">Group ID</label>
+            <input type="text" name="update_groupid" id="groupid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['group_id']); ?>" class=" cp-form-control">
           </div>
 
           <div class="form-group">

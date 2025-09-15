@@ -44,6 +44,9 @@ if (isset($_POST['submit'])) {
     $description = $_POST['description'] ?? '';
     $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
     $price = isset($_POST['price']) ? (float)$_POST['price'] : 0.0;
+    // Read lensid and groupid from POST and sanitize to strings
+    $lensid = isset($_POST['lensid']) ? trim($_POST['lensid']) : '';
+    $groupid = isset($_POST['groupid']) ? trim($_POST['groupid']) : '';
 
     // Handle multiple files: require at least 1 image and allow up to 5
     $uploadedFiles = $_FILES['uploadfile'] ?? null;
@@ -288,7 +291,7 @@ if (isset($_POST['submit'])) {
             if ($stmt === false) {
                 die('Prepare failed: ' . $conn->error);
             }
-            $stmt->bind_param("ssssidsss", $name, $category, $tag, $description, $quantity, $price, $filename_str, $lens_id, $group_id);
+            $stmt->bind_param("ssssidsss", $name, $category, $tag, $description, $quantity, $price, $filename_str, $lensid, $groupid);
 
             if ($stmt->execute()) {
                 // prefer session flash + redirect to avoid resubmit
@@ -418,13 +421,13 @@ if (isset($_POST['submit'])) {
 
 
                             <div class="mb-3">
-                                <label for="exampleInputName" class="form-label">Lens ID</label>
-                                <input type="text" name="lens_id" class="form-control" id="exampleInputName" required>
+                                <label for="exampleInputLensID" class="form-label">Lens ID</label>
+                                <input type="text" name="lensid" class="form-control" id="exampleInputLensID" required>
                             </div>
 
                             <div class="mb-3">
-                                <label for="exampleInputName" class="form-label">Group ID</label>
-                                <input type="text" name="group_id" class="form-control" id="exampleInputName" required>
+                                <label for="exampleInputGroupID" class="form-label">Group ID</label>
+                                <input type="text" name="groupid" class="form-control" id="exampleInputGroupID" required>
                             </div>
 
                             <button type="submit" name="submit" class="btn btn-primary">Submit</button>

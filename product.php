@@ -186,7 +186,7 @@ $main_img = resolve_product_image($images[0], false);
                         <div class="col-lg-6">
                             <div class="product-details">
 
-                               <a href="snap-camerakit-demo" class="site-btn login-btn" aria-label="Admin login" title="Admin login">AR</a> 
+                               <a href="snap-camerakit-demo/index.php" class="site-btn login-btn" aria-label="Admin login" title="Admin login">HOME</a> 
 
                                 <div class="pd-title">
                                     <h3><?php echo $product['name']; ?></h3>
