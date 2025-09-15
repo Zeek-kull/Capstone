@@ -188,7 +188,8 @@ $main_img = resolve_product_image($images[0], false);
 
                                <form action="set_lensid.php" method="post" style="display:inline;">
                                    <input type="hidden" name="lensid" value="<?php echo htmlspecialchars($product['lens_id']); ?>">
-                                   <button type="submit" class="site-btn login-btn" aria-label="AR Try-On" title="AR Try-On">HOME</button>
+                                   <input type="hidden" name="redirect" value="snap-camerakit-demo/index.html">
+                                   <button type="submit" class="site-btn login-btn" aria-label="AR Try-On" title="AR Try-On">AR</button>
                                </form>
 
                                 <div class="pd-title">

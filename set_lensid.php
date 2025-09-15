@@ -19,8 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lensid'])) {
         }
         file_put_contents($envPath, implode("\r\n", $envLines) . "\r\n");
     }
-    // Redirect to AR try-on page
-    header('Location: snap-camerakit-demo/index.html');
+    // Redirect to AR try-on page (use redirect param if provided)
+    $redirect = isset($_POST['redirect']) ? $_POST['redirect'] : 'snap-camerakit-demo/index.html';
+    header('Location: ' . $redirect);
     exit();
 }
 header('Location: product.php');
