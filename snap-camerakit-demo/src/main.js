@@ -1,3 +1,5 @@
+
+
 import { bootstrapCameraKit, createMediaStreamSource, Transform2D } from '@snap/camera-kit';
 
 const API_TOKEN = import.meta.env.VITE_SNAP_API_TOKEN;
