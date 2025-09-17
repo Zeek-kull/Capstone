@@ -66,7 +66,7 @@ $admin_id = $admin_data['ad_id'] ?? 1;
 if (isset($_POST['update_update_btn'])) {
     // Sanitize inputs
     $update_value = isset($_POST['update_status']) ? mysqli_real_escape_string($conn, trim($_POST['update_status'])) : '';
-    $update_id = isset($_POST['update_id']) ? intval($_POST['update_id']) : 0;
+    $update_id = isset($_POST['o_id']) ? intval($_POST['o_id']) : 0;
 
     $change_reason = isset($_POST['change_reason']) ? trim($_POST['change_reason']) : '';
     $transaction_number = isset($_POST['transaction_number']) ? trim($_POST['transaction_number']) : '';
@@ -466,7 +466,7 @@ $status_label_map = [
 
                 <div class="order-actions">
                     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="status-form" style="display: contents;">
-                        <input type="hidden" name="update_id" value="<?php echo $row['o_id']; ?>">
+                        <input type="hidden" name="o_id" value="<?php echo $row['o_id']; ?>">
                         
                         <select name="update_status" class="btn btn-sm btn-outline" required aria-label="<?php echo 'Update status for order #' . htmlspecialchars($row['o_id']); ?>">
                             <option value="" disabled selected>Update Status</option>
