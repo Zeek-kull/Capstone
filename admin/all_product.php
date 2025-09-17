@@ -272,12 +272,16 @@ if($catResult){
 
           <div class="detail-row">
             <span class="detail-label">Lens ID</span>
-            <span class="detail-value"><?php echo htmlspecialchars($row['lens_id']); ?></span>
+            <span class="detail-value">
+              <input type="text" name="update_lensid" id="lensid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['lens_id']); ?>" class="cp-form-control" placeholder="Lens ID">
+            </span>
           </div>
 
           <div class="detail-row">
             <span class="detail-label">Group ID</span>
-            <span class="detail-value"><?php echo htmlspecialchars($row['group_id']); ?></span>
+            <span class="detail-value">
+              <input type="text" name="update_groupid" id="groupid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['group_id']); ?>" class="cp-form-control" placeholder="Group ID">
+            </span>
           </div>
 
           <div class="product-actions">

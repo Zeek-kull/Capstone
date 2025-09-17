@@ -1,0 +1,1 @@
+[2025-09-17T21:34:11+02:00] Admin DB connection error: php_network_getaddresses: getaddrinfo for mysql.hostinger.com failed: No such host is known.  in C:\xampp\htdocs\Capstone\admin\lib\connection.php on line 55
