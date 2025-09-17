@@ -30,10 +30,10 @@ $tags_result = mysqli_query($conn, $tags_sql);
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
     <!-- Favicon: prefer root /favicon.ico, provide PNG fallback in img/ for older browsers -->
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <!-- Optional PNG fallback if you include img/favicon.png in the repo -->
-    <link rel="icon" href="img/favicon.png" type="image/png">
+    <link rel="icon" href="favicon.png" type="image/png">
 
     <!-- Local Muli Font -->
     <link rel="stylesheet" href="css/css.css" type="text/css">
