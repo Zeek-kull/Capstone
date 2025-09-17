@@ -205,11 +205,7 @@ if (isset($_POST['add_to_cart'])) {
                         <div class="col-lg-6">
                             <div class="product-details">
 
-                                <form action="set_lensid.php" method="post" style="display:inline;">
-                                    <input type="hidden" name="lensid" value="<?php echo htmlspecialchars($product['lens_id']); ?>">
-                                    <input type="hidden" name="redirect" value="snap-camerakit-demo/dist/index.html">
-                                    <button type="submit" class="site-btn login-btn" aria-label="AR Try-On" title="AR Try-On">AR</button>
-                                </form>
+                                <!-- AR button will be displayed next to Add to Cart below -->
 
                                 <div class="pd-title">
                                     <h3><?php echo $product['name']; ?></h3>
@@ -238,15 +234,24 @@ if (isset($_POST['add_to_cart'])) {
                                             <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="<?php echo $product['quantity'] > 0 ? $product['quantity'] : 1; ?>" <?php echo $product['quantity'] <= 0 ? 'disabled' : ''; ?>>
                                         </div>
 
-                                        <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
-                                            <?php if ($product['quantity'] <= 0): ?>
-                                                <button type="button" class="site-btn login-btn" disabled>Out of Stock</button>
+                                            <?php if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1): ?>
+                                                <div class="d-flex align-items-center" style="gap:0.75rem;">
+                                                    <?php if ($product['quantity'] <= 0): ?>
+                                                        <button type="button" class="site-btn login-btn" disabled>Out of Stock</button>
+                                                    <?php else: ?>
+                                                        <button type="submit" class="site-btn login-btn" name="add_to_cart">Add to Cart</button>
+                                                    <?php endif; ?>
+
+                                                    <!-- AR form (separate form to avoid nesting) -->
+                                                    <form action="set_lensid.php" method="post" style="display:inline;margin:0;">
+                                                        <input type="hidden" name="lensid" value="<?php echo htmlspecialchars($product['lens_id']); ?>">
+                                                        <input type="hidden" name="redirect" value="snap-camerakit-demo/dist/index.html">
+                                                        <button type="submit" class="site-btn" aria-label="AR Try-On" title="AR Try-On">AR</button>
+                                                    </form>
+                                                </div>
                                             <?php else: ?>
-                                                <button type="submit" class="site-btn login-btn" name="add_to_cart">Add to Cart</button>
+                                                <!-- Login prompt removed: unauthenticated users are not shown an add-to-cart button -->
                                             <?php endif; ?>
-                                        <?php else: ?>
-                                            <!-- Login prompt removed: unauthenticated users are not shown an add-to-cart button -->
-                                        <?php endif; ?>
                                     </form>
                                 </div>
 
