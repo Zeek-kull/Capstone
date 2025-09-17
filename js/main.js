@@ -296,25 +296,4 @@
     $button.parent().find("input").val(newVal);
   });
 
-
-  import initCameraKit from './camera.js';
-
-async function startAR() {
-  const cameraKit = await initCameraKit();
-
-  // Provide an existing canvas or let Camera Kit create one
-  const canvasElement = document.getElementById('ar-canvas');
-  const session = await cameraKit.createSession({ canvas: canvasElement });
-
-  // Load a Lens by its ID
-  await session.loadLens('850dbd2f-b51f-4845-8df6-df39b09ff486');
-
-  // Begin rendering the camera feed
-  await session.start();
-}
-
-startAR().catch(console.error);
-
-
-
 })(jQuery);
