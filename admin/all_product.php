@@ -279,8 +279,7 @@ if($catResult){
             <label for="groupid_<?php echo $row['p_id']; ?>">Group ID</label>
             <input type="text" name="update_groupid" id="groupid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['group_id']); ?>" class="cp-form-control" placeholder="Group ID">
           </div>
-
-
+          
           <div class="product-actions">
             <button type="submit" name="update_update_btn" class="btn btn-primary btn-full">
               💾 Update Product
