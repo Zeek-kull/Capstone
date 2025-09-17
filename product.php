@@ -8,7 +8,7 @@ include 'lib/connection.php';
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     if (session_status() == PHP_SESSION_NONE) session_start();
     $_SESSION['error_message'] = 'Invalid product ID!';
-    header('Location: index.php');
+    header('Location: default.php');
     exit();
 }
 
@@ -29,7 +29,7 @@ if ($result->num_rows > 0) {
 } else {
     if (session_status() == PHP_SESSION_NONE) session_start();
     $_SESSION['error_message'] = 'Product not found!';
-    header('Location: index.php');
+    header('Location: default.php');
     exit();
 }
 

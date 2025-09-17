@@ -23,7 +23,7 @@
         // Insert product into cart
         $insert_product = mysqli_query($conn, "INSERT INTO `cart`(userid, productid, name, quantity, price) VALUES('$user_id', '$product_id', '$product_name', '$product_quantity', '$product_price')");
         $message[] = 'Product added to cart successfully';
-        header('Location: index.php'); // Refresh the page after adding the product
+        header('Location: default.php'); // Refresh the page after adding the product
         exit();
       }
     } else {

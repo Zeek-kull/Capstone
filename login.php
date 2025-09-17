@@ -6,7 +6,7 @@
 
 // Redirect if already authenticated
 if (isset($_SESSION['auth']) && $_SESSION['auth'] == 1) {
-    header("location:index.php");
+    header("location:default.php");
     exit;
 }
 
@@ -42,7 +42,7 @@ if (isset($_POST['submit'])) {
                     $_SESSION['userid'] = $result['u_id'];
                     $_SESSION['auth'] = 1;
                     $_SESSION['email'] = $email;
-                    header("location:index.php");
+                    header("location:default.php");
                     exit;
                 } else {
                     $error_message = "Invalid email or password";
@@ -100,7 +100,7 @@ if (isset($_POST['submit'])) {
             <div class="row">
                 <div class="col-lg-12">
                     <div class="breadcrumb-text">
-                        <a href="index.php"><i class="fa fa-home"></i> Home</a>
+                        <a href="default.php"><i class="fa fa-home"></i> Home</a>
 
                         <span>Login</span>
                     </div>
