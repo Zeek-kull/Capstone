@@ -71,7 +71,7 @@ if (mysqli_num_rows($result) > 0) {
                             <?php if ($isOutOfStock): ?>
                                 <button type="button" class="site-btn login-btn w-100" disabled style="background-color: #ccc; cursor: not-allowed;">Out of Stock</button>
                             <?php elseif (!isset($_SESSION['auth']) || $_SESSION['auth'] != 1): ?>
-                                <a href="login.php" class="site-btn login-btn w-100">Login to Add to Cart</a>
+                                <!-- Login prompt removed: unauthenticated users are not shown an add-to-cart button -->
                             <?php endif; ?>
                         </div>
                         <input type="hidden" name="product_id" value="<?php echo $row['p_id']; ?>">
