@@ -1,0 +1,9 @@
+# Node
+node_modules/
+
+# Composer
+/vendor/
+
+# Local env and DB config (contains secrets)
+.env
+lib/db_config.php

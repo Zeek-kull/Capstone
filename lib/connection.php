@@ -8,6 +8,39 @@
 // - Logs connection errors to a file instead of echoing them
 // - Exposes $conn for backward compatibility with existing code
 
+// Try to load project Composer autoload (optional) so phpdotenv is available if installed
+$projectRoot = dirname(__DIR__);
+$autoload = $projectRoot . '/vendor/autoload.php';
+if (file_exists($autoload)) {
+	require_once $autoload;
+
+	// If phpdotenv is available, load .env from project root
+	if (class_exists('Dotenv\Dotenv')) {
+		try {
+			$dotenv = Dotenv\Dotenv::createImmutable($projectRoot);
+			$dotenv->safeLoad();
+		} catch (Exception $e) {
+			// ignore dotenv errors; fall back to other methods
+		}
+	}
+}
+
+// Next, try to load lib/db_config.php if present (simple no-dependency approach)
+$dbConfigFile = __DIR__ . '/db_config.php';
+if (file_exists($dbConfigFile)) {
+	$cfg = include $dbConfigFile;
+	if (is_array($cfg)) {
+		foreach ($cfg as $k => $v) {
+			// Only set env var if not already defined
+			if (getenv($k) === false) {
+				putenv("$k=$v");
+				$_ENV[$k] = $v;
+				$_SERVER[$k] = $v;
+			}
+		}
+	}
+}
+
 // Default values (fall back to these when env vars are not set)
 $host = getenv('DB_HOST') !== false ? getenv('DB_HOST') : 'localhost';
 $user = getenv('DB_USER') !== false ? getenv('DB_USER') : 'root';
