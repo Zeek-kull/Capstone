@@ -171,7 +171,7 @@ $user = mysqli_fetch_assoc($user_q) ?: [];
   <script src="js/jquery-3.6.0.min.js"></script>
   <script src="js/bootstrap.min.js"></script>
   <script src="js/ph-address-selector.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/main.bundle.js"></script>
   <script>
     // initialize address selector after page load using hidden values
     function initAddressSelects() {

@@ -345,7 +345,7 @@ $main_img = resolve_product_image($images[0], false);
     <script src="js/jquery.dd.min.js"></script>
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/main.bundle.js"></script>
     <script>
     // Wire thumbnail clicks to update main image and reinit zoom
     $(document).ready(function(){

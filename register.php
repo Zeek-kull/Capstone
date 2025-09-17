@@ -286,7 +286,7 @@ if (isset($_POST['u_submit'])) {
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/ph-address-selector.js"></script>
     <script src="js/owl.carousel.min.js"></script>
-        <script src="js/main.js"></script>
+    <script src="js/main.bundle.js"></script>
         <script>
             // If user clicks the register button in header, set a flag in localStorage
             var headerRegisterBtn = document.getElementById('header-register-btn');
