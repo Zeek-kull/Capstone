@@ -236,24 +236,24 @@ $main_img = resolve_product_image($images[0], false);
                                
                                 <div class="pd-share">
                                     <div class="pd-social">
-                                        <a href="#"><i class="ti-facebook"></i></a>
-                                        <a href="#"><i class="ti-twitter-alt"></i></a>
-                                        <a href="#"><i class="ti-linkedin"></i></a>
+                                        <a href="#" title="Share on Facebook" aria-label="Share on Facebook"><i class="ti-facebook" aria-hidden="true"></i></a>
+                                        <a href="#" title="Share on Twitter" aria-label="Share on Twitter"><i class="ti-twitter-alt" aria-hidden="true"></i></a>
+                                        <a href="#" title="Share on LinkedIn" aria-label="Share on LinkedIn"><i class="ti-linkedin" aria-hidden="true"></i></a>
                                     </div>
                                 </div>
 
                                 <div class="product-tab">
-                                    <ul class="nav" role="tablist">
-                                        <li class="nav-item">
-                                            <a class="nav-link active" data-toggle="tab" href="#tab-1" role="tab">DESCRIPTION</a>
+                                    <ul class="nav" role="tablist" aria-label="Product information tabs">
+                                        <li class="nav-item" role="presentation">
+                                            <a id="tab-1-tab" class="nav-link active" data-toggle="tab" href="#tab-1" role="tab" aria-controls="tab-1" aria-selected="true" tabindex="0">DESCRIPTION</a>
                                         </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" href="#tab-2" role="tab">SIZE CHART</a>
+                                        <li class="nav-item" role="presentation">
+                                            <a id="tab-2-tab" class="nav-link" data-toggle="tab" href="#tab-2" role="tab" aria-controls="tab-2" aria-selected="false" tabindex="-1">SIZE CHART</a>
                                         </li>
                                     </ul>
 
                                     <div class="tab-content">
-                                        <div class="tab-pane fade show active" id="tab-1" role="tabpanel">
+                                        <div class="tab-pane fade show active" id="tab-1" role="tabpanel" aria-labelledby="tab-1-tab">
                                             <div class="product-content">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -263,7 +263,7 @@ $main_img = resolve_product_image($images[0], false);
                                             </div>
                                         </div>
 
-                                        <div class="tab-pane fade" id="tab-2" role="tabpanel">
+                                        <div class="tab-pane fade" id="tab-2" role="tabpanel" aria-labelledby="tab-2-tab">
                                             <div class="product-content">
                                                 <div class="row">
                                                     <div class="col-12 d-flex justify-content-center">
