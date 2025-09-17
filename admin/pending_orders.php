@@ -60,7 +60,7 @@ if (isset($_GET['remove'])) {
 $admin_userid = $_SESSION['admin_userid'] ?? 'admin';
 $admin_query = mysqli_query($conn, "SELECT ad_id FROM admin WHERE userid = '$admin_userid'");
 $admin_data = mysqli_fetch_assoc($admin_query);
-$admin_id = $admin_data['id'] ?? 1;
+$admin_id = $admin_data['ad_id'] ?? 1;
 
 // Handle status update with process tracking
 if (isset($_POST['update_update_btn'])) {
@@ -127,9 +127,37 @@ if (isset($_POST['update_update_btn'])) {
             $update_sql = "UPDATE orders SET " . implode(', ', $update_fields) . " WHERE o_id = '{$update_id}'";
             $update_query = mysqli_query($conn, $update_sql);
 
-            // Record in history
-            $history_sql = "INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, change_reason) VALUES ('{$update_id}', '" . mysqli_real_escape_string($conn, $current_status) . "', '{$update_value}', '{$admin_id}', '{$change_reason}')";
+            // Record in history. If available, include transaction_number in history as well.
+            $history_fields = ['order_id', 'old_status', 'new_status', 'changed_by', 'change_reason'];
+            $history_values = [
+                "'{$update_id}'",
+                "'" . mysqli_real_escape_string($conn, $current_status) . "'",
+                "'{$update_value}'",
+                "'{$admin_id}'",
+                "'" . mysqli_real_escape_string($conn, $change_reason) . "'"
+            ];
+
+            // If a transaction number was provided, include it in the history table too (if the column exists)
+            $tx_col_exists = false;
+            if ($transaction_number !== '') {
+                $col_check = mysqli_query($conn, "SHOW COLUMNS FROM order_status_history LIKE 'transaction_number'");
+                if ($col_check && mysqli_num_rows($col_check) > 0) {
+                    $tx_col_exists = true;
+                    $history_fields[] = 'transaction_number';
+                    $history_values[] = "'" . mysqli_real_escape_string($conn, $transaction_number) . "'";
+                }
+            }
+
+            $history_sql = "INSERT INTO order_status_history (" . implode(', ', $history_fields) . ") VALUES (" . implode(', ', $history_values) . ")";
             $history_query = mysqli_query($conn, $history_sql);
+
+            // If orders table lacks transaction_number column but we received a transaction number, set an info message for admin
+            if ($transaction_number !== '') {
+                $orders_tx_check = mysqli_query($conn, "SHOW COLUMNS FROM orders LIKE 'transaction_number'");
+                if (!($orders_tx_check && mysqli_num_rows($orders_tx_check) > 0)) {
+                    $_SESSION['error_message'] = "Note: transaction number received but orders table doesn't have a 'transaction_number' column. Transaction saved only in history (if supported).";
+                }
+            }
 
             if ($update_query && $history_query) {
                 // If cancelling the order, attempt to restore stock
