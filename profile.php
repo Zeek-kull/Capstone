@@ -306,11 +306,19 @@ $status_label_map = [
                 <?php
                   // Make the tracking cell clickable and open a small order tracking page
                   $orderId = $row['o_id'] ?? null;
+                  // Build a tracking number: prefer transaction_number if present, otherwise use legacy ORD-<id>
+                  $tracking_no = '';
+                  if (!empty($row['transaction_number'])) {
+                    $tracking_no = $row['transaction_number'];
+                  } elseif (!empty($orderId)) {
+                    $tracking_no = 'ORD-' . $orderId;
+                  }
                   // Render a Track button; JS will open the tracking overlay when clicked
                   $btnTitle = 'Track order #' . htmlspecialchars($orderId);
                   // Use inline style to ensure the button color is applied consistently
                   $btnStyle = 'background:#e7ab3c;border-color:#e7ab3c;color:#fff';
-                  echo '<button type="button" class="btn btn-sm track-btn" style="' . $btnStyle . '" data-order-id="' . htmlspecialchars($orderId) . '" title="' . $btnTitle . '">Track</button>';
+                  // Add data-transaction attribute so JS can surface the tracking number inside the overlay
+                  echo '<button type="button" class="btn btn-sm track-btn" style="' . $btnStyle . '" data-order-id="' . htmlspecialchars($orderId) . '" data-transaction="' . htmlspecialchars($tracking_no) . '" title="' . $btnTitle . '">Track</button>';
                 ?>
               </td>
               <td>
@@ -372,6 +380,10 @@ $status_label_map = [
     }
     var overlay = document.getElementById('orderTrackOverlay');
     var content = document.getElementById('orderTrackContent');
+    // store the clicked button's tracking number on the overlay so we can use it if the fragment
+    // doesn't include a tracking number (server fragments may be older versions)
+    var clickedTracking = btn ? (btn.getAttribute('data-transaction') || '') : '';
+    overlay._clickedTracking = clickedTracking;
     overlay.style.display = 'flex';
     content.innerHTML = 'Loading...';
     fetch(href.toString(), { credentials: 'same-origin' })
@@ -384,6 +396,13 @@ $status_label_map = [
         // attach copy/open-jnt handlers
         var copyBtn = content.querySelector('.copy-track');
         if (copyBtn) {
+          // ensure copy button has the tracking number; prefer fragment-provided data-track,
+          // otherwise fall back to the clicked button's data-transaction stored on overlay
+          if (!copyBtn.getAttribute('data-track') || copyBtn.getAttribute('data-track').trim() === '') {
+            if (overlay._clickedTracking && overlay._clickedTracking.trim() !== '') {
+              copyBtn.setAttribute('data-track', overlay._clickedTracking);
+            }
+          }
           // Use Font Awesome copy icon if available, otherwise fallback to emoji
           var iconHTML = '';
           if (typeof window.FontAwesome !== 'undefined' || document.querySelector('.fa')) {
@@ -408,6 +427,11 @@ $status_label_map = [
         }
         var jntBtn = content.querySelector('.open-jnt');
         if (jntBtn) {
+          if (!jntBtn.getAttribute('data-track') || jntBtn.getAttribute('data-track').trim() === '') {
+            if (overlay._clickedTracking && overlay._clickedTracking.trim() !== '') {
+              jntBtn.setAttribute('data-track', overlay._clickedTracking);
+            }
+          }
           jntBtn.addEventListener('click', function(){
             var t = jntBtn.getAttribute('data-track') || '';
             // JNT tracking URL - open in new tab

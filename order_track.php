@@ -156,7 +156,12 @@ if ($currentIndex < 0) {
 $lastIndex = count($steps) - 1;
 $badge_variant = $isIssue ? 'issue' : (($currentIndex >= $lastIndex) ? '' : 'moving');
 
- $tracking_no = htmlspecialchars('ORD-' . $order_id);
+// Prefer explicit transaction_number when available; otherwise fall back to ORD-<id>
+if (!empty($order['transaction_number'])) {
+    $tracking_no = htmlspecialchars($order['transaction_number']);
+} else {
+    $tracking_no = htmlspecialchars('ORD-' . $order_id);
+}
  $courier = htmlspecialchars($order['courier'] ?? ($order['shipping_courier'] ?? 'N/A'));
  $recipient = htmlspecialchars($order['name'] ?? ($order['recip_name'] ?? 'N/A'));
  $destination = htmlspecialchars($order['address'] ?? 'N/A');
