@@ -67,7 +67,18 @@ if (isset($_POST['update_update_btn'])) {
     // Sanitize inputs
     $update_value = isset($_POST['update_status']) ? mysqli_real_escape_string($conn, trim($_POST['update_status'])) : '';
     $update_id = isset($_POST['update_id']) ? intval($_POST['update_id']) : 0;
+
     $change_reason = isset($_POST['change_reason']) ? trim($_POST['change_reason']) : '';
+    $transaction_number = isset($_POST['transaction_number']) ? trim($_POST['transaction_number']) : '';
+
+    // Server-side: require a transaction number when marking as Shipped
+    if (strtolower($update_value) === 'shipped') {
+        if ($transaction_number === '') {
+            $_SESSION['error_message'] = "Transaction number is required when marking an order as Shipped.";
+            header('location:pending_orders.php');
+            exit();
+        }
+    }
 
     // Server-side: require a reason when cancelling an order
     if (strtolower($update_value) === 'cancelled' || strtolower($update_value) === 'cancel') {
@@ -103,7 +114,17 @@ if (isset($_POST['update_update_btn'])) {
         
         try {
             // Update order status (use escaped values)
-            $update_sql = "UPDATE orders SET status = '{$update_value}', status_updated_at = NOW() WHERE o_id = '{$update_id}'";
+            // If the orders table has a 'transaction_number' column and transaction provided, include it
+            $update_fields = ["status = '{$update_value}'", "status_updated_at = NOW()"];
+            if ($transaction_number !== '') {
+                // Check whether the column exists to avoid SQL errors on schemas without this column
+                $col_check = mysqli_query($conn, "SHOW COLUMNS FROM orders LIKE 'transaction_number'");
+                if ($col_check && mysqli_num_rows($col_check) > 0) {
+                    $tx_esc = mysqli_real_escape_string($conn, $transaction_number);
+                    $update_fields[] = "transaction_number = '{$tx_esc}'";
+                }
+            }
+            $update_sql = "UPDATE orders SET " . implode(', ', $update_fields) . " WHERE o_id = '{$update_id}'";
             $update_query = mysqli_query($conn, $update_sql);
 
             // Record in history
@@ -429,6 +450,11 @@ $status_label_map = [
                         
                         <!-- Hidden final change reason submitted to server -->
                         <input type="hidden" name="change_reason" id="change_reason_<?php echo $row['o_id']; ?>" value="">
+                        <!-- Transaction number input (hidden unless Shipped) -->
+                        <div class="transaction-group" style="display:none; margin-left:0.5rem;">
+                            <label for="transaction_number_<?php echo $row['o_id']; ?>" style="margin-right:0.5rem; font-weight:600;">Transaction #</label>
+                            <input type="text" name="transaction_number" id="transaction_number_<?php echo $row['o_id']; ?>" class="transaction-number-input" placeholder="Enter transaction number" style="padding:0.25rem 0.5rem;">
+                        </div>
                         <!-- Visible cancel reason options (hidden unless Cancelling) -->
                         <div class="cancel-reason-group" style="display:none; flex:1; gap:0.5rem; align-items:center;">
                             <label style="margin:0 0.5rem 0 0; font-weight:600;">Cancel reason:</label>
@@ -544,22 +570,36 @@ document.addEventListener('DOMContentLoaded', function(){
                 var form = sel.closest('form');
                 if(!form) return;
                 var cancelGroup = form.querySelector('.cancel-reason-group');
+                var txGroup = form.querySelector('.transaction-group');
+                var txInput = form.querySelector('.transaction-number-input');
                 var reasonHidden = form.querySelector('input[name="change_reason"]');
                 if(!cancelGroup || !reasonHidden) return;
                 var val = (sel.value || '').toLowerCase();
                 if(val === 'cancelled' || val === 'cancel'){
+                    // Show cancel reason group and require selection
                     cancelGroup.style.display = 'flex';
-                    // mark first radio required via JS requirement enforcement
                     var radios = cancelGroup.querySelectorAll('input[type="radio"][name="cancel_reason"]');
                     radios.forEach(function(r){ r.required = true; });
+                    // Hide transaction input when cancelling
+                    if(txGroup){ txGroup.style.display = 'none'; }
+                    if(txInput){ txInput.removeAttribute('required'); txInput.value = ''; }
                 } else {
+                    // Hide cancel group and clear values
                     cancelGroup.style.display = 'none';
-                    // clear and remove required
                     var radios = cancelGroup.querySelectorAll('input[type="radio"][name="cancel_reason"]');
                     radios.forEach(function(r){ r.required = false; r.checked = false; });
                     var other = cancelGroup.querySelector('.cancel-reason-other');
                     if(other){ other.style.display = 'none'; other.value = ''; other.removeAttribute('required'); }
                     if(reasonHidden) reasonHidden.value = '';
+
+                    // If marking as shipped, show transaction input and require it
+                    if(val === 'shipped'){
+                        if(txGroup) txGroup.style.display = 'inline-block';
+                        if(txInput) txInput.setAttribute('required','required');
+                    } else {
+                        if(txGroup) txGroup.style.display = 'none';
+                        if(txInput){ txInput.removeAttribute('required'); txInput.value = ''; }
+                    }
                 }
             });
         });
@@ -623,6 +663,18 @@ document.addEventListener('DOMContentLoaded', function(){
                             return false;
                         }
                         changeReasonHidden.value = finalReason.substring(0,2000);
+                    }
+
+                    // If marking as shipped, ensure transaction number is provided
+                    if(val === 'shipped'){
+                        var txInput = f.querySelector('.transaction-number-input');
+                        if(!txInput || !txInput.value.trim()){
+                            e.preventDefault();
+                            alert('Please provide a transaction number when marking an order as Shipped.');
+                            txInput && txInput.focus && txInput.focus();
+                            return false;
+                        }
+                        txInput.value = txInput.value.trim().substring(0,255);
                     }
                 }
             });
