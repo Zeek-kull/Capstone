@@ -56,7 +56,7 @@ $tags_result = mysqli_query($conn, $tags_sql);
                 <div class="row">
                     <div class="col-lg-2 col-md-2">
                         <div class="logo">
-                            <a href="./index.php">
+                            <a href="./default.php">
                                 <img src="img/amLogoo.png" alt="">
                             </a>
                         </div>
@@ -109,7 +109,7 @@ $tags_result = mysqli_query($conn, $tags_sql);
                         $current_tag = isset($_GET['tags']) ? $_GET['tags'] : '';
                     ?>
                     <ul>
-                        <li<?php echo in_array($current_page, ['index.php','home.php']) ? ' class="active"' : ''; ?>><a href="./index.php">Home</a></li>
+                        <li<?php echo in_array($current_page, ['default.php','home.php']) ? ' class="active"' : ''; ?>><a href="./default.php">Home</a></li>
                         <li<?php echo $current_page === 'shop.php' ? ' class="active"' : ''; ?>><a href="./shop.php">Shop</a></li>
                         <?php
                         // Add dynamic tags to navigation. Normalize 'Kid' => 'Kids' and order

@@ -1,0 +1,7 @@
+{
+    "name": "capstone/project",
+    "description": "Capstone project dependencies",
+    "require": {
+        "vlucas/phpdotenv": "^5.5"
+    }
+}

@@ -1,0 +1,9 @@
+<?php
+// Copy this file to lib/db_config.php and fill in your Hostinger credentials
+return [
+    'DB_HOST' => 'mysql.hostinger.com',
+    'DB_USER' => 'u785593787_root',
+    'DB_PASS' => '@Rootssap145',
+    'DB_NAME' => 'u785593787_cse411project',
+    'DB_PORT' => 3306,
+];

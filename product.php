@@ -8,7 +8,7 @@ include 'lib/connection.php';
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     if (session_status() == PHP_SESSION_NONE) session_start();
     $_SESSION['error_message'] = 'Invalid product ID!';
-    header('Location: index.php');
+    header('Location: default.php');
     exit();
 }
 
@@ -29,7 +29,7 @@ if ($result->num_rows > 0) {
 } else {
     if (session_status() == PHP_SESSION_NONE) session_start();
     $_SESSION['error_message'] = 'Product not found!';
-    header('Location: index.php');
+    header('Location: default.php');
     exit();
 }
 
@@ -345,7 +345,7 @@ $main_img = resolve_product_image($images[0], false);
     <script src="js/jquery.dd.min.js"></script>
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/main.bundle.js"></script>
     <script>
     // Wire thumbnail clicks to update main image and reinit zoom
     $(document).ready(function(){

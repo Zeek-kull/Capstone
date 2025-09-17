@@ -91,7 +91,7 @@ if (isset($_POST['add_to_cart'])) {
             <div class="row">
                 <div class="col-lg-12">
                     <div class="breadcrumb-text">
-                        <a href="index.php"><i class="fa fa-home"></i> Home</a>
+                        <a href="default.php"><i class="fa fa-home"></i> Home</a>
 
                         <span>Shop</span>
                     </div>
@@ -270,7 +270,7 @@ if (isset($_POST['add_to_cart'])) {
     <script src="js/jquery.dd.min.js"></script>
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/main.bundle.js"></script>
 
     <script>
     $(document).ready(function() {

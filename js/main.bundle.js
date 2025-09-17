@@ -1,42 +1,22 @@
-/*  ---------------------------------------------------
-    Template Name: Fashi
-    Description: Fashi eCommerce HTML Template
-    Author: Colorlib
-    Author URI: https://colorlib.com/
-    Version: 1.0
-    Created: Colorlib
----------------------------------------------------------  */
-
+/* Production bundle (copied from main.js) - served to the site to avoid module/import issues */
 "use strict";
 
 (function ($) {
-  /*------------------
-        Preloader
-    --------------------*/
   $(window).on("load", function () {
     $(".loader").fadeOut();
     $("#preloder").delay(200).fadeOut("slow");
   });
 
-  /*------------------
-        Background Set
-    --------------------*/
   $(".set-bg").each(function () {
     var bg = $(this).data("setbg");
     $(this).css("background-image", "url(" + bg + ")");
   });
 
-  /*------------------
-		Navigation
-	--------------------*/
   $(".mobile-menu").slicknav({
     prependTo: "#mobile-menu-wrap",
     allowParentLinks: true,
   });
 
-  /*------------------
-        Hero Slider
-    --------------------*/
   $(".hero-items").owlCarousel({
     loop: true,
     margin: 0,
@@ -54,9 +34,6 @@
     autoplay: true,
   });
 
-  /*------------------
-        Product Slider
-    --------------------*/
   $(".product-slider").owlCarousel({
     loop: true,
     margin: 25,
@@ -71,24 +48,13 @@
     autoHeight: false,
     autoplay: true,
     responsive: {
-      0: {
-        items: 1,
-      },
-      576: {
-        items: 2,
-      },
-      992: {
-        items: 2,
-      },
-      1200: {
-        items: 3,
-      },
+      0: { items: 1 },
+      576: { items: 2 },
+      992: { items: 2 },
+      1200: { items: 3 },
     },
   });
 
-  /*------------------
-       logo Carousel
-    --------------------*/
   $(".logo-carousel").owlCarousel({
     loop: false,
     margin: 30,
@@ -103,43 +69,25 @@
     autoHeight: false,
     mouseDrag: false,
     autoplay: true,
-    responsive: {
-      0: {
-        items: 3,
-      },
-      768: {
-        items: 5,
-      },
-    },
+    responsive: { 0: { items: 3 }, 768: { items: 5 } },
   });
 
-  /*-----------------------
-       Product Single Slider
-    -------------------------*/
   $(".ps-slider").owlCarousel({
     loop: false,
     margin: 10,
     nav: true,
     items: 3,
     dots: false,
-    navText: [
-      '<i class="fa fa-angle-left"></i>',
-      '<i class="fa fa-angle-right"></i>',
-    ],
+    navText: [ '<i class="fa fa-angle-left"></i>', '<i class="fa fa-angle-right"></i>' ],
     smartSpeed: 1200,
     autoHeight: false,
     autoplay: true,
   });
 
-  /*------------------
-        CountDown
-    --------------------*/
-  // For demo preview
   var today = new Date();
   var dd = String(today.getDate()).padStart(2, "0");
-  var mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
+  var mm = String(today.getMonth() + 1).padStart(2, "0");
   var yyyy = today.getFullYear();
-
   if (mm == 12) {
     mm = "01";
     yyyy = yyyy + 1;
@@ -148,12 +96,7 @@
     mm = String(mm).padStart(2, "0");
   }
   var timerdate = mm + "/" + dd + "/" + yyyy;
-  // For demo preview end
-
   console.log(timerdate);
-
-  // Use this for real timer date
-  /* var timerdate = "2020/01/01"; */
 
   $("#countdown").countdown(timerdate, function (event) {
     $(this).html(
@@ -166,39 +109,23 @@
     );
   });
 
-  /*----------------------------------------------------
-     Language Flag js 
-    ----------------------------------------------------*/
   $(document).ready(function (e) {
-    //no use
     try {
       var pages = $("#pages")
         .msDropdown({
-          on: {
-            change: function (data, ui) {
-              var val = data.value;
-              if (val != "") window.location = val;
-            },
-          },
+          on: { change: function (data, ui) { var val = data.value; if (val != "") window.location = val; } },
         })
         .data("dd");
-
       var pagename = document.location.pathname.toString();
       pagename = pagename.split("/");
       pages.setIndexByValue(pagename[pagename.length - 1]);
       $("#ver").html(msBeautify.version.msDropdown);
-    } catch (e) {
-      // console.log(e);
-    }
+    } catch (e) {}
     $("#ver").html(msBeautify.version.msDropdown);
-
-    //convert
     $(".language_drop").msDropdown({ roundedBorder: false });
     $("#tech").data("dd");
   });
-  /*-------------------
-		Range Slider
-	--------------------- */
+
   var rangeSlider = $(".price-range"),
     minamount = $("#minamount"),
     maxamount = $("#maxamount"),
@@ -217,27 +144,13 @@
   minamount.val("$" + rangeSlider.slider("values", 0));
   maxamount.val("$" + rangeSlider.slider("values", 1));
 
-  /*-------------------
-		Radio Btn
-	--------------------- */
-  $(".fw-size-choose .sc-item label, .pd-size-choose .sc-item label").on(
-    "click",
-    function () {
-      $(
-        ".fw-size-choose .sc-item label, .pd-size-choose .sc-item label"
-      ).removeClass("active");
-      $(this).addClass("active");
-    }
-  );
+  $(".fw-size-choose .sc-item label, .pd-size-choose .sc-item label").on("click", function () {
+    $(".fw-size-choose .sc-item label, .pd-size-choose .sc-item label").removeClass("active");
+    $(this).addClass("active");
+  });
 
-  /*-------------------
-		Nice Select
-    --------------------- */
   $(".sorting, .p-show").niceSelect();
 
-  /*------------------
-		Single Product
-	--------------------*/
   $(".product-thumbs-track .pt").on("click", function () {
     $(".product-thumbs-track .pt").removeClass("active");
     $(this).addClass("active");
@@ -251,32 +164,22 @@
 
   $(".product-pic-zoom").zoom();
 
-  // Helper to reinit zoom after the main product image is swapped.
-  // Some versions of the zoom plugin don't provide a destroy method,
-  // so we clean up event handlers and artifacts then reinitialize.
   window.initProductZoom = function () {
     try {
       $(".product-pic-zoom").each(function () {
         var $c = $(this);
-        // attempt graceful destroy if plugin supports it
         try { $c.trigger('zoom.destroy'); } catch (e) {}
-        // remove plugin-related events and artifacts
         $c.off('.zoom');
         $c.find('img').off('.zoom');
         $c.find('.zoomImg').remove();
         $c.removeData('zoom');
       });
-      // re-init
       $(".product-pic-zoom").zoom();
     } catch (err) {
-      // silent fail — zoom is non-critical
       console.error('initProductZoom error', err);
     }
   };
 
-  /*-------------------
-		Quantity change
-	--------------------- */
   var proQty = $(".pro-qty");
   proQty.prepend('<span class="dec qtybtn">-</span>');
   proQty.append('<span class="inc qtybtn">+</span>');
@@ -286,14 +189,10 @@
     if ($button.hasClass("inc")) {
       var newVal = parseFloat(oldValue) + 1;
     } else {
-      // Don't allow decrementing below zero
       if (oldValue > 0) {
         var newVal = parseFloat(oldValue) - 1;
-      } else {
-        newVal = 0;
-      }
+      } else { newVal = 0; }
     }
     $button.parent().find("input").val(newVal);
   });
-
 })(jQuery);

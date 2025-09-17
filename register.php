@@ -171,7 +171,7 @@ if (isset($_POST['u_submit'])) {
             <div class="row">
                 <div class="col-lg-12">
                     <div class="breadcrumb-text">
-                        <a href="index.php"><i class="fa fa-home"></i> Home</a>
+                        <a href="default.php"><i class="fa fa-home"></i> Home</a>
 
                         <span>Register</span>
                     </div>
@@ -286,7 +286,7 @@ if (isset($_POST['u_submit'])) {
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/ph-address-selector.js"></script>
     <script src="js/owl.carousel.min.js"></script>
-        <script src="js/main.js"></script>
+    <script src="js/main.bundle.js"></script>
         <script>
             // If user clicks the register button in header, set a flag in localStorage
             var headerRegisterBtn = document.getElementById('header-register-btn');
