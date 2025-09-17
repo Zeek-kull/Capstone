@@ -246,7 +246,7 @@ if (isset($_POST['add_to_cart'])) {
                                                     <form action="set_lensid.php" method="post" style="display:inline;margin:0;">
                                                         <input type="hidden" name="lensid" value="<?php echo htmlspecialchars($product['lens_id']); ?>">
                                                         <input type="hidden" name="redirect" value="snap-camerakit-demo/dist/index.html">
-                                                        <button type="submit" class="site-btn" aria-label="AR Try-On" title="AR Try-On">AR</button>
+                                                        <button type="submit" class="site-btn" aria-label="AR Try-On" title="AR Try-On">Try On</button>
                                                     </form>
                                                 </div>
                                             <?php else: ?>
