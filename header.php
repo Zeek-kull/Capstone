@@ -29,11 +29,18 @@ $tags_result = mysqli_query($conn, $tags_sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <!-- Favicon: prefer root /favicon.ico, provide PNG fallback in img/ for older browsers -->
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <!-- Optional PNG fallback if you include img/favicon.png in the repo -->
-    <link rel="icon" href="favicon.png" type="image/png">
+    <!-- Favicon: compute base path so this works under a subdirectory (e.g., /Capstone) -->
+    <?php
+    // Determine base path for assets relative to document root
+    $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+    $basePath = $scriptDir === '' ? '' : $scriptDir;
+    // prefer favicon at the site root (e.g., /Capstone/favicon.ico)
+    $icoPath = $basePath . '/favicon.ico';
+    $pngPath = $basePath . '/img/favicon.png';
+    ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($icoPath); ?>" type="image/x-icon">
+    <link rel="shortcut icon" href="<?php echo htmlspecialchars($icoPath); ?>" type="image/x-icon">
+    <link rel="icon" href="<?php echo htmlspecialchars($pngPath); ?>" type="image/png">
 
     <!-- Local Muli Font -->
     <link rel="stylesheet" href="css/css.css" type="text/css">
