@@ -427,7 +427,17 @@ $status_label_map = [
                             <?php endforeach; ?>
                         </select>
                         
-                        <input type="text" name="change_reason" id="change_reason_<?php echo $row['o_id']; ?>" class="btn btn-sm btn-outline change-reason-input" placeholder="Reason (required when cancelling)" style="flex: 1;">
+                        <!-- Hidden final change reason submitted to server -->
+                        <input type="hidden" name="change_reason" id="change_reason_<?php echo $row['o_id']; ?>" value="">
+                        <!-- Visible cancel reason options (hidden unless Cancelling) -->
+                        <div class="cancel-reason-group" style="display:none; flex:1; gap:0.5rem; align-items:center;">
+                            <label style="margin:0 0.5rem 0 0; font-weight:600;">Cancel reason:</label>
+                            <label style="margin-right:0.5rem;"><input type="radio" name="cancel_reason" value="changed_mind"> Changed my mind</label>
+                            <label style="margin-right:0.5rem;"><input type="radio" name="cancel_reason" value="found_cheaper"> Found a better price</label>
+                            <label style="margin-right:0.5rem;"><input type="radio" name="cancel_reason" value="wrong_item"> Wrong item ordered</label>
+                            <label style="margin-right:0.5rem;"><input type="radio" name="cancel_reason" value="other"> Other</label>
+                            <input type="text" name="cancel_reason_other" class="cancel-reason-other other-input" placeholder="Other reason" style="display:none; margin-left:0.5rem;">
+                        </div>
                         
                         <button type="submit" name="update_update_btn" class="btn btn-sm btn-primary">
                             Update
@@ -462,8 +472,8 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
     });
 });
 
-// Status filter
-document.getElementById('statusFilter').addEventListener('change', function(e) {
+    // Status filter
+    document.getElementById('statusFilter').addEventListener('change', function(e) {
     // statusFilter contains DB enum values (e.g. 'OFD') or empty string
     const statusFilter = (e.target.value || '').toLowerCase();
     const orders = document.querySelectorAll('.order-card');
@@ -526,44 +536,98 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script>
-// Client-side: require reason when admin attempts to set status to Cancelled
-document.addEventListener('DOMContentLoaded', function(){
-    // Attach change listener to all select elements in order-action forms
-    document.querySelectorAll('.status-form select[name="update_status"]').forEach(function(sel){
-        sel.addEventListener('change', function(e){
-            var form = sel.closest('form');
-            var reasonInput = form.querySelector('.change-reason-input');
-            if(!reasonInput) return;
-            var val = (sel.value || '').toLowerCase();
-            if(val === 'cancelled' || val === 'cancel'){
-                reasonInput.required = true;
-                reasonInput.placeholder = 'Reason (required)';
-                reasonInput.style.border = '1px solid #e74c3c';
-            } else {
-                reasonInput.required = false;
-                reasonInput.placeholder = 'Reason (optional)';
-                reasonInput.style.border = '';
-            }
-        });
-    });
-
-    // Prevent submit if required reason missing
-    document.querySelectorAll('.status-form').forEach(function(f){
-        f.addEventListener('submit', function(e){
-            var sel = f.querySelector('select[name="update_status"]');
-            var reason = f.querySelector('.change-reason-input');
-            if(sel && reason){
+    // Client-side: require reason when admin attempts to set status to Cancelled
+    document.addEventListener('DOMContentLoaded', function(){
+        // Attach change listener to all select elements in order-action forms
+        document.querySelectorAll('.status-form select[name="update_status"]').forEach(function(sel){
+            sel.addEventListener('change', function(e){
+                var form = sel.closest('form');
+                if(!form) return;
+                var cancelGroup = form.querySelector('.cancel-reason-group');
+                var reasonHidden = form.querySelector('input[name="change_reason"]');
+                if(!cancelGroup || !reasonHidden) return;
                 var val = (sel.value || '').toLowerCase();
-                if((val === 'cancelled' || val === 'cancel') && reason.value.trim() === ''){
-                    e.preventDefault();
-                    alert('Please provide a reason for cancelling the order.');
-                    reason.focus();
-                    return false;
+                if(val === 'cancelled' || val === 'cancel'){
+                    cancelGroup.style.display = 'flex';
+                    // mark first radio required via JS requirement enforcement
+                    var radios = cancelGroup.querySelectorAll('input[type="radio"][name="cancel_reason"]');
+                    radios.forEach(function(r){ r.required = true; });
+                } else {
+                    cancelGroup.style.display = 'none';
+                    // clear and remove required
+                    var radios = cancelGroup.querySelectorAll('input[type="radio"][name="cancel_reason"]');
+                    radios.forEach(function(r){ r.required = false; r.checked = false; });
+                    var other = cancelGroup.querySelector('.cancel-reason-other');
+                    if(other){ other.style.display = 'none'; other.value = ''; other.removeAttribute('required'); }
+                    if(reasonHidden) reasonHidden.value = '';
                 }
-            }
+            });
+        });
+
+        // Toggle Other input visibility
+        document.querySelectorAll('.cancel-reason-group input[name="cancel_reason"]').forEach(function(radio){
+            radio.addEventListener('change', function(e){
+                var group = radio.closest('.cancel-reason-group');
+                if(!group) return;
+                var otherInput = group.querySelector('.cancel-reason-other');
+                if(!otherInput) return;
+                if(radio.value === 'other'){
+                    otherInput.style.display = 'inline-block';
+                    otherInput.setAttribute('required','required');
+                } else {
+                    otherInput.style.display = 'none';
+                    otherInput.removeAttribute('required');
+                    otherInput.value = '';
+                }
+            });
+        });
+
+        // Prevent submit if required reason missing, and assemble final change_reason
+        document.querySelectorAll('.status-form').forEach(function(f){
+            f.addEventListener('submit', function(e){
+                var sel = f.querySelector('select[name="update_status"]');
+                var changeReasonHidden = f.querySelector('input[name="change_reason"]');
+                if(sel && changeReasonHidden){
+                    var val = (sel.value || '').toLowerCase();
+                    if((val === 'cancelled' || val === 'cancel')){
+                        var group = f.querySelector('.cancel-reason-group');
+                        if(!group){
+                            e.preventDefault();
+                            alert('Please provide a reason for cancelling the order.');
+                            return false;
+                        }
+                        var selected = group.querySelector('input[name="cancel_reason"]:checked');
+                        var finalReason = '';
+                        if(selected){
+                            if(selected.value === 'other'){
+                                var otherVal = (group.querySelector('.cancel-reason-other') || {value:''}).value.trim();
+                                if(otherVal === ''){
+                                    e.preventDefault();
+                                    alert('Please provide the other reason for cancellation.');
+                                    (group.querySelector('.cancel-reason-other') || {}).focus && (group.querySelector('.cancel-reason-other') || {}).focus();
+                                    return false;
+                                }
+                                finalReason = otherVal;
+                            } else {
+                                // Map option to human-friendly label similar to profile.php
+                                var map = {
+                                    'changed_mind': 'Changed my mind',
+                                    'found_cheaper': 'Found a better price',
+                                    'wrong_item': 'Wrong item ordered'
+                                };
+                                finalReason = map[selected.value] || selected.value;
+                            }
+                        } else {
+                            e.preventDefault();
+                            alert('Please select a cancellation reason.');
+                            return false;
+                        }
+                        changeReasonHidden.value = finalReason.substring(0,2000);
+                    }
+                }
+            });
         });
     });
-});
 </script>
 
 </body>
