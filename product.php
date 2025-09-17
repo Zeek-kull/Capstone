@@ -259,6 +259,7 @@ if (isset($_POST['add_to_cart'])) {
                                 </div>
 
                                 <div class="product-tab">
+                                    <div class="tab-item">
                                     <ul class="nav" role="tablist" aria-label="Product information tabs">
                                         <li class="nav-item" role="presentation">
                                             <a id="tab-1-tab" class="nav-link active" data-toggle="tab" href="#tab-1" role="tab" aria-controls="tab-1" aria-selected="true" tabindex="0">DESCRIPTION</a>
@@ -267,7 +268,7 @@ if (isset($_POST['add_to_cart'])) {
                                             <a id="tab-2-tab" class="nav-link" data-toggle="tab" href="#tab-2" role="tab" aria-controls="tab-2" aria-selected="false" tabindex="-1">SIZE CHART</a>
                                         </li>
                                     </ul>
-
+                                    </div>
                                     <div class="tab-content">
                                         <div class="tab-pane fade show active" id="tab-1" role="tabpanel" aria-labelledby="tab-1-tab">
                                             <div class="product-content">
