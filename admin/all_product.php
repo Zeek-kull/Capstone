@@ -270,16 +270,16 @@ if($catResult){
             <input type="number" name="update_Price" id="price_<?php echo $row['p_id']; ?>" value="<?php echo $row['price']; ?>" class=" cp-form-control" step="0.01" min="0" required>
           </div>
 
-          <div class="detail-row">
-            <span class="detail-label">Lens ID</span>
-            <span class="detail-value">
-              <input type="text" name="update_lensid" id="lensid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['lens_id']); ?>" class="cp-form-control" placeholder="Lens ID">
-            </span>
+          <div class="form-group">
+            <label for="lensid_<?php echo $row['p_id']; ?>">Lens ID</label>
+            <input type="text" name="update_lensid" id="lensid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['lens_id']); ?>" class="cp-form-control" placeholder="Lens ID">
           </div>
 
-          <div class="detail-row">
-            <span class="detail-label">Group ID</span>
-            <span class="detail-value">
+          <div class="form-group">
+            <label for="groupid_<?php echo $row['p_id']; ?>">Group ID</label>
+            <input type="text" name="update_groupid" id="groupid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['group_id']); ?>" class="cp-form-control" placeholder="Group ID">
+          </div>
+
               <input type="text" name="update_groupid" id="groupid_<?php echo $row['p_id']; ?>" value="<?php echo htmlspecialchars($row['group_id']); ?>" class="cp-form-control" placeholder="Group ID">
             </span>
           </div>
