@@ -13,8 +13,7 @@ const liveCanvas = document.getElementById('live');
   const session = await cameraKit.createSession({ liveRenderTarget: liveCanvas });
 
   const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
-  const source = createMediaStreamSource(stream, { transform: Transform2D.MirrorX, cameraType: 'front' });
-  camera.setZoom(0.8); // Hypothetical API
+  const source = createMediaStreamSource(stream, { transform: Transform2D.MirrorX, cameraType: 'front' }); 
   await session.setSource(source);
 
   const lens = await cameraKit.lensRepository.loadLens(LENS_ID, LENS_GROUP_ID);

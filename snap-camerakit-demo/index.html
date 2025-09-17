@@ -18,21 +18,49 @@
     <link rel="stylesheet" href="../css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="../css/style.css" type="text/css">
     <link rel="stylesheet" href="../css/out-of-stock.css" type="text/css">
+
+    <style>
+            #live {
+        width: 100%;
+        height: 320px;
+        max-width: 700px;
+        display: block;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        background-color: red;
+      }
+      @media (max-width: 600px) {
+        #live {
+          height: 180px;
+          max-width: 100vw;
+        }
+      }
+    </style>
   </head>
   <body style="background-color: whitesmoke;">
+    <form action="../product.php" method="get" style="display:inline;">
+      <button type="submit" class="site-btn login-btn" aria-label="product" title="product">HOME</button>
+    </form>
     <div style="text-align:center;">
-      <canvas id="live" style="background-color: red;"></canvas>
-      <center>
-<form action="../product.php" method="get" style="display:inline;">
-  <button type="submit" class="site-btn login-btn" aria-label="product" title="product">HOME</button>
-</form>
-      </center>
-      
+      <div style="width:100%;max-width:700px;margin:auto;">
+        <canvas id="live" style="background-color: red; width:100%; height:auto; display:block; border-radius:12px; box-shadow:0 2px 16px rgba(0,0,0,0.08);"></canvas>
+      </div>
 
     </div>
 
 
 
     <script type="module" src="src/main.js"></script>
+
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/jquery-ui.min.js"></script>
+    <script src="../js/jquery.countdown.min.js"></script>
+    <script src="../js/jquery.nice-select.min.js"></script>
+    <script src="../js/jquery.zoom.min.js"></script>
+    <script src="../js/jquery.dd.min.js"></script>
+    <script src="../js/jquery.slicknav.js"></script>
+    <script src="../js/owl.carousel.min.js"></script>
+    <script src="../js/main.js"></script>
   </body>
 </html>
