@@ -236,36 +236,44 @@ $main_img = resolve_product_image($images[0], false);
                                
                                 <div class="pd-share">
                                     <div class="pd-social">
-                                        <div class="pd-share">
-                                            <div class="pd-social">
-                                                <a href="#"><i class="ti-facebook"></i></a>
-                                                <a href="#"><i class="ti-twitter-alt"></i></a>
-                                                <a href="#"><i class="ti-linkedin"></i></a>
-                                            </div>
-                                        </div>
-                    </div>
-                    <div class="product-tab">
-                        <div class="tab-item">
-                            <ul class="nav" role="tablist">
-                                <li>
-                                            <li>
-                                                <a class="active" data-toggle="tab" href="#tab-1" role="tab">DESCRIPTION</a>
-                                            </li>
-                        </div>
-                        <div class="tab-item-content">
-                            <div class="tab-content">
-                                <div class="tab-pane fade-in active" id="tab-1" role="tabpanel">
-                                            <div class="tab-pane fade-in active" id="tab-1" role="tabpanel">
-                                                <div class="product-content">
-                                                    <div class="row">
-                                                        <div class="col-12">
-                                                            <?php echo nl2br(htmlspecialchars($product['description'] ?? 'No description available.')); ?>
-                                                        </div>
+                                        <a href="#"><i class="ti-facebook"></i></a>
+                                        <a href="#"><i class="ti-twitter-alt"></i></a>
+                                        <a href="#"><i class="ti-linkedin"></i></a>
+                                    </div>
+                                </div>
+
+                                <div class="product-tab">
+                                    <ul class="nav" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" data-toggle="tab" href="#tab-1" role="tab">DESCRIPTION</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href="#tab-2" role="tab">SIZE CHART</a>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade show active" id="tab-1" role="tabpanel">
+                                            <div class="product-content">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <?php echo nl2br(htmlspecialchars($product['description'] ?? 'No description available.')); ?>
                                                     </div>
                                                 </div>
                                             </div>
-                        </div>
-                    </div>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="tab-2" role="tabpanel">
+                                            <div class="product-content">
+                                                <div class="row">
+                                                    <div class="col-12 d-flex justify-content-center">
+                                                        <img src="img/select-product-1.jpg" alt="Size Chart" style="width:300px;height:300px;object-fit:cover;border:1px solid #ddd;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                 </div>
             </div>
         </div>
