@@ -250,7 +250,7 @@ if (isset($_POST['add_to_cart'])) {
                                                     </form>
                                                 </div>
                                             <?php else: ?>
-                                                <!-- Login prompt removed: unauthenticated users are not shown an add-to-cart button -->
+                                                <a href="login.php" class="site-btn login-btn">Login to Add to Cart</a>
                                             <?php endif; ?>
                                     </form>
                                 </div>
